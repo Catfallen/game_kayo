@@ -1,0 +1,83 @@
+{
+	"_readme": [
+		"A Jornada do Kayo boots, and somebody in it can be talked to.",
+		"",
+		"check.sh runs every script under tests/fixtures/qa/<game>/ with --game=<that",
+		"directory>, so this game is inside the play gate without the gate being edited.",
+		"",
+		"The walk east is held until the greeter's BODY stops it rather than counted in tiles:",
+		"an NPC is a wall, and a leg that counts tiles is one that lies the day the room",
+		"changes shape."
+	],
+	"steps": [
+		{
+			"op": "note",
+			"text": "a --qa-script run points saves at user://qa_saves and empties it at boot, so there is never anything to continue and the cursor opens on New game. Rows: Continue, New game. One press starts the run."
+		},
+		{
+			"op": "assert_state",
+			"state": "title"
+		},
+		{
+			"action": "interact",
+			"op": "press"
+		},
+		{
+			"frames": 10,
+			"op": "wait"
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"map": "kayo_start",
+			"op": "assert_map"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				3
+			]
+		},
+		{
+			"op": "note",
+			"text": "east until the greeter stops us, which also turns us to face them - facing is what decides who you talk to."
+		},
+		{
+			"action": "move_right",
+			"frames": 40,
+			"op": "hold"
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"frames": 3,
+			"op": "wait"
+		},
+		{
+			"action": "interact",
+			"op": "press"
+		},
+		{
+			"frames": 10,
+			"op": "wait"
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"action": "interact",
+			"limit": 60,
+			"op": "press_until_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		}
+	]
+}

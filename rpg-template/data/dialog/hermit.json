@@ -1,0 +1,73 @@
+{
+	"_readme": [
+		"The oil, and the only gift on this path. The flask can be taken in the first minute of the",
+		"game, before the player has any idea a lantern exists - so the hermit says what it is FOR.",
+		"An item obtainable before its purpose is statable has to carry its purpose at pickup.",
+		"",
+		"The gift is on a CHOICE, never on a node: a node has no condition and no memory, so a",
+		"conversation looped through one would hand over a second flask. The idiom is set_flag +",
+		"hidden_if_flag on the same choice. Both replies END the talk - a choice line cannot be",
+		"escaped with cancel, so a conversation that looped back through one would have no way out.",
+		"",
+		"The rapier sits BEHIND the oil (requires_flag took_oil), the owner's call on 2026-09-18: a",
+		"blade offered in the same breath as the errand is a shelf, where one offered on the way back",
+		"is a thank-you, and it gives the cave a reason to be walked into twice."
+	],
+	"id": "hermit",
+	"start": "greet",
+	"nodes": {
+		"greet": {
+			"speaker": "Hermit",
+			"portrait": "quest_hermit",
+			"text": "Nobody comes down here for the view.",
+			"next": "shelf"
+		},
+		"ask": {
+			"speaker": "Hermit",
+			"portrait": "quest_hermit",
+			"text": "I have kept the rest since. More than one person needs.",
+			"choices": [
+				{
+					"text": "Could I have some of that oil?",
+					"next": "gave",
+					"give_item": "lamp_oil",
+					"set_flag": "took_oil",
+					"hidden_if_flag": "took_oil"
+				},
+				{
+					"text": "Is that a blade on the shelf?",
+					"next": "blade",
+					"give_item": "rapier",
+					"set_flag": "took_rapier",
+					"hidden_if_flag": "took_rapier",
+					"requires_flag": "took_oil"
+				},
+				{
+					"text": "Just passing through.",
+					"next": "passing"
+				}
+			]
+		},
+		"blade": {
+			"speaker": "Hermit",
+			"portrait": "quest_hermit",
+			"text": "Take it. A thin thing, but it keeps its edge better than I do."
+		},
+		"gave": {
+			"speaker": "Hermit",
+			"portrait": "quest_hermit",
+			"text": "Take a flask. Mind the wick - it catches faster than you expect."
+		},
+		"passing": {
+			"speaker": "Hermit",
+			"portrait": "quest_hermit",
+			"text": "Everyone is, eventually. The shelf keeps."
+		},
+		"shelf": {
+			"speaker": "Hermit",
+			"portrait": "quest_hermit",
+			"text": "There is oil on the shelf. The keep's lantern drank its last flask years before the gate was barred.",
+			"next": "ask"
+		}
+	}
+}

@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+
+; What haunts the cave, and now stands beside the Keeper as well. Genuinely dangerous early and
+; trivial at level 3, where one timed hit ends it - so WHEN you take the cave is the decision,
+; which is the whole point of it being optional.
+;
+; The cave fields a PAIR of them, and that pair is worth exactly one level: 24 xp against a
+; second curve step of 24. That relationship is not decoration, it is the same one the single
+; gloom had against the old [10, 12] curve, carried across intact. Retune either number and
+; test_battle_content says so.
+;
+; Gold halved (6 -> 3) for the reason slink.tres gives: a fight pays what that fight paid.
+;
+; WEAK TO FIRE (200%), which makes Ember worth 14 against it - exactly its health, so one
+; cast ends it. That is the loudest answer in the table on purpose: the first weakness a
+; player meets has to be unmistakable, or it reads as the numbers being noisy rather than as
+; something they now know. A cold dark thing that burns needs no explaining either.
+;
+; UNJUDGED BY EAR: whether a one-cast kill is a reward for knowing something or a fight that
+; ends before it starts. 150% would make it 10 and leave the Gloom standing on 4.
+;
+; CHILL IS THE GAME'S ONE AFFLICTION, and it replaced this enemy's plain 0-power hit rather than
+; being added beside it - a third move would have diluted the two that were tuned. It takes two
+; off the target's guard for three turns and deals no damage at all, so the Gloom now either
+; hurts you or makes the next thing that hurts you worse. Ward is the reply, learned at the same
+; level the Keeper is met at; a debuff the player cannot answer is a mechanic that happens TO
+; them rather than one they play against.
+;
+; A well-timed guard shrugs it off entirely, which is the only reason it is safe on an enemy
+; that appears in the game's unfleeable fight: the press that was already worth making is worth
+; making for one more reason.
+
+; IN THE ARENA (M50) it hunts: two tiles a second, turning toward the player every 32 frames the
+; way A Link to the Past's guards re-aim, and holding its heading in between so it can be
+; side-stepped. UNJUDGED BY HAND; the balance gate plays it.
+
+[ext_resource type="Script" path="res://scripts/data/enemy_def.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"gloom"
+name = "Gloom"
+character = &"quest_gloom"
+max_hp = 14
+attack = 6
+defense = 2
+xp = 12
+gold = 3
+boss = false
+resistances = {
+&"fire": 200
+}
+moves = [{ "name": "Chill", "status": "sap", "stat": "defense", "amount": 2, "turns": 3 }, { "name": "Grasp", "power": 3 }]
+speed_tiles_per_second = 2.0
+chase_every_frames = 32

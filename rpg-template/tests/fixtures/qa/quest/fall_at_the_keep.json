@@ -1,0 +1,701 @@
+{
+	"_readme": [
+		"The same game played BADLY, on purpose, because a driver that plays well only ever visits",
+		"the branches good play reaches. Nothing here is a fixture: it is the shipped quest, lost.",
+		"",
+		"press_until_state mashes, and only the FIRST press of a cue is captured - so a masher's",
+		"press always lands early and never scores. That is what makes this a bad driver for free,",
+		"and it is why the Keeper kills them: four unblocked hits against twenty-four health.",
+		"",
+		"What only this script ever reaches: fleeing a fight and finding it still standing, a boss",
+		"refusing to be fled, losing, the game-over screen, and the road back from it.",
+		"",
+		"M32 gave this script two more jobs: it is the only session that hears the Keeper's own theme, and the only one that reaches a game over at all - so both of that milestone's audio features are shown on a walked path rather than only proven in a suite."
+	],
+	"steps": [
+		{
+			"op": "note",
+			"text": "the title opens the game now. A --qa-script run points saves at user://qa_saves and empties it at boot, so there is never anything to Continue - and the cursor opens on the row a press will actually do something with, which is New game. Rows: Continue, New game. One press starts the run."
+		},
+		{
+			"op": "assert_state",
+			"state": "title"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "note",
+			"text": "the warden opens the game now - hear her out before anything else"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "note",
+			"text": "the same road, walked badly. Every press in this script is mistimed on purpose: press_until_state mashes, and only the FIRST press of a cue is captured - so a masher's press always lands early and never scores. That is the point. A driver that plays well only ever visits the branches good play reaches, and the branches this game most needs proven - a fight lost, a boss that will not let you run, the road back afterwards - are exactly the ones it never sees."
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_map",
+			"map": "quest_village"
+		},
+		{
+			"op": "note",
+			"text": "west into the hollow, straight into the thing in the gap - and RUN from it"
+		},
+		{
+			"op": "note",
+			"text": "fetch Rook first - the west road refuses a player travelling alone now, because everything past it is sized for two. South to the well, west to the wall, south to her."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 5
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_flag",
+			"key": "rook_joins",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "north up the wall and through the west door, which opens now that she is along"
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 5
+		},
+		{
+			"op": "assert_map",
+			"map": "quest_hollow"
+		},
+		{
+			"op": "note",
+			"text": "south down the east side until the wall, then west into the pair standing in the gap"
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 300
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 5
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "note",
+			"text": "Rows: Attack, Magic, Item, Flee. Flee is the fourth, so three downs then confirm - the count moved when Magic was inserted above it, which is the price of putting a command where the genre keeps it"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 120
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "note",
+			"text": "something you ran from is still standing there: no level, and it is still on its tile"
+		},
+		{
+			"op": "assert_level",
+			"value": 1
+		},
+		{
+			"op": "note",
+			"text": "running leaves it standing on its tile - and standing on OUR tile too, so nothing re-triggers until we leave and come back. West to the wall, then east into it again"
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 120
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				4
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 60
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "note",
+			"text": "and this time see it through, mistimed all the way"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 3000
+		},
+		{
+			"op": "assert_level",
+			"value": 1
+		},
+		{
+			"op": "note",
+			"text": "through the gap, where the second one is waiting - re-anchor first, since the fight left us off-centre and the gap is one tile wide"
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 120
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				4
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 60
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				4
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 80
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 3000
+		},
+		{
+			"op": "note",
+			"text": "two of them is still a level, even played badly - the hollow is not where this ends"
+		},
+		{
+			"op": "assert_level",
+			"value": 2
+		},
+		{
+			"op": "note",
+			"text": "the stash, then out east and through the gate on the key"
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 400
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				6
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 6
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 20
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "assert_item",
+			"id": "gate_key",
+			"count": 1
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 60
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 400
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				10,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 120
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 200
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				3
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				4
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 400
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_map",
+			"map": "quest_keep"
+		},
+		{
+			"op": "note",
+			"text": "and here is the fight this script exists for"
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 100
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "note",
+			"text": "the Keeper brings his own theme: EnemyDef.music outranks the manifest's battle track, so this fight does not sound like the ones in the hollow. The escort states nothing, and the first foe that names a track scores the whole formation."
+		},
+		{
+			"op": "assert_music",
+			"id": "vigil",
+			"now": true
+		},
+		{
+			"op": "note",
+			"text": "try to run first: a boss refuses, and the attempt still costs the turn. Rows: Attack, Magic, Item, Flee - three downs to reach the fourth"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 200
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "note",
+			"text": "then mash it out. Twenty-four health, four blocked hits a round if you block - and this driver never does. It loses on every seed, which is what makes the timing mechanic a mechanic rather than a decoration."
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "game_over",
+			"limit": 4000
+		},
+		{
+			"op": "assert_state",
+			"state": "game_over"
+		},
+		{
+			"op": "note",
+			"text": "and nothing was paid for losing: not the coin, not the experience, and not the sword he is still holding."
+		},
+		{
+			"op": "assert_item",
+			"id": "longsword",
+			"count": 0
+		},
+		{
+			"op": "note",
+			"text": "and the run has its own sound. This used to be SILENCE, on a comment claiming every game this borrows from cuts the music at a game over - Final Fantasy I ships 'Dead Music' in 1987. now:true asks what is playing this frame rather than what was asked for, which is the only way to tell a theme that started from one that was requested."
+		},
+		{
+			"op": "assert_music",
+			"id": "dirge",
+			"now": true
+		},
+		{
+			"op": "note",
+			"text": "the run is over, and the only ways on are a save or a fresh start. There is no save, so Continue is refused and says so - press it anyway and nothing happens"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 20
+		},
+		{
+			"op": "assert_state",
+			"state": "game_over"
+		},
+		{
+			"op": "note",
+			"text": "start again: down one, confirm"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 30
+		},
+		{
+			"op": "note",
+			"text": "and a fresh run begins the story again - the warden has not met this one"
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_map",
+			"map": "quest_village"
+		},
+		{
+			"op": "note",
+			"text": "a fresh run really is fresh - level one, empty bag, nothing beaten"
+		},
+		{
+			"op": "assert_level",
+			"value": 1
+		},
+		{
+			"op": "assert_hp",
+			"value": 20
+		},
+		{
+			"op": "assert_xp",
+			"value": 0
+		},
+		{
+			"op": "assert_item",
+			"id": "gate_key",
+			"count": 0
+		},
+		{
+			"op": "assert_flag",
+			"key": "lit_the_lantern",
+			"expect": false
+		}
+	]
+}

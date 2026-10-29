@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="GameManifest" load_steps=4 format=3]
+
+; A Jornada do Kayo, scaffolded by tools/new_game.sh.
+;
+; This file is the whole answer to "which game is running": its first map, where the
+; player stands in it, who they are, the tuning it uses and the voice it speaks in.
+;
+; It is not chosen automatically. With more than one game in data/games and nothing
+; picking between them the title offers a Switch game row; to boot this one straight
+; away, set application/config/game in project.godot or run it with --game=kayo.
+
+[ext_resource type="Script" path="res://scripts/data/game_manifest.gd" id="1_manifest"]
+[ext_resource type="Resource" path="res://data/game_config.tres" id="2_config"]
+[ext_resource type="Resource" path="res://data/sounds/dusk16.tres" id="3_sound"]
+
+[resource]
+script = ExtResource("1_manifest")
+id = &"kayo"
+title = "A Jornada do Kayo"
+start_map = &"kayo_start"
+start_spawn = &"start"
+player_character = &"kayo"
+config = ExtResource("2_config")
+sound_style = ExtResource("3_sound")
+controls_hint = "{move} andar    {confirm} olhar    {pause} pausar"

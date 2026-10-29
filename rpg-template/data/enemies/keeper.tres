@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+
+; What the gate was barred against, and the only fight in the game that cannot be fled - by
+; anybody in it. Unfleeability is a property of the ENCOUNTER: one boss in a formation refuses
+; the escape for the whole of it.
+;
+; It does not come alone. The record names a Gloom and a Slink beside it, which is Final
+; Fantasy I's mixed formation ("a mix of up to 6 small and 2 large") and exactly fills the three
+; foes the screen draws - so the boss out-scales the ordinary pairs instead of matching them.
+;
+; The numbers are still the difficulty statement, and it is now made of a formation against a
+; party rather than of a duel. At level 2 a party that times every press clears all three in
+; about five rounds with roughly half its health; a party that times NOTHING is wiped in about
+; three, against a formation that would have needed ten. Neither outcome depends on luck, which
+; is the point: this fight asks whether you learned the timing, and answers honestly. That is
+; no longer arithmetic in a comment - test_battle_content PLAYS it, both ways, on twelve seeds.
+;
+; TWO GLOOMS WAS MEASURED AND REJECTED: it is unwinnable even with every press timed. The
+; driver reports it as such on four seeds if anyone tries again.
+;
+; The two tonics from the smith are what sit between those two extremes, for a party that
+; lands some presses and misses others. Gold is 20 rather than 25 so the formation still pays
+; the 25 this fight always paid.
+;
+; IT HAS ITS OWN THEME, which is the one place this game leaves natural A minor - vigil
+; leans on G#, and a boss should be the thing that sounds wrong. The field is on the ENEMY
+; rather than behind the boss flag because the references disagree about which fights get a
+; second battle theme: Dragon Quest I reserves one for the Dragonlord, Final Fantasy I has
+; none at all, Final Fantasy IV plays one for nearly every boss. In a formation the first
+; foe that states a track wins, so his escort does not have to be silent about it.
+
+; RESISTS FIRE (50%), so Ember lands 3 on it rather than 7. The point is that the trick which
+; deletes its escort does not delete IT - burn the Gloom, then swing. A boss that shrugged off
+; nothing would make the whole fight one repeated cast, and a boss immune to fire would make
+; the spell dead weight in the encounter it matters most in; half is the answer that keeps the
+; cast legal and stops it being the only plan.
+;
+; Its formation is where the whole system is visible at once: the same Ember is doubled
+; against the Gloom standing beside it and halved against this. UNJUDGED BY EAR.
+
+; IN THE ARENA (M50) it is slow and relentless: a tile and a half a second, re-aiming every 24
+; frames, with a footprint a tile across, so it is the one thing on the floor that cannot be walked
+; round without meaning to. UNJUDGED BY HAND; the balance gate plays it, both ways.
+
+[ext_resource type="Script" path="res://scripts/data/enemy_def.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"keeper"
+name = "The Keeper"
+character = &"quest_keeper"
+max_hp = 30
+attack = 8
+defense = 3
+xp = 25
+gold = 20
+drop = &"longsword"
+boss = true
+resistances = {
+&"fire": 50
+}
+music = &"vigil"
+moves = [{ "name": "Bar", "power": 0 }, { "name": "Crush", "power": 4 }]
+speed_tiles_per_second = 1.5
+chase_every_frames = 24
+body_tiles = Vector2(1, 0.75)

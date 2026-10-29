@@ -1,0 +1,496 @@
+extends GdUnitTestSuite
+## Writing this template's maps out to LDtk and reading them back.
+##
+## THE PROOF IS THE SIX MAPS THE GAME ALREADY SHIPS, round-tripped, exactly as the Tiled suite
+## does it - real warps, patrol paths, formations, a locked door and a legend, all authored before
+## either direction of this translator existed. Compared through `MapData.differences()`, the one
+## place this project asks whether two maps are the same one.
+##
+## WHAT THIS SUITE CANNOT PROVE, said plainly here because a green suite is persuasive: LDtk is
+## not installed on this machine, so nothing here has ever opened a generated file in the editor.
+## A round trip proves this reader understands this writer. The nearest independent check that
+## WAS made is a one-off validation of all six generated files against LDtk's own published
+## 1.5.3 JSON schema (0 errors) - not repeated in the gate, because it needs a Python package the
+## runner would have to fetch on every run, and a gate that reaches an external index is a flaky
+## gate. To repeat it:
+##
+##     tools/map_io.sh --out=ldtk --dir=build/maps
+##     python3 -m pip install jsonschema
+##     # then validate each file against https://ldtk.io/files/JSON_SCHEMA.json
+##
+## Opening one file in LDtk once would close the gap properly. That was weighed on 2026-09-01 and
+## DECLINED - Tiled was verified instead (a generated map opened, 352 cells matching), and LDtk
+## has no Homebrew cask. So this is a recorded state rather than a chore waiting to be done; see
+## docs/DECISIONS.md before treating it as one.
+
+const MAP_DIR := "res://data/maps"
+
+## The tile bank in index order, which is what a tile index MEANS. Read from the generated table
+## because that is the file the coupling runs through - a list of our own would prove the
+## translator against a bank nobody paints with.
+func _tile_ids(style: String) -> PackedStringArray:
+	var file := JsonFile.read("res://assets/generated/%s/tiles.json" % style)
+	assert_bool(file.ok).override_failure_message(
+		"no generated tile table for '%s', so no tile index here means anything" % style).is_true()
+	var out := PackedStringArray()
+	for entry: Variant in file.data.get("tiles", []):
+		out.append(str((entry as Dictionary).get("id", "")))
+	return out
+
+## The size that bank's indices are drawn at, from the same generated table. Read rather than
+## written down for `_shipped_style()`'s reason one unit along: a size spelled into this suite is
+## handed to BOTH directions of the round trip, where a wrong one cancels itself out and comes
+## back the same map. `tools/map_io.gd` held a literal 16 through four milestones that way, and
+## every export it wrote declared a 16px grid over a 32px atlas.
+func _tile_size(style: String) -> int:
+	var file := JsonFile.read("res://assets/generated/%s/tiles.json" % style)
+	assert_bool(file.ok).override_failure_message(
+		"no generated tile table for '%s', so no coordinate here means anything" % style).is_true()
+	return int(file.data.get("tile_size", 0))
+
+func _native_of(path: String) -> Dictionary:
+	var file := JsonFile.read(path)
+	assert_bool(file.ok).is_true()
+	var out := file.data.duplicate(true)
+	# Prose for whoever opens the file; it describes nothing the game reads, so it does not travel.
+	out.erase("_readme")
+	return out
+
+func _maps() -> PackedStringArray:
+	return ContentScan.files_of(MAP_DIR, "json")
+
+func _exported(path: String) -> Dictionary:
+	var native := _native_of(path)
+	var style := str(native.get("style", "gb16"))
+	return LdtkMap.from_native(native, _tile_ids(style), _tile_size(style))
+
+## The style the shipped maps are actually drawn in, read from the first of them. Named here
+## rather than written out, because the demo has changed style once already and a style spelled
+## into this suite goes stale as a REFUSAL: every coupling check would report every map as
+## painted against the wrong bank, which looks like the translator failing rather than the
+## fixture being out of date.
+func _shipped_style() -> String:
+	return str(_native_of(_maps()[0]).get("style", ""))
+
+func test_there_is_something_to_check() -> void:
+	# A loop over an empty directory validates nothing and reports success.
+	assert_int(_maps().size()).is_greater(3)
+
+func test_every_shipped_map_survives_a_trip_through_ldtk() -> void:
+	var checked := 0
+	for path in _maps():
+		var native := _native_of(path)
+		var ids := _tile_ids(str(native.get("style", "gb16")))
+		var size := _tile_size(str(native.get("style", "gb16")))
+		var back := LdtkMap.to_native(LdtkMap.from_native(native, ids, size), ids, size)
+		var faults := MapData.differences(MapData.load_from(path), MapData.from_dictionary(back))
+		assert_array(faults).override_failure_message(
+			"'%s' came back from LDtk as a different map:\n  %s"
+			% [path.get_file(), "\n  ".join(faults)]).is_empty()
+		checked += 1
+	assert_int(checked).override_failure_message(
+		"no map was round-tripped, so the loop above proved nothing").is_greater(3)
+
+func test_a_map_that_came_back_is_still_a_map_the_game_can_read() -> void:
+	for path in _maps():
+		var native := _native_of(path)
+		var ids := _tile_ids(str(native.get("style", "gb16")))
+		var size := _tile_size(str(native.get("style", "gb16")))
+		var back := LdtkMap.to_native(LdtkMap.from_native(native, ids, size), ids, size)
+		var after := MapData.from_dictionary(back)
+		assert_bool(after.ok).override_failure_message(
+			"'%s' did not parse after a trip through LDtk: %s" % [path, after.error]).is_true()
+		assert_vector(after.size()).override_failure_message(
+			"'%s' changed size" % path).is_equal(MapData.load_from(path).size())
+
+func test_a_tile_lands_where_ldtk_says_it_should() -> void:
+	# The arithmetic, pinned against LDtk's own documented meanings rather than against this
+	# translator's opinion of them: `px` is PIXEL coordinates in the layer and `src` is PIXEL
+	# coordinates into the atlas. Getting either wrong produces a file that round-trips here
+	# perfectly and draws a scrambled map in the editor - the one failure this suite could
+	# otherwise never see.
+	# Deliberately NOT the first tile in the bank. The first draft of this test painted grass,
+	# which is index 0 - so `src` was [0,0] and a mutant replacing the whole calculation with
+	# [0,0] SURVIVED. An assertion whose expected value is the degenerate one proves nothing;
+	# `wall` is index 4, so the arithmetic has somewhere to be wrong.
+	var native := {
+		"id": "t", "style": "dusk16", "music": "", "legend": {"#": "wall"},
+		"ground": ["##", "##"], "decor": ["  ", "  "], "spawns": {},
+		"npcs": [], "warps": [], "objects": [], "enemies": [],
+	}
+	var ids := _tile_ids("dusk16")
+	assert_int(ids.find("wall")).override_failure_message(
+		"this test needs a tile that is NOT index 0, or it cannot see a wrong src").is_greater(0)
+	# The pixel figures below are written out as literals, which is the point of them - so the
+	# premise they rest on is asserted rather than assumed. If dusk16 ever moves off 16px this
+	# fails HERE, naming the fixture, instead of failing as arithmetic that looks like a bug.
+	assert_int(_tile_size("dusk16")).override_failure_message(
+		"this test's pixel figures are dusk16's 16px grid written out").is_equal(16)
+	var made := LdtkMap.from_native(native, ids, _tile_size("dusk16"))
+	var level: Dictionary = (made["levels"] as Array)[0]
+	var ground: Dictionary = (level["layerInstances"] as Array)[0]
+	assert_str(str(ground["__identifier"])).is_equal("ground")
+	var tiles: Array = ground["gridTiles"]
+	assert_int(tiles.size()).override_failure_message(
+		"a two-by-two map of grass drew %d tiles" % tiles.size()).is_equal(4)
+	var at := ids.find("wall")
+	for entry: Variant in tiles:
+		var tile: Dictionary = entry
+		assert_int(int(tile["t"])).override_failure_message(
+			"a wall cell points at tile %s rather than %d" % [tile["t"], at]).is_equal(at)
+		var src := JsonFile.to_int_array(tile["src"])
+		assert_int(src[0]).override_failure_message(
+			"src is not pixels into the atlas: %s" % [src]).is_equal(at * _tile_size("dusk16"))
+		assert_int(src[1]).is_equal(0)
+	# The bottom-right cell of a 2x2 map at 16px sits at (16, 16), in pixels.
+	var corners: Array = []
+	for entry: Variant in tiles:
+		corners.append(JsonFile.to_int_array((entry as Dictionary)["px"]))
+	assert_bool(corners.has([16, 16])).override_failure_message(
+		"no tile was drawn at pixel (16,16); the layer holds %s" % [corners]).is_true()
+
+func test_every_field_a_record_carries_is_declared() -> void:
+	# LDtk resolves a field instance through its `defUid`, and reading its own source says an
+	# unmatched one is dropped in the kind way and a CRASH in the unkind way. So the definitions
+	# are derived from the records rather than hand-listed - a game may put anything on an npc,
+	# and a fixed list would silently drop whatever the template did not know about.
+	var native := _native_of(_maps()[0])
+	var style := str(native.get("style", "gb16"))
+	var made := LdtkMap.from_native(native, _tile_ids(style), _tile_size(style))
+	var declared := {}
+	for entry: Variant in (made["defs"] as Dictionary)["entities"]:
+		var def: Dictionary = entry
+		for field: Variant in def["fieldDefs"]:
+			declared[int((field as Dictionary)["uid"])] = true
+	var seen := 0
+	for entry: Variant in ((made["levels"] as Array)[0] as Dictionary)["layerInstances"]:
+		var layer: Dictionary = entry
+		for thing: Variant in layer.get("entityInstances", []):
+			for field: Variant in (thing as Dictionary)["fieldInstances"]:
+				var uid := int((field as Dictionary)["defUid"])
+				assert_bool(declared.has(uid)).override_failure_message(
+					"field '%s' points at definition %d, which nothing declares"
+					% [(field as Dictionary)["__identifier"], uid]).is_true()
+				seen += 1
+	assert_int(seen).override_failure_message(
+		"no field instance was written at all, so this checked nothing").is_greater(3)
+
+func test_every_layer_carries_the_arrays_ldtk_reads_without_guarding() -> void:
+	# Measured from LDtk's own loader rather than from its schema: it walks `gridTiles`,
+	# `entityInstances` and `intGridCsv` RAW, with no null check and no default, so a layer
+	# missing any of them aborts the whole file load. They are written on every layer whatever
+	# its type, and this is the assertion that keeps them there.
+	var made := _exported(_maps()[0])
+	var layers: Array = ((made["levels"] as Array)[0] as Dictionary)["layerInstances"]
+	assert_int(layers.size()).is_greater(3)
+	for entry: Variant in layers:
+		var layer: Dictionary = entry
+		for key: String in ["gridTiles", "entityInstances", "intGridCsv"]:
+			assert_bool(layer.has(key)).override_failure_message(
+				"layer '%s' has no '%s', which stops LDtk opening the file at all"
+				% [layer.get("__identifier", "?"), key]).is_true()
+
+func test_the_same_map_exports_the_same_bytes_twice() -> void:
+	# A drift gate cannot survive an id drawn fresh on every run, and LDtk wants a UUID on the
+	# project, the level, every layer and every entity. They are derived from the map's own names
+	# instead, which is what makes this true.
+	var path := _maps()[0]
+	assert_str(JSON.stringify(_exported(path))).is_equal(JSON.stringify(_exported(path)))
+
+func test_every_id_it_writes_is_its_own() -> void:
+	# Duplicated iids are ACCEPTED by LDtk and silently collapse entity references onto one
+	# object - no warning, no repair. Derived ids make that a real risk rather than a
+	# theoretical one, so it is asserted.
+	var made := _exported(_maps()[0])
+	var seen := {}
+	_collect_iids(made, seen)
+	assert_int(seen.size()).override_failure_message(
+		"the file carries fewer distinct iids than iids").is_greater(5)
+
+func _collect_iids(value: Variant, seen: Dictionary) -> void:
+	if value is Dictionary:
+		var dict: Dictionary = value
+		for key: Variant in dict:
+			if str(key) == "iid":
+				var id := str(dict[key])
+				assert_bool(seen.has(id)).override_failure_message(
+					"iid '%s' is used twice, which silently corrupts entity references" % id
+					).is_false()
+				seen[id] = true
+			else:
+				_collect_iids(dict[key], seen)
+	elif value is Array:
+		for entry: Variant in value:
+			_collect_iids(entry, seen)
+
+func test_a_map_painted_against_another_bank_is_refused() -> void:
+	# THE COUPLING. A tile is stored as an INDEX, so a map painted against one bank and read
+	# against another is not a broken file - it is a map full of the wrong tiles, and nothing
+	# else in this project would notice.
+	var ids := _tile_ids(_shipped_style())
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, _tile_size(_shipped_style()))
+	assert_array(LdtkMap.problems(made, StringName(_shipped_style()), ids)).override_failure_message(
+		"a map painted against the bank it is being read with was refused").is_empty()
+	var shorter := ids.duplicate()
+	shorter.remove_at(shorter.size() - 1)
+	assert_array(LdtkMap.problems(made, StringName(_shipped_style()), shorter)).override_failure_message(
+		"the bank lost a tile and the map was accepted anyway").is_not_empty()
+
+func test_a_map_painted_on_another_grid_is_refused() -> void:
+	# The Tiled suite's twin, and the same silence: LDtk writes a tile at `px` in pixels and an
+	# entity likewise, so a project painted on one grid and read on another moves every record
+	# without breaking the file - and a round trip cannot see it, since both directions share the
+	# number.
+	var style := _shipped_style()
+	var ids := _tile_ids(style)
+	var size := _tile_size(style)
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, size)
+	assert_array(LdtkMap.problems(made, StringName(style), ids, size)).override_failure_message(
+		"a project read at the size it was painted on was refused").is_empty()
+	assert_array(LdtkMap.problems(made, StringName(style), ids, size * 2)) \
+		.override_failure_message("a project painted at %dpx was accepted at %dpx; every record "
+		% [size, size * 2] + "on it would land at half its tile").is_not_empty()
+	assert_array(LdtkMap.problems(made, StringName(style), ids)).override_failure_message(
+		"a caller with no table to hand should get no size complaint, and got one").is_empty()
+
+func test_a_tile_the_bank_does_not_have_is_named_rather_than_quietly_emptied() -> void:
+	# TiledMap's twin and for its reason: an index past the id list resolved to "" and the cell
+	# became a space, so a project painted against a wider bank came back with holes in it and
+	# nothing said why. One past the end is what a project painted against the whole atlas carries.
+	var style := _shipped_style()
+	var ids := _tile_ids(style)
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, _tile_size(style))
+	assert_array(LdtkMap.problems(made, StringName(style), ids)).override_failure_message(
+		"an untouched export was refused").is_empty()
+	var poked := false
+	for level_entry: Variant in (made["levels"] as Array):
+		for entry: Variant in ((level_entry as Dictionary)["layerInstances"] as Array):
+			var layer: Dictionary = entry
+			if poked or str(layer.get("__type", "")) != "Tiles":
+				continue
+			var tiles: Array = layer["gridTiles"]
+			(tiles[0] as Dictionary)["t"] = ids.size()
+			layer["gridTiles"] = tiles
+			poked = true
+	assert_bool(poked).override_failure_message(
+		"the exported project has no tile layer to poke").is_true()
+	assert_str("\n".join(LdtkMap.problems(made, StringName(style), ids))).contains(
+		"would come back as an empty cell")
+
+
+func test_a_map_painted_against_another_style_is_refused() -> void:
+	var style := _shipped_style()
+	var ids := _tile_ids(style)
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, _tile_size(style))
+	# The other style is DERIVED, never named. Spelling one in works only while the demo is the
+	# only game: scaffold a second one drawn in that style and the suite reads its map as its own
+	# style, so the refusal this exists to prove cannot fire and it goes red having found nothing.
+	var other := ArtFixtures.some_other_style(StringName(style))
+	assert_array(LdtkMap.problems(made, other, ids)).override_failure_message(
+		"a map painted for %s was read as %s without complaint" % [style, other]).is_not_empty()
+
+func test_a_project_keeping_its_levels_elsewhere_is_refused() -> void:
+	# LDtk can split levels into `.ldtkl` files beside the project. This reads them inline, so a
+	# split project would present as a map with no layers rather than as an unsupported file.
+	var ids := _tile_ids(_shipped_style())
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, _tile_size(_shipped_style()))
+	made["externalLevels"] = true
+	assert_array(LdtkMap.problems(made, StringName(_shipped_style()), ids)).is_not_empty()
+
+func test_a_project_with_two_tilesets_is_refused() -> void:
+	var ids := _tile_ids(_shipped_style())
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, _tile_size(_shipped_style()))
+	var sets: Array = (made["defs"] as Dictionary)["tilesets"]
+	sets.append({"identifier": "other", "uid": 99, "__cWid": 4, "__cHei": 1, "tileGridSize": 16})
+	assert_array(LdtkMap.problems(made, StringName(_shipped_style()), ids)).override_failure_message(
+		"a map painted from two banks was accepted, and only one of them can be resolved") \
+		.is_not_empty()
+
+func test_a_project_holding_more_than_one_level_is_refused() -> void:
+	var ids := _tile_ids(_shipped_style())
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, _tile_size(_shipped_style()))
+	var levels: Array = made["levels"]
+	levels.append(levels[0])
+	assert_array(LdtkMap.problems(made, StringName(_shipped_style()), ids)).is_not_empty()
+
+func test_a_structured_field_survives_as_more_than_a_string() -> void:
+	# LDtk has no type describing an array of tile PAIRS, which is what a patrol path is, so those
+	# travel as JSON behind a marker - the same answer Tiled gets, for a different reason. This is
+	# the assertion that says they come back as DATA rather than as the text of some data.
+	var native := {
+		"id": "t", "style": "dusk16", "music": "", "legend": {".": "grass"}, "ground": ["."],
+		"decor": [" "], "spawns": {},
+		"npcs": [{"tile": [0, 0], "id": "walker", "behavior": "patrol",
+			"path": [[1, 2], [3, 4]], "loop": true, "dwell": 30}],
+		"warps": [], "objects": [], "enemies": [],
+	}
+	var ids := _tile_ids("dusk16")
+	var size := _tile_size("dusk16")
+	var back := LdtkMap.to_native(LdtkMap.from_native(native, ids, size), ids, size)
+	var npc: Dictionary = (back["npcs"] as Array)[0]
+	assert_that(MapData.plain_numbers(npc.get("path"))).override_failure_message(
+		"a patrol path came back as %s" % [npc.get("path")]).is_equal([[1, 2], [3, 4]])
+	assert_bool(npc.get("loop")).is_true()
+	assert_int(npc.get("dwell")).is_equal(30)
+	assert_str(str(npc.get("behavior"))).is_equal("patrol")
+
+func test_a_field_the_records_disagree_about_stays_lossless() -> void:
+	# One definition describes a FIELD, not one value of it, so records that disagree about a
+	# key's type force it to String - and the non-strings among them then have to survive anyway.
+	# Picking a winner here would silently rewrite somebody's data.
+	var native := {
+		"id": "t", "style": "dusk16", "music": "", "legend": {".": "grass"}, "ground": ["."],
+		"decor": [" "], "spawns": {},
+		"npcs": [{"tile": [0, 0], "id": "a", "note": 7}, {"tile": [0, 0], "id": "b", "note": "hi"}],
+		"warps": [], "objects": [], "enemies": [],
+	}
+	var ids := _tile_ids("dusk16")
+	var size := _tile_size("dusk16")
+	var back := LdtkMap.to_native(LdtkMap.from_native(native, ids, size), ids, size)
+	var npcs: Array = back["npcs"]
+	assert_that(MapData.plain_numbers((npcs[0] as Dictionary).get("note"))).override_failure_message(
+		"a number under a disagreed-about field came back as %s"
+		% [(npcs[0] as Dictionary).get("note")]).is_equal(7)
+	assert_str(str((npcs[1] as Dictionary).get("note"))).is_equal("hi")
+
+func test_a_map_says_which_bank_it_was_painted_against() -> void:
+	var native := _native_of(_maps()[0])
+	var style := str(native.get("style", "gb16"))
+	var made := LdtkMap.from_native(native, _tile_ids(style), _tile_size(style))
+	assert_str(LdtkMap.style_of(made)).is_equal(str(native.get("style", "")))
+
+func test_a_file_naming_no_style_is_not_guessed_at() -> void:
+	# Empty, never a default: a guessed bank is the exact failure problems() exists to refuse.
+	assert_str(LdtkMap.style_of({})).is_empty()
+	assert_str(LdtkMap.style_of({"levels": []})).is_empty()
+
+func test_the_tileset_image_is_named_beside_the_map() -> void:
+	# The Tiled suite's twin, and the same bug: LDtk resolves `relPath` relative to the .ldtk, so
+	# a bare "tiles.png" is a tileset the editor cannot find and a map that opens with nothing
+	# drawn on it. Both translators answer `atlas_name()`, so one export directory serves both.
+	var native := _native_of(_maps()[0])
+	var style := str(native.get("style", "gb16"))
+	var made := LdtkMap.from_native(native, _tile_ids(style), _tile_size(style))
+	var set_one: Dictionary = ((made["defs"] as Dictionary)["tilesets"] as Array)[0]
+	assert_str(str(set_one["relPath"])).is_equal(LdtkMap.atlas_name(style))
+	assert_str(str(set_one["relPath"])).override_failure_message(
+		"the path climbs out of the map's own directory, so an export is not portable"
+		).not_contains("/")
+
+func test_both_translators_agree_on_the_atlas_name() -> void:
+	# They write into ONE directory, so a disagreement means two copies of the same sheet under
+	# two names - or worse, one editor pointed at a file the other never wrote.
+	for style: String in ["gb16", "dusk16", "nes16"]:
+		assert_str(LdtkMap.atlas_name(style)).override_failure_message(
+			"Tiled and LDtk disagree about what the '%s' sheet is called" % style
+			).is_equal(TiledMap.atlas_name(style))
+
+func test_a_tile_layer_points_at_the_same_sheet() -> void:
+	# LDtk carries the path twice - on the tileset def and on every tile layer instance - and the
+	# editor reads the layer's copy. They have to agree.
+	var native := _native_of(_maps()[0])
+	var style := str(native.get("style", "gb16"))
+	var made := LdtkMap.from_native(native, _tile_ids(style), _tile_size(style))
+	var found := 0
+	for entry: Variant in ((made["levels"] as Array)[0] as Dictionary)["layerInstances"]:
+		var layer: Dictionary = entry
+		if str(layer.get("__type", "")) != "Tiles":
+			continue
+		assert_str(str(layer["__tilesetRelPath"])).override_failure_message(
+			"layer '%s' points at a different sheet from the tileset definition"
+			% layer.get("__identifier", "?")).is_equal(LdtkMap.atlas_name(style))
+		found += 1
+	assert_int(found).override_failure_message("no tile layer was checked").is_greater(1)
+
+
+# -- the shapes the game draws -----------------------------------------------------------------
+
+## TiledMap's suite reads these the same way and for the same reason.
+func _edges(style: String) -> Array:
+	var file := JsonFile.read("res://assets/generated/%s/tiles.json" % style)
+	assert_bool(file.ok).is_true()
+	return file.data.get("edges", []) as Array
+
+func _columns(style: String) -> int:
+	var file := JsonFile.read("res://assets/generated/%s/tiles.json" % style)
+	assert_bool(file.ok).is_true()
+	return int(file.data.get("columns", 0))
+
+func _ground_of(made: Dictionary) -> Dictionary:
+	var level: Dictionary = (made["levels"] as Array)[0]
+	for entry: Variant in (level["layerInstances"] as Array):
+		if str((entry as Dictionary).get("__identifier", "")) == "ground":
+			return entry
+	fail("the project has no ground layer")
+	return {}
+
+func test_every_shipped_map_survives_a_trip_through_ldtk_wearing_its_shorelines() -> void:
+	var composed := 0
+	for path in _maps():
+		var native := _native_of(path)
+		var style := str(native.get("style", "gb16"))
+		var ids := _tile_ids(style)
+		var size := _tile_size(style)
+		var made := LdtkMap.from_native(native, ids, size, {}, _edges(style))
+		for tile: Variant in _ground_of(made)["gridTiles"]:
+			if int((tile as Dictionary)["t"]) >= ids.size():
+				composed += 1
+		var back := LdtkMap.to_native(made, ids, size, _edges(style))
+		var faults := MapData.differences(MapData.load_from(path), MapData.from_dictionary(back))
+		assert_array(faults).override_failure_message(
+			"'%s' came back from LDtk as a different map:\n  %s"
+			% [path.get_file(), "\n  ".join(faults)]).is_empty()
+	assert_int(composed).override_failure_message(
+		"no shipped cell was written as a composed shape, so nothing was folded").is_greater(0)
+
+func test_a_ground_tile_points_at_the_shape_the_game_draws_there() -> void:
+	var shored := 0
+	for path in _maps():
+		var native := _native_of(path)
+		var style := str(native.get("style", "gb16"))
+		var edges := _edges(style)
+		if edges.is_empty():
+			continue
+		var ids := _tile_ids(style)
+		var size := _tile_size(style)
+		var map := MapData.load_from(path)
+		var by_tile := TileSetFactory.edges_by_id({"edges": edges})
+		var across := _columns(style)
+		for entry: Variant in _ground_of(LdtkMap.from_native(native, ids, size, {}, edges))["gridTiles"]:
+			var tile: Dictionary = entry
+			var px := JsonFile.to_int_array(tile["px"])
+			var at := Vector2i(px[0] / size, px[1] / size)
+			var named := map.ground_at(at)
+			var want := TerrainEdges.cell_index(by_tile.get(named, []) as Array, map.around(at),
+				ids.find(named))
+			assert_int(int(tile["t"])).override_failure_message(
+				"%s %s is %s and the game draws column %d there; the project says %d"
+				% [path.get_file(), at, named, want, int(tile["t"])]).is_equal(want)
+			assert_int(JsonFile.to_int_array(tile["src"])[0]).is_equal((want % across) * size)
+			if want >= ids.size():
+				shored += 1
+	assert_int(shored).is_greater(0)
+
+func test_the_tileset_declares_every_column_of_the_sheet() -> void:
+	var style := _shipped_style()
+	assert_int(_columns(style)).is_greater(_tile_ids(style).size())
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), _tile_ids(style), _tile_size(style),
+		{}, _edges(style))
+	var set_one: Dictionary = ((made["defs"] as Dictionary)["tilesets"] as Array)[0]
+	assert_int(int(set_one["__cWid"])).is_equal(_columns(style))
+	assert_int(int(set_one["pxWid"])).is_equal(_columns(style) * _tile_size(style))
+
+func test_a_composed_tile_is_accepted_and_only_one_past_the_whole_sheet_is_refused() -> void:
+	var style := _shipped_style()
+	var ids := _tile_ids(style)
+	var size := _tile_size(style)
+	var edges := _edges(style)
+	var made := LdtkMap.from_native(_native_of(_maps()[0]), ids, size, {}, edges)
+	var tiles: Array = _ground_of(made)["gridTiles"]
+	(tiles[0] as Dictionary)["t"] = _columns(style) - 1
+	assert_array(LdtkMap.problems(made, StringName(style), ids, size, edges)) \
+		.override_failure_message("the last shape on the sheet was refused").is_empty()
+	(tiles[0] as Dictionary)["t"] = _columns(style)
+	assert_str("\n".join(LdtkMap.problems(made, StringName(style), ids, size, edges))) \
+		.contains("would come back as an empty cell")
+

@@ -1,0 +1,358 @@
+extends GdUnitTestSuite
+## The gates an IMPORTED style answers to, over the real files.
+##
+## The consistency gates draw every frame through the rig and cannot draw an import, so an
+## imported style leaves them (ArtFixtures.rig_style_ids) and enters here. What can be asked of
+## art the template did not draw: that every input has committed output which describes
+## itself, that the cast stands on one ground line, that every layer is credited under a
+## licence the style accepts, and that the inputs are not shipped. A palette rule would be
+## meaningless - these pixels are the artists', not the style's.
+
+## Where a composed character's recipe lives, and how a weapon layer is told from the rest of a
+## person. Both are here rather than in the tests below because two of them read the same files.
+const DESIGNS := "res://docs/lpc_designs/"
+const SWORD_PREFIX := "weapons/sword/"
+
+func _meta(style_id: StringName, id: StringName) -> SheetMeta:
+	var file := JsonFile.read(ArtFixtures.generated_meta_path(style_id, id))
+	assert_bool(file.ok).override_failure_message(file.error).is_true()
+	return SheetMeta.from_dict(file.data)
+
+func test_every_imported_character_has_output_that_describes_itself() -> void:
+	var checked := 0
+	for style_id in ArtFixtures.imported_style_ids():
+		var ids := ArtFixtures.imported_characters_of(style_id)
+		assert_array(ids).override_failure_message(
+			"%s imports its sheets and has nothing under data/imports/%s" % [style_id, style_id]).is_not_empty()
+		for id in ids:
+			var texture := load(ArtFixtures.generated_texture_path(style_id, id)) as Texture2D
+			assert_object(texture).override_failure_message(
+				"%s/%s has no committed sheet - run tools/gen_sprites.gd" % [style_id, id]).is_not_null()
+			var meta := _meta(style_id, id)
+			assert_array(meta.problems(texture.get_size())).override_failure_message(
+				"%s/%s: %s" % [style_id, id, meta.problems(texture.get_size())]).is_empty()
+			assert_str(meta.source).is_equal("lpc")
+			# Canonical rows, against literals: the re-cut is the whole point of the importer.
+			assert_int(meta.row_of(Dir.D.DOWN)).is_equal(0)
+			assert_int(meta.row_of(Dir.D.LEFT)).is_equal(1)
+			assert_int(meta.row_of(Dir.D.RIGHT)).is_equal(2)
+			assert_int(meta.row_of(Dir.D.UP)).is_equal(3)
+			checked += 1
+	# The template ships one imported style, so an empty run here is the gate not looking.
+	assert_int(checked).override_failure_message("no imported character was measured").is_greater(0)
+
+## How far apart two body types' ground rows may be. Two, because the shipped spread is one and
+## a number equal to what ships cannot tell "as drawn" from "one worse than drawn"; a cape or a
+## shadow taken for a foot is out by ten or more.
+const MAX_GROUND_SPREAD := 2
+
+
+## Which of the generator's bodies a character is drawn on, from the export itself rather than
+## from the recipe: a character downloaded from the browser has no recipe, and both routes write
+## this field.
+func _body_type(style_id: StringName, id: StringName) -> String:
+	var file := JsonFile.read("%s/%s/%s/character.json" % [ArtFixtures.IMPORT_ROOT, style_id, id])
+	return str(file.data.get("bodyType", "")) if file.ok else ""
+
+
+## What a shared ground line actually means for art the template did not draw.
+##
+## Every sheet carries its OWN measured anchor and every character is placed by it, so their
+## feet land on their node's origin whatever row that is - the equality this used to demand
+## was a proxy, and it asked the LPC artists to draw four body types identically. They do not:
+## the female and teen bodies sit one pixel lower than the male and child ones, in art shipped
+## by a dozen people over ten years.
+##
+## So the rule is stated in the two halves that are actually load-bearing. Within one BODY
+## TYPE the ground row is exactly equal, which still catches a stray low pixel on one costume.
+## Across the whole cast it is within a couple of pixels, which is what catches the failure the
+## anchor cannot survive: a trailing cape or a shadow measured as the ground, putting a
+## character's feet in the air by the length of the thing hanging beneath them.
+func test_an_imported_cast_stands_on_one_ground_line() -> void:
+	for style_id in ArtFixtures.imported_style_ids():
+		var by_body := {}
+		var rows: Array[int] = []
+		var counted := 0
+		for id in ArtFixtures.imported_characters_of(style_id):
+			var meta := _meta(style_id, id)
+			# Inside the cell and below its middle: feet, not a hat.
+			assert_int(meta.anchor.y).is_greater(meta.cell.y / 2)
+			assert_int(meta.anchor.y).is_less(meta.cell.y)
+			var body := _body_type(style_id, id)
+			assert_bool(body.is_empty()).override_failure_message(
+				"'%s' does not say which body it is drawn on" % id).is_false()
+			if not by_body.has(body):
+				by_body[body] = {}
+			(by_body[body] as Dictionary)[meta.anchor.y] = id
+			if not rows.has(meta.anchor.y):
+				rows.append(meta.anchor.y)
+			counted += 1
+		assert_int(counted).override_failure_message(
+			"%s has no imported characters, so this proved nothing" % style_id).is_greater(0)
+		for body: Variant in by_body.keys():
+			var seen: Dictionary = by_body[body]
+			assert_int(seen.size()).override_failure_message(
+				"%s '%s' characters stand on %d different rows: %s - one of them is being"
+				% [style_id, body, seen.size(), seen] + " measured by something other than its feet"
+				).is_equal(1)
+		rows.sort()
+		assert_int(rows[rows.size() - 1] - rows[0]).override_failure_message(
+			"%s characters stand on rows %s, too far apart to be four bodies drawn by hand -"
+			% [style_id, rows] + " something is being measured that is not a foot"
+			).is_less_equal(MAX_GROUND_SPREAD)
+
+
+## The bound above is only evidence if it REFUSES something, and the shipped cast is one row
+## apart - so widening the ceiling to a whole cell changes no verdict at all and the check
+## quietly stops checking. This pins the number itself against the failure it exists for: a
+## trailing cape or a shadow taken for the ground puts a character's feet ten or more rows out.
+func test_the_ground_line_bound_refuses_a_cape_measured_as_a_foot() -> void:
+	assert_int(MAX_GROUND_SPREAD).override_failure_message(
+		"a ground-line spread of ten rows is inside the bound, which is a character standing"
+		+ " in the air by the length of whatever hangs beneath it").is_less(10)
+	# And it is not so tight that hand-drawn bodies fail it: the shipped spread is one.
+	assert_int(MAX_GROUND_SPREAD).is_greater_equal(1)
+
+
+func test_every_layer_is_credited_under_a_licence_the_style_accepts() -> void:
+	for style_id in ArtFixtures.imported_style_ids():
+		var style := ArtFixtures.style(style_id)
+		var summary := JsonFile.read("%s/%s/credits.json" % [ArtFixtures.GENERATED_ROOT, style_id])
+		assert_bool(summary.ok).override_failure_message(summary.error).is_true()
+		var credited: Array[String] = []
+		for entry: Dictionary in summary.data["files"] as Array:
+			credited.append(str(entry["file"]))
+		for id in ArtFixtures.imported_characters_of(style_id):
+			var recipe := JsonFile.read("%s/character.json" % ArtFixtures.import_dir(style_id, id))
+			assert_bool(recipe.ok).override_failure_message(recipe.error).is_true()
+			var files := LpcImport.credits_of(recipe.data)
+			assert_array(files).override_failure_message("%s/%s credits nobody" % [style_id, id]).is_not_empty()
+			for c: Dictionary in files:
+				assert_array(credited).override_failure_message(
+					"%s/%s uses %s, which credits.json does not name" % [style_id, id, c["file"]]) \
+					.contains([str(c["file"])])
+				var allowed := false
+				for l in JsonFile.to_string_array(c["licenses"]):
+					if LpcImport.license_allowed(l, style):
+						allowed = true
+				assert_bool(allowed).override_failure_message(
+					"%s/%s: %s is licensed %s, outside %s" % [style_id, id, c["file"], c["licenses"], style.licenses]) \
+					.is_true()
+		assert_bool(FileAccess.file_exists("%s/%s/LICENSE.txt" % [ArtFixtures.GENERATED_ROOT, style_id])) \
+			.override_failure_message("%s ships imported art with no licence notice beside it" % style_id).is_true()
+
+func test_committed_imports_match_what_the_importer_produces_now() -> void:
+	# The drift gate as a test, on test_determinism's terms: an input edited without
+	# regenerating would ship the old sprite while the repository described the new one. The
+	# same check that makes any mutant of the converter visible here, since the committed
+	# output was made by the unmutated one.
+	var checked := 0
+	for style_id in ArtFixtures.imported_style_ids():
+		var style := ArtFixtures.style(style_id)
+		for id in ArtFixtures.imported_characters_of(style_id):
+			var folder := ArtFixtures.import_dir(style_id, id)
+			var image := ImageFile.read_png(folder + "/" + ArtFixtures.IMPORT_SHEET)
+			var recipe := JsonFile.read(folder + "/character.json")
+			assert_object(image).is_not_null()
+			assert_bool(recipe.ok).is_true()
+			assert_array(LpcImport.problems(image, recipe.data, style)).is_empty()
+			var built := LpcImport.build(image, recipe.data, style, String(id))
+			var path := ArtFixtures.generated_texture_path(style_id, id)
+			var committed := ImageFile.read_png(path)
+			assert_object(committed).override_failure_message("%s is missing" % path).is_not_null()
+			assert_str(Hashing.image_digest(committed)).override_failure_message(
+				"%s is out of date - re-run tools/gen_sprites.gd and commit the result" % path) \
+				.is_equal(Hashing.image_digest(built["image"]))
+			var meta: SheetMeta = built["meta"]
+			assert_str(JSON.stringify(_meta(style_id, id).to_dict())).is_equal(JSON.stringify(meta.to_dict()))
+			checked += 1
+	assert_int(checked).is_greater(0)
+
+func test_the_inputs_are_kept_out_of_the_editor_and_the_pack() -> void:
+	# A .gdignore is what stops the importer turning every 832x3456 input into a texture and
+	# the exporter packing it. pack_check.sh proves the outcome; this pins the mechanism.
+	assert_bool(FileAccess.file_exists(ArtFixtures.IMPORT_ROOT + "/.gdignore")).is_true()
+
+func test_every_imported_bank_cuts_cleanly_from_art_that_is_on_disk() -> void:
+	# The bank's own problems() checks what it says about itself; this checks it against the art,
+	# which is the half that needs files. A missing sheet, a cell past the edge of one, a hole in
+	# a ground tile and a licence outside the style all land here.
+	var checked := 0
+	for bank_id in ArtFixtures.imported_bank_ids():
+		var bank := ArtFixtures.bank(bank_id)
+		assert_array(bank.problems()).override_failure_message(
+			"bank '%s': %s" % [bank_id, bank.problems()]).is_empty()
+		var images := ArtFixtures.tile_images_for(bank)
+		for name in bank.file_names():
+			assert_bool(images.has(name)).override_failure_message(
+				"'%s' is credited by the %s bank and is not at %s"
+				% [name, bank_id, bank.source_path(name)]).is_true()
+		var styles := ArtFixtures.styles_using(bank_id)
+		assert_array(styles).override_failure_message(
+			"the %s bank is painted by no style, so nothing here is checked against one"
+			% bank_id).is_not_empty()
+		for style_id in styles:
+			var faults := TileGen.problems(bank, ArtFixtures.style(style_id), images)
+			assert_array(faults).override_failure_message(
+				"%s against the %s bank: %s" % [style_id, bank_id, faults]).is_empty()
+			checked += 1
+	assert_int(checked).override_failure_message(
+		"no imported bank was measured against a style").is_greater(0)
+
+func test_every_piece_of_terrain_is_credited_where_its_style_ships() -> void:
+	# The cast's rule, for the ground. An artist named in a bank and missing from the credits
+	# file beside the sprites is art shipping with nobody credited - and the bank is a build
+	# input, so it is not what a credits screen can read.
+	var checked := 0
+	for bank_id in ArtFixtures.imported_bank_ids():
+		var bank := ArtFixtures.bank(bank_id)
+		for style_id in ArtFixtures.styles_using(bank_id):
+			var credits := JsonFile.read("%s/%s/credits.json" % [ArtFixtures.GENERATED_ROOT, style_id])
+			assert_bool(credits.ok).override_failure_message(
+				"%s paints from imported art and has no credits.json" % style_id).is_true()
+			var named: Array[String] = []
+			for entry: Variant in credits.data.get("files", []):
+				named.append(str((entry as Dictionary).get("file", "")))
+			for name in bank.file_names():
+				assert_bool(named.has(name)).override_failure_message(
+					"'%s' is cut into %s's ground and is not in its credits.json" % [name, style_id]
+					).is_true()
+				checked += 1
+	assert_int(checked).override_failure_message("no terrain file was checked").is_greater(0)
+
+
+func test_every_sheet_an_imported_bank_cuts_from_is_the_one_its_sha256_names() -> void:
+	# The bank is what a reviewer reads and the sheet is a binary nobody does, so the sum is how
+	# replacing the art shows up as a changed line rather than as ground that quietly moved. It is
+	# also the sum tools/fetch_tiles.sh refuses a download against, so green here means a fresh
+	# fetch would put back exactly what is committed.
+	var checked := 0
+	for bank_id in ArtFixtures.imported_bank_ids():
+		var bank := ArtFixtures.bank(bank_id)
+		for entry: Variant in bank.files():
+			var record: Dictionary = entry
+			var path := bank.source_path(str(record.get("file", "")))
+			assert_bool(FileAccess.file_exists(path)).override_failure_message(
+				"%s is credited by the %s bank and is not on disk" % [path, bank_id]).is_true()
+			assert_str(FileAccess.get_sha256(path)).override_failure_message(
+				"%s is not the art the %s bank names - replace a sheet and its sha256 together"
+				% [path, bank_id]).is_equal(str(record.get("sha256", "")))
+			checked += 1
+	assert_int(checked).override_failure_message("no imported sheet was checked").is_greater(0)
+
+
+func test_every_imported_character_has_a_face_with_something_in_it() -> void:
+	# The import arm's half of the same rule, and it is the arm that needs it: these bodies are
+	# four different heights, and the cast wears hats, hoods and a pair of horns. A face measured
+	# once and applied to all of them would be right for whoever it was measured from.
+	var seen := 0
+	for style_id in ArtFixtures.imported_style_ids():
+		var style := ArtFixtures.style(style_id)
+		for character in ArtFixtures.imported_characters_of(style_id):
+			var doc := JsonFile.read("res://assets/generated/%s/%s.sheet.json"
+				% [style_id, character])
+			assert_bool(doc.ok).override_failure_message(doc.error).is_true()
+			var meta := SheetMeta.from_dict(doc.data)
+			assert_int(meta.portrait.size.x).override_failure_message(
+				"%s/%s has no face" % [style_id, character]).is_equal(style.portrait_size)
+			var img := ImageFile.read_png("res://assets/generated/%s/%s.png"
+				% [style_id, character])
+			assert_object(img).is_not_null()
+			img.convert(Image.FORMAT_RGBA8)
+			var cut := img.get_region(Rect2i(meta.portrait.position
+				+ Vector2i(0, meta.row_of(Dir.D.DOWN) * meta.cell.y), meta.portrait.size))
+			assert_int(SpriteCompositor.top_row(cut)).override_failure_message(
+				"%s/%s: the face is a square of nothing, or starts below the top of its square"
+				% [style_id, character]).is_equal(0)
+			seen += 1
+	assert_int(seen).override_failure_message(
+		"no imported character was measured, so this proved nothing").is_greater(3)
+
+
+func test_the_heros_sword_swing_is_cropped_to_what_it_draws() -> void:
+	# Literals measured from the generator's own PNGs at the pinned commit on 2026-09-15, outside this
+	# project: the bronze arming sword's swing and the hero's body, composed, draw from (16, 45) to
+	# (112, 98) of a 128px cell, and the feet (32, 62) of a 64px frame land at (64, 94) once it is
+	# centred. A crop that moved, grew or lost a pixel changes these before anyone looks at the arena.
+	var meta := _meta(&"lpc32", &"quest_wanderer")
+	assert_bool(meta.has_grid("slash")).override_failure_message(
+		"the hero's swing is not on a grid of its own - is he still swinging the dagger?").is_true()
+	assert_vector(Vector2(meta.cell_of("slash"))).is_equal(Vector2(97, 54))
+	assert_vector(Vector2(meta.anchor_of("slash"))).is_equal(Vector2(48, 49))
+	assert_vector(Vector2(meta.origin_of("slash"))).is_equal(Vector2(0, 256))
+	assert_vector(Vector2(meta.anchor)).is_equal(Vector2(32, 62))
+
+
+func test_every_sword_the_hero_can_wear_is_cropped_to_what_it_draws() -> void:
+	# The three blades he can carry, composed on 2026-09-16 at the pinned generator commit and read back
+	# off the committed sheets. These are the arena floor's input: the widest of them decides how much
+	# room a fight needs, so a crop that moved would move a window nobody is watching.
+	#
+	# The longsword and the rapier crop IDENTICALLY, which was checked rather than assumed - their
+	# sheets differ in hash, size and picture; the two blades simply reach the same outermost pixels of
+	# their 192px cell.
+	for entry: Array in [
+		[&"quest_wanderer_saber", Vector2(93, 55), Vector2(44, 49)],
+		[&"quest_wanderer_longsword", Vector2(162, 85), Vector2(81, 66)],
+		[&"quest_wanderer_rapier", Vector2(162, 85), Vector2(81, 66)],
+	]:
+		var id: StringName = entry[0]
+		var meta := _meta(&"lpc32", id)
+		assert_bool(meta.has_grid("slash")).override_failure_message(
+			"%s does not draw his swing on a grid of its own" % id).is_true()
+		assert_vector(Vector2(meta.cell_of("slash"))).override_failure_message(
+			"%s draws its swing on a different grid than it was measured at" % id).is_equal(entry[1])
+		assert_vector(Vector2(meta.anchor_of("slash"))).override_failure_message(
+			"%s swings from somewhere other than its feet" % id).is_equal(entry[2])
+		# The walk is untouched by which sword he wears, which is what keeps the cast on one ground
+		# line however he is armed - the swing is measured from the walk, never the other way round.
+		assert_vector(Vector2(meta.cell)).override_failure_message(
+			"%s walks on a different grid than the rest of the cast" % id).is_equal(Vector2(64, 64))
+		assert_vector(Vector2(meta.anchor)).override_failure_message(
+			"%s stands on a different ground line than the hero" % id).is_equal(Vector2(32, 62))
+
+
+func test_the_wanderers_recipes_differ_only_in_the_sword_they_draw() -> void:
+	# He exists four times over now, one sheet per blade he can wear. Four copies of one design is four
+	# things to keep in step, and the day his hair changes in one of them he is two different men in the
+	# same fight - so the sameness is asserted rather than remembered.
+	var base := _recipe("the_road.json")
+	var base_body := _without_the_sword(base)
+	var base_sword := _the_sword(base)
+	assert_array(base_sword).override_failure_message(
+		"the_road.json carries no sword layer, so this proves nothing about the others").has_size(1)
+	for name: String in ["the_road_saber.json", "the_road_longsword.json", "the_road_rapier.json"]:
+		var other := _recipe(name)
+		assert_str(str(other.get("body_type", ""))).override_failure_message(
+			"%s is drawn on another body" % name).is_equal(str(base.get("body_type", "")))
+		assert_array(_without_the_sword(other)).override_failure_message(
+			"%s draws a different man, not the same man with a different sword" % name
+			).is_equal(base_body)
+		var sword := _the_sword(other)
+		assert_array(sword).override_failure_message(
+			"%s does not carry exactly one sword layer" % name).has_size(1)
+		assert_bool(sword == base_sword).override_failure_message(
+			"%s carries the same sword as the_road.json, so it is not another blade" % name).is_false()
+
+
+func _recipe(name: String) -> Dictionary:
+	var file := JsonFile.read(DESIGNS + name)
+	assert_bool(file.ok).override_failure_message(file.error).is_true()
+	return file.data
+
+
+func _the_sword(recipe: Dictionary) -> Array:
+	return _layers_of(recipe, true)
+
+
+func _without_the_sword(recipe: Dictionary) -> Array:
+	return _layers_of(recipe, false)
+
+
+func _layers_of(recipe: Dictionary, swords: bool) -> Array:
+	var out: Array = []
+	for entry: Variant in recipe.get("layers", []) as Array:
+		var layer: Dictionary = entry
+		if str(layer.get("def", "")).begins_with(SWORD_PREFIX) == swords:
+			out.append(layer)
+	return out

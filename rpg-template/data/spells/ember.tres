@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=2 format=3]
+
+; The attack spell, and the first one the player has.
+;
+; 7 damage flat, ignoring the enemy's armour, against a level-1 swing of 5 that a slink's 2
+; defense takes down to 3. So magic is the answer to something armoured and a bad deal against
+; something soft - which is the decision it exists to pose. A timed hit still beats it (10),
+; and that is deliberate: the swing is the thing you can be GOOD at.
+;
+; MADE OF FIRE, as of M33, and the name finally means something: the Gloom burns for double and
+; the Keeper shrugs half of it off. Those two answers sit in the same fight - the Keeper's escort
+; contains a Gloom - so the whole system is one encounter, which is what stops it being a feature
+; a player never meets.
+;
+; UNJUDGED BY EAR: the gates fight with it every run and cannot judge it. Whether one cast
+; ending a Gloom outright reads as a REWARD for knowing something or as the fight being over
+; before it started is a question for somebody holding the controls.
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"ember"
+name = "Ember"
+description = "A hot coil of air. It does not care what you are wearing."
+mp_cost = 3
+learn_level = 1
+kind = 0
+power = 7
+element = &"fire"

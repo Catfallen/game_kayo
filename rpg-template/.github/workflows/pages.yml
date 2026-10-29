@@ -1,0 +1,170 @@
+name: pages
+
+# Publishes the playable demo, but ONLY from a green main. `workflow_run` rather than a plain
+# `push` trigger is the difference between "the deploy waits for the tests" and "the deploy
+# races the tests" - the second one looks identical until the day a red build ships.
+on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Never deploy off a red build. workflow_dispatch has no upstream run to inspect, so it is
+    # allowed through explicitly rather than by the check being absent.
+    #
+    # The `event == 'push'` half is not redundant with `branches: [main]` above. That filter
+    # matches the triggering run's HEAD BRANCH, and a pull request from a fork whose branch is
+    # itself called `main` produces a run with exactly that head branch - so without this, a
+    # stranger could deploy their own tree by naming their branch well. A push to main is the
+    # only thing that should ever publish.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # workflow_run checks out the default branch's HEAD by default, which is not
+          # necessarily the commit that was tested. Pin it to the one that went green.
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          persist-credentials: false
+
+      # Read from the script that pins it - and note this now travels with the COMMIT being
+      # deployed rather than with main's copy of this file. `workflow_run` takes the workflow
+      # from the default branch but checks out head_sha, so the engine and the tree it packs
+      # are the same commit's, which is the more correct of the two.
+      - name: Read the pinned engine version
+        id: godot
+        run: |
+          set -euo pipefail
+          version="$(tools/fetch_godot.sh --print-version)"
+          [ -n "$version" ] || { echo "fetch_godot.sh printed no version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the engine and export templates
+        id: godot-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates
+          # The key changed with the contents on purpose: a cache entry is IMMUTABLE for its
+          # key, so trimming what goes into it does nothing until the key moves. The old one
+          # held every platform's templates - 1.3GB restored on every deploy to export one web
+          # build.
+          # hashFiles is part of it too, so a change to WHAT gets installed - a corrected
+          # sum, a different templates glob - moves the key even when the version has not.
+          key: godot-web-only-${{ steps.godot.outputs.version }}-${{ hashFiles('tools/fetch_godot.sh') }}
+
+      # No --dest: the script's default IS the contract, and the steps below hardcode
+      # ~/godot-bin to match it.
+      - name: Download and verify Godot and its templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: tools/fetch_godot.sh --templates
+
+      - name: Export the web build
+        run: |
+          # `set +e` is the load-bearing line. GitHub runs every `run:` step with
+          # `bash --noprofile --norc -eo pipefail`, so errexit is ALREADY ON before this
+          # script starts - writing `set -uo pipefail` does not cancel it, and the export
+          # below would kill the shell before the status line could read its code. The exit
+          # code is checked by hand here, for the reason spelled out further down.
+          set +e
+          set -uo pipefail
+          mkdir -p build/web
+          # NOT swallowed. This used to end in `|| true`, which is a fail-open in the one
+          # step that builds what users download: a broken import produces a pack missing its
+          # imported resources, and the only symptom downstream was a smaller file.
+          #
+          # The contrast with the export below is deliberate and worth reading: THAT exit code
+          # is ignored for a stated, measured reason (the exporter aborts during shutdown after
+          # writing a complete package). This one was ignored out of habit.
+          ~/godot-bin/godot --headless --path . --import
+          import_status=$?
+          if [ "$import_status" -ne 0 ]; then
+            echo "the import failed (exit ${import_status}) - the pack would be missing resources"
+            exit 1
+          fi
+
+          # Run through a wrapper shell so THAT shell, rather than this one, is the one that
+          # notices the exporter dying by a signal. Bash prints "Aborted (core dumped)" for a
+          # foreground command killed by one, and redirecting the command's own streams does
+          # not stop it - the message comes from the shell that waited, not from the program.
+          # In this log it reads as a crash nobody handled, next to a comment explaining that
+          # the crash is expected, which is the kind of contradiction that teaches people to
+          # skim. The wrapper's stderr is discarded and it exits normally; the real status is
+          # kept in a file, because it is worth printing.
+          bash -c '~/godot-bin/godot --headless --path . --export-release "Web" build/web/index.html; echo $? > /tmp/export_status' 2>/dev/null
+          status=$(cat /tmp/export_status 2>/dev/null || echo "?")
+          echo "godot --export-release exited ${status}"
+
+          # Godot's headless exporter writes the complete package and THEN aborts during
+          # shutdown (SIGABRT, exit 134) on this platform - the log ends with "DONE savepack"
+          # and dies cleaning up. So the exit code is not evidence in either direction, and
+          # the artifacts are: every file the page needs must exist, and the package must be
+          # big enough to be a real one rather than a truncated stub.
+          missing=0
+          for f in index.html index.js index.wasm index.pck; do
+            if [ ! -s "build/web/${f}" ]; then
+              echo "MISSING or empty: build/web/${f}"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "the export did not produce a runnable page (exit was ${status})"
+            exit 1
+          fi
+          pck_bytes=$(stat -c%s build/web/index.pck)
+          if [ "$pck_bytes" -lt 100000 ]; then
+            echo "build/web/index.pck is only ${pck_bytes} bytes - the package is truncated"
+            exit 1
+          fi
+
+          # GitHub Pages runs Jekyll over the artifact unless told not to, and Jekyll drops
+          # files beginning with an underscore - which is most of an Emscripten build.
+          touch build/web/.nojekyll
+          ls -la build/web
+
+      - name: Play the package that is about to be deployed
+        env:
+          GODOT_BIN: /home/runner/godot-bin/godot
+        # The file checks above are liveness: four files exist and the pack is not truncated.
+        # They cannot tell a complete package from one missing every sound, which was measured -
+        # excluding the cues left a pack that boots, walks, talks and requests every cue exactly
+        # as it should, and is silent.
+        #
+        # This drives THE PACK ABOUT TO SHIP through the real QA harness. `deploy` needs this
+        # job, so a package that does not play leaves the live page on the last good build.
+        run: tools/pack_check.sh build/web/index.pck
+
+      - name: Package the site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

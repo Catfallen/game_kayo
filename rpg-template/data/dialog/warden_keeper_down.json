@@ -1,0 +1,31 @@
+{
+	"_readme": [
+		"Said by the hooks once the Keeper is beaten and the lantern is still dark.",
+		"",
+		"It repeats the WHOLE remaining objective on purpose. This line outranks warden_has_key",
+		"forever, so anything only that line said - the lantern, the oil, the hermit, the cave east",
+		"of the town - would be permanently unreachable for a player who went straight in and won.",
+		"A conditional line that can be outranked must carry the facts of the one it outranks."
+	],
+	"id": "warden_keeper_down",
+	"start": "heard",
+	"nodes": {
+		"heard": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "You went in. And you came out.",
+			"next": "quiet"
+		},
+		"quiet": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "Then the keep is only a building again. It wants a light, and that lantern ran dry years ago.",
+			"next": "where"
+		},
+		"where": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "The hermit in the cave east of the town hoards oil by the flask. Light it, and I will believe it."
+		}
+	}
+}

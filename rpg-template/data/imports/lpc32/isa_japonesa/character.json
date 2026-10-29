@@ -1,0 +1,18 @@
+{
+	"bodyType": "photo",
+	"credits": [
+		{
+			"authors": [
+				"Arte original do projeto game_kayo"
+			],
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": [],
+			"notes": "Sprites de caminhada gerados por tools/gerar_sprites.py a partir de uma ilustracao unica.",
+			"file": "game_kayo/assets/isa japonesa.png"
+		}
+	],
+	"generatedBy": "game_kayo/tools/gerar_sprites.py",
+	"layers": []
+}

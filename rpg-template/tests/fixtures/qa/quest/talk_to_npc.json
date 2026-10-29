@@ -1,0 +1,164 @@
+{
+	"_readme": [
+		"Interaction and control handover: walk up to the warden, talk, and confirm the player",
+		"cannot move while the conversation is open.",
+		"",
+		"It asserts the TILE it arrives on before pressing. Facing is what decides who you talk",
+		"to, so a test that pressed from wherever it happened to stop would pass or fail on the",
+		"arithmetic of a hold rather than on the interaction."
+	],
+	"steps": [
+		{
+			"op": "note",
+			"text": "the title opens the game now. A --qa-script run points saves at user://qa_saves and empties it at boot, so there is never anything to Continue - and the cursor opens on the row a press will actually do something with, which is New game. Rows: Continue, New game. One press starts the run."
+		},
+		{
+			"op": "assert_state",
+			"state": "title"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "note",
+			"text": "the warden opens the game now - hear her out before anything else"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "note",
+			"text": "the opening conversation already landed its flag - a talk the player never chose to have is still a talk that happened"
+		},
+		{
+			"op": "assert_flag",
+			"key": "told_warden_yes",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "spawn is tile (5,5); the warden stands at (5,3)"
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				5,
+				4
+			]
+		},
+		{
+			"op": "note",
+			"text": "face the warden and talk"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 20
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "note",
+			"text": "movement is suspended while the conversation is open"
+		},
+		{
+			"op": "mark",
+			"name": "talking"
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 30
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_moved",
+			"axis": "x",
+			"expect": "unchanged",
+			"since": "talking"
+		},
+		{
+			"op": "note",
+			"text": "press through the conversation until control comes back"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "note",
+			"text": "and the player can walk again"
+		},
+		{
+			"op": "mark",
+			"name": "freed"
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 30
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_moved",
+			"axis": "x",
+			"expect": "decrease",
+			"since": "freed"
+		}
+	]
+}

@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"The lantern's refusal. It names OIL and where the nearest is, because it used to say only",
+		"that the reservoir was dry - true, atmospheric, and useless to a player who has just fought",
+		"a boss to reach it."
+	],
+	"id": "lantern_dry",
+	"start": "dry",
+	"nodes": {
+		"dry": {
+			"speaker": "",
+			"text": "A lantern on a hook. The reservoir is dry, and has been for a long time.",
+			"next": "wants"
+		},
+		"wants": {
+			"speaker": "",
+			"text": "It wants oil, and nobody nearer than the hermit - east, past the town - has kept any."
+		}
+	}
+}

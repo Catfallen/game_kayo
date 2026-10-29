@@ -1,0 +1,377 @@
+extends GdUnitTestSuite
+## Pins the engine behaviours this template's determinism and pixel exactness rely on.
+##
+## Every assertion here is a documented Godot behaviour the sprite generator is built
+## around. If a future engine version changes one, this suite fails with a clear name
+## instead of surfacing three suites away as a golden-hash mismatch nobody can explain.
+
+func test_seeded_rng_is_reproducible_and_seed_sensitive() -> void:
+	# The whole "same seed, same sprite" promise rests on this.
+	var a: Array[float] = _roll(7)
+	var b: Array[float] = _roll(7)
+	var c: Array[float] = _roll(8)
+	assert_array(a).is_equal(b)
+	assert_array(a).is_not_equal(c)
+
+func _roll(seed_value: int) -> Array[float]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var out: Array[float] = []
+	for i in 5:
+		out.append(rng.randf_range(0.0, 1.0))
+	return out
+
+func test_image_create_empty_is_transparent_rgba8() -> void:
+	# Layers are stamped onto a blank image; if "blank" were opaque black, every sprite
+	# would ship with a black box around it and the palette gate would fail confusingly.
+	var img := Image.create_empty(4, 4, false, Image.FORMAT_RGBA8)
+	assert_int(img.get_width()).is_equal(4)
+	assert_int(img.get_format()).is_equal(Image.FORMAT_RGBA8)
+	assert_int(img.get_pixel(0, 0).to_rgba32()).is_equal(0)
+
+func test_color_equality_is_exact_through_rgba32() -> void:
+	# Palette membership is decided by integer comparison. Colors are four floats, and two
+	# visually identical colours built by different routes are not always `==`.
+	var a := Color("#1a1c2c")
+	var b := Color(26.0 / 255.0, 28.0 / 255.0, 44.0 / 255.0, 1.0)
+	assert_int(a.to_rgba32()).is_equal(b.to_rgba32())
+
+func test_set_pixel_preserves_exact_color_bytes() -> void:
+	# The compositor draws with set_pixel precisely because it stores what it is given.
+	# blend_rect would mix floats and produce off-palette values that no gate could name.
+	var img := Image.create_empty(2, 2, false, Image.FORMAT_RGBA8)
+	var c := Color("#a7f070")
+	img.set_pixel(1, 1, c)
+	assert_int(img.get_pixel(1, 1).to_rgba32()).is_equal(c.to_rgba32())
+	assert_int(img.get_pixel(0, 0).to_rgba32()).is_equal(0)
+
+func test_color8_survives_a_round_trip_through_an_image_but_floats_may_not() -> void:
+	# Storing a colour in an 8-bit image TRUNCATES the channel, while Color.to_rgba32()
+	# ROUNDS it. A colour computed in floats can therefore report one value and come back
+	# out of the image as another, one unit darker - which is why every generated colour is
+	# built from whole bytes with Color8.
+	var img := Image.create_empty(1, 1, false, Image.FORMAT_RGBA8)
+	for v in 256:
+		var c := Color8(v, v, v, 255)
+		img.set_pixel(0, 0, c)
+		assert_int(img.get_pixel(0, 0).to_rgba32()).is_equal(c.to_rgba32())
+
+	# The failure this rule exists to prevent, pinned so it cannot come back unnoticed.
+	var floaty := Color("#008840").darkened(0.35)
+	img.set_pixel(0, 0, floaty)
+	assert_int(img.get_pixel(0, 0).to_rgba32()).is_not_equal(floaty.to_rgba32())
+
+func test_flip_x_mutates_in_place_and_is_its_own_inverse() -> void:
+	# The left-facing row is the right-facing row flipped. flip_x has NO return value: a
+	# `var left = right.flip_x()` would bind null and silently mirror the original.
+	var img := Image.create_empty(2, 1, false, Image.FORMAT_RGBA8)
+	var c := Color("#41a6f6")
+	img.set_pixel(0, 0, c)
+	img.flip_x()
+	assert_int(img.get_pixel(1, 0).to_rgba32()).is_equal(c.to_rgba32())
+	assert_int(img.get_pixel(0, 0).to_rgba32()).is_equal(0)
+	img.flip_x()
+	assert_int(img.get_pixel(0, 0).to_rgba32()).is_equal(c.to_rgba32())
+
+func test_image_data_is_stable_for_hashing() -> void:
+	# Golden hashes are taken over get_data() (raw RGBA bytes), not over encoded PNG bytes,
+	# which carry encoder settings and can differ between platforms for the same picture.
+	var a := Image.create_empty(3, 3, false, Image.FORMAT_RGBA8)
+	var b := Image.create_empty(3, 3, false, Image.FORMAT_RGBA8)
+	a.set_pixel(2, 2, Color("#ffcd75"))
+	b.set_pixel(2, 2, Color("#ffcd75"))
+	assert_str(Hashing.image_digest(a)).is_equal(Hashing.image_digest(b))
+	b.set_pixel(0, 0, Color("#ffcd75"))
+	assert_str(Hashing.image_digest(a)).is_not_equal(Hashing.image_digest(b))
+
+func test_the_digest_is_a_real_sha256() -> void:
+	# Pinned against a known vector so a future refactor cannot quietly swap in a weaker or
+	# differently-encoded hash and keep every comparison "passing".
+	assert_str(Hashing.sha256_bytes("abc".to_utf8_buffer())) \
+		.is_equal("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+
+func test_json_numbers_arrive_as_floats() -> void:
+	# Every int read out of a map or sheet file is cast, because this is what JSON gives.
+	var parsed: Variant = JSON.parse_string('{"cell": 16}')
+	var d := parsed as Dictionary
+	assert_bool(is_same(d["cell"], 16)).is_false()
+	assert_int(int(d["cell"])).is_equal(16)
+
+func test_stringname_and_string_are_the_same_dictionary_key() -> void:
+	# EventBus payloads are keyed by StringName; tests read them with String literals.
+	var d: Dictionary = {&"kind": "interacted"}
+	assert_bool(d.has("kind")).is_true()
+	assert_bool(d.has(&"kind")).is_true()
+
+func test_typed_array_needs_assign_not_direct_cast() -> void:
+	# filter()/map() return untyped arrays; assigning one to a typed field is a runtime
+	# error. Every such site in scripts/ uses .assign() or an explicit loop.
+	var untyped: Array = [1, 2, 3]
+	var typed: Array[int] = []
+	typed.assign(untyped)
+	assert_array(typed).is_equal([1, 2, 3])
+
+func test_move_and_slide_picks_its_own_delta_rather_than_one_you_pass() -> void:
+	# The assumption the whole grid-step design rests on, so it is pinned rather than trusted.
+	#
+	# move_and_slide() takes no delta. It chooses one itself - the PHYSICS delta when called
+	# during a physics frame, the IDLE delta otherwise - so the distance one call covers is
+	# not something a caller can predict or control. That is why a grid step ends by noticing
+	# it has arrived rather than by computing which frame it will arrive on: a step that
+	# predicted the landing frame from a delta it passed in would overshoot in exactly the
+	# harness tests/integration/test_world_movement.gd uses, which drives apply() by hand from
+	# a coroutine and is therefore NOT in a physics frame.
+	var body := CharacterBody2D.new()
+	add_child(body)
+	auto_free(body)
+	body.velocity = Vector2(100.0, 0.0)
+
+	# Called from a test coroutine: not a physics frame.
+	assert_bool(Engine.is_in_physics_frame()).override_failure_message(
+		"this suite is running inside a physics frame, so the case below proves nothing").is_false()
+	var before := body.global_position.x
+	body.move_and_slide()
+	var moved := body.global_position.x - before
+
+	# It moved SOMETHING - the call is not inert outside a physics frame, which is what makes
+	# the hand-driven integration harness work at all.
+	assert_float(moved).is_greater(0.0)
+	# And it is the idle delta, not the physics one. If these ever coincide the assertion
+	# below is vacuous, so the guard above states the frame kind explicitly.
+	var idle_step := 100.0 * get_process_delta_time()
+	assert_float(moved).is_equal_approx(idle_step, 0.001)
+
+
+func test_reading_a_missing_file_as_bytes_is_empty_and_quiet() -> void:
+	# ImageFile.read_png has no file_exists guard in front of its read, because this makes one
+	# unreachable: a missing path comes back as an empty array rather than as an error or a
+	# crash. The reader turns that into null, which is what the art-drift gate reports as
+	# "(unreadable)". If a future engine made this noisy or fatal, the gate would start
+	# crashing on a missing sprite instead of naming it, and this is where that shows up.
+	var bytes := FileAccess.get_file_as_bytes("res://assets/generated/does_not_exist.png")
+	assert_int(bytes.size()).override_failure_message(
+		"a missing file no longer reads as empty bytes").is_equal(0)
+	assert_int(FileAccess.get_open_error()).is_equal(ERR_FILE_NOT_FOUND)
+
+
+func test_a_body_inherits_the_velocity_of_the_floor_it_stands_on() -> void:
+	# Why ActorBody clears platform_floor_layers. The engine treats EVERY layer as a possible
+	# moving platform by default, and a body reporting on_floor against a moving one inherits
+	# its velocity - the conveyor/moving-platform feature. In a top-down game every actor is
+	# a "floor" to anything touching it from above, so the feature presented as an NPC being
+	# dragged sideways by a player walking past her.
+	#
+	# Pinned with a StaticBody2D's constant_linear_velocity because that is the one platform
+	# velocity the physics server knows without the platform being moved inside a physics
+	# frame. The mechanism is the same one the fix opts out of.
+	var ground := StaticBody2D.new()
+	var ground_shape := CollisionShape2D.new()
+	var ground_rect := RectangleShape2D.new()
+	ground_rect.size = Vector2(200.0, 8.0)
+	ground_shape.shape = ground_rect
+	ground.add_child(ground_shape)
+	ground.constant_linear_velocity = Vector2(60.0, 0.0)
+	add_child(ground)
+	ground.global_position = Vector2(0.0, 20.0)
+
+	var body := CharacterBody2D.new()
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(8.0, 8.0)
+	shape.shape = rect
+	body.add_child(shape)
+	add_child(body)
+
+	# Carried: the default, every layer a platform.
+	body.global_position = Vector2(0.0, 10.0)
+	body.platform_floor_layers = 0xFFFFFFFF
+	var carried_from := body.global_position.x
+	for i in 20:
+		body.velocity = Vector2(0.0, 200.0)
+		body.move_and_slide()
+		await get_tree().physics_frame
+	var carried := body.global_position.x - carried_from
+	assert_float(carried).override_failure_message(
+		"the platform stopped carrying at all, so the opt-out below proves nothing").is_greater(1.0)
+
+	# Opted out: the same contact, no inheritance.
+	body.global_position = Vector2(0.0, 10.0)
+	body.platform_floor_layers = 0
+	var free_from := body.global_position.x
+	for i in 20:
+		body.velocity = Vector2(0.0, 200.0)
+		body.move_and_slide()
+		await get_tree().physics_frame
+	assert_float(body.global_position.x).override_failure_message(
+		"clearing platform_floor_layers no longer stops the carry; the NPC drag can return"
+		).is_equal_approx(free_from, 0.01)
+
+	ground.queue_free()
+	body.queue_free()
+
+
+func test_a_freed_reference_compares_equal_to_null() -> void:
+	# Pinned because a milestone was nearly spent on the opposite belief. Reviewing
+	# _teardown_game it looked like a real bug that two screens were nulled INSIDE their
+	# validity guard while six were nulled outside it - the reading being that a screen freed
+	# somewhere else would leave a reference that every `!= null` guard still passed, refusing
+	# to ever open another. Measuring it says otherwise: this engine's freed references answer
+	# null, so the guarded form was only inconsistent, never broken.
+	#
+	# The distinction the code still needs is the other one: `is_instance_valid` is what tells
+	# a freed object from a live one, because the reference is not enough to CALL through.
+	var node := Node.new()
+	var ref := node
+	node.free()
+	assert_bool(ref == null).override_failure_message(
+		"a freed reference no longer answers null, so every `!= null` guard over a screen this "
+		+ "game frees is now a real dangling-reference hazard").is_true()
+	assert_bool(is_instance_valid(ref)).is_false()
+
+	var live := Node.new()
+	assert_bool(live == null).is_false()
+	assert_bool(is_instance_valid(live)).override_failure_message(
+		"the control failed: a live node reads as invalid, so the assertion above proves nothing"
+		).is_true()
+	live.free()
+
+
+
+func test_a_search_by_class_name_finds_a_subclass_of_that_class() -> void:
+	# Anything looking for "the fight screen" by name - the scripted harness does - has to find the
+	# arena's as well as the turn fight's, and that rests on find_children walking a script's base
+	# classes rather than matching its own name only.
+	var parent := Node.new()
+	var screen := ArenaScreen.new()
+	parent.add_child(screen)
+	var found := parent.find_children("", "FightScreen", true, false)
+	assert_int(found.size()).is_equal(1)
+	assert_object(found[0]).is_same(screen)
+	parent.free()
+
+
+func test_a_texture_rect_that_ignores_its_texture_keeps_the_size_it_is_given() -> void:
+	# The arena lays a 32px tile on a 16 design pixel square. A TextureRect's minimum size is its
+	# texture's unless it is told to ignore it, and a Control never shrinks below its minimum - so
+	# without EXPAND_IGNORE_SIZE every square of ground would grow back to 32 and overlap its neighbours.
+	var atlas := ImageTexture.create_from_image(Image.create_empty(64, 32, false, Image.FORMAT_RGBA8))
+	var cut := AtlasTexture.new()
+	cut.atlas = atlas
+	cut.region = Rect2(32, 0, 32, 32)
+	var ignoring := TextureRect.new()
+	ignoring.texture = cut
+	ignoring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ignoring.size = Vector2(16, 16)
+	var keeping := TextureRect.new()
+	keeping.texture = cut
+	keeping.size = Vector2(16, 16)
+	assert_vector(ignoring.size).is_equal(Vector2(16, 16))
+	assert_vector(keeping.size).is_equal(Vector2(32, 32))
+	ignoring.free()
+	keeping.free()
+
+
+func test_hiding_a_canvas_layer_hides_the_control_inside_it() -> void:
+	# The controls hint is a CanvasLayer and the thing that must stop being drawn is the Label inside
+	# it. Visibility propagates through CanvasItem parents - and a CanvasLayer is NOT a CanvasItem, so
+	# that it counts at all is the special case the whole flow-model gate rests on. The second half is
+	# why that gate reads is_visible_in_tree(): the child's OWN visible is untouched, so asking it
+	# would report the label as drawn on a hidden layer forever.
+	var layer := CanvasLayer.new()
+	var label := Label.new()
+	layer.add_child(label)
+	add_child(layer)
+	assert_bool(label.is_visible_in_tree()).is_true()
+	layer.visible = false
+	assert_bool(label.is_visible_in_tree()).is_false()
+	assert_bool(label.visible).is_true()
+	layer.free()
+
+
+func _pad_button(button: JoyButton, down: bool, device := 0) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.button_index = button
+	e.pressed = down
+	e.device = device
+	return e
+
+
+func _stick(axis: JoyAxis, value: float, device := 0) -> InputEventJoypadMotion:
+	var e := InputEventJoypadMotion.new()
+	e.axis = axis
+	e.axis_value = value
+	e.device = device
+	return e
+
+
+func test_a_pad_button_parsed_through_the_input_singleton_presses_its_action() -> void:
+	# The harness and every suite press ACTIONS, which never touch the map, so this is the one
+	# place the committed binding for the pad's A is exercised: a map that lost it fails here by
+	# name rather than as a session standing on the title forever.
+	Input.parse_input_event(_pad_button(JOY_BUTTON_A, true))
+	await get_tree().physics_frame
+	var pressed := Input.is_action_pressed(&"interact")
+	Input.parse_input_event(_pad_button(JOY_BUTTON_A, false))
+	await get_tree().physics_frame
+	assert_bool(pressed).override_failure_message("the pad's A did not press interact").is_true()
+	assert_bool(Input.is_action_pressed(&"interact")).is_false()
+
+
+func test_a_pad_button_from_any_pad_index_presses_its_action() -> void:
+	# A stored binding fires only for its own device index or for the -1 "all devices" sentinel
+	# (InputMap::_find_event). Written with index 0, the map answered the first pad and no other -
+	# which a single Bluetooth pad never shows, and a second pad, or one enumerated after another
+	# HID device, shows as a game that ignores it.
+	Input.parse_input_event(_pad_button(JOY_BUTTON_A, true, 3))
+	await get_tree().physics_frame
+	var pressed := Input.is_action_pressed(&"interact")
+	Input.parse_input_event(_pad_button(JOY_BUTTON_A, false, 3))
+	await get_tree().physics_frame
+	assert_bool(pressed).override_failure_message(
+		"a pad that is not index 0 presses nothing - the bindings are written for one pad").is_true()
+
+
+func test_a_stick_inside_the_deadzone_presses_nothing_and_past_it_presses() -> void:
+	Input.parse_input_event(_stick(JOY_AXIS_LEFT_Y, -0.1))
+	await get_tree().physics_frame
+	assert_bool(Input.is_action_pressed(&"move_up")).is_false()
+	assert_float(Input.get_axis(&"move_up", &"move_down")).is_equal(0.0)
+	Input.parse_input_event(_stick(JOY_AXIS_LEFT_Y, -0.9))
+	await get_tree().physics_frame
+	assert_bool(Input.is_action_pressed(&"move_up")).is_true()
+	assert_float(Input.get_axis(&"move_up", &"move_down")).is_less(0.0)
+	Input.parse_input_event(_stick(JOY_AXIS_LEFT_Y, 0.0))
+	await get_tree().physics_frame
+	assert_bool(Input.is_action_pressed(&"move_up")).is_false()
+
+
+func test_a_stick_event_matches_an_action_by_axis_and_carries_its_direction_only_when_pressed() -> void:
+	# is_action() is MEMBERSHIP: a motion on the Y axis "is" move_down whichever way it points, and
+	# only is_action_pressed() reads the sign (core/input/input_event.cpp, "Matches even if not in
+	# the same direction, but returns a 'not pressed' event"). And a motion event's own is_pressed()
+	# is the engine's toggle point, 0.5, never the action's deadzone. Every menu cursor here rests
+	# on both halves, and every one of them used to read the first and be wrong.
+	var up := _stick(JOY_AXIS_LEFT_Y, -1.0)
+	assert_bool(up.is_action(&"move_down")).is_true()
+	assert_bool(up.is_action_pressed(&"move_down")).is_false()
+	assert_bool(up.is_action_pressed(&"move_up")).is_true()
+	assert_bool(_stick(JOY_AXIS_LEFT_Y, -0.4).is_pressed()).is_false()
+	assert_bool(_stick(JOY_AXIS_LEFT_Y, -0.6).is_pressed()).is_true()
+
+
+func test_a_sticks_strength_is_remapped_from_the_deadzone() -> void:
+	# inverse_lerp(deadzone, 1, abs): half a push reads 0.375 at a deadzone of 0.2, which is how a
+	# second threshold downstream (the arena's, once) came to disagree with the map about one stick.
+	Input.parse_input_event(_stick(JOY_AXIS_LEFT_Y, -0.5))
+	await get_tree().physics_frame
+	var strength := Input.get_action_strength(&"move_up")
+	Input.parse_input_event(_stick(JOY_AXIS_LEFT_Y, 0.0))
+	await get_tree().physics_frame
+	assert_float(strength).is_equal_approx(0.375, 0.001)
+
+
+func test_a_key_event_carries_the_keyboard_device_id_and_a_pad_event_does_not() -> void:
+	# Since 4.7 a key is device 16, which is why the committed map reads "device":16 on every key,
+	# and why the device a player is holding is classified by an event's CLASS, never that number.
+	assert_int(InputEventKey.new().device).is_equal(InputEvent.DEVICE_ID_KEYBOARD)
+	assert_int(InputEventJoypadButton.new().device).is_equal(0)

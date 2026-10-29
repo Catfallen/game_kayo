@@ -1,0 +1,176 @@
+{
+	"_readme": [
+		"A map is ASCII rows plus a legend. Two layers share one grid: 'ground' is what you",
+		"walk on, 'decor' is what stands on top of it (a space means nothing there).",
+		"",
+		"Whether a tile blocks movement is NOT decided here - it comes from the tiles' own",
+		"data, so making cliffs solid is an art decision and the movement code never learns",
+		"the word 'cliff'.",
+		"",
+		"Coordinates in spawns, npcs, objects and warps are [column, row], zero-based,",
+		"matching the rows below.",
+		"",
+		"An 'object' is an interaction point, not a sprite: the well below is the water tiles",
+		"you can already see, plus four lines saying what happens when you press into them.",
+		"",
+		"The gap in the north wall is the road to the village. It is the one tile of that",
+		"wall a character may stand on, and it is a warp, which is the only reason the map",
+		"validator allows an opening in an outer edge at all."
+	],
+	"id": "quest_town",
+	"style": "lpc32",
+	"music": "barred_gate",
+	"legend": {
+		".": "grass",
+		",": "grass_alt",
+		"-": "path",
+		"#": "wall",
+		"~": "water",
+		"*": "bush",
+		"+": "door"
+	},
+	"ground": [
+		"##########-#########",
+		"#..#####.------....#",
+		"#..#+###.------..,.#",
+		"#........--..--....#",
+		"#..,.....--..--....#",
+		"#--------------.,..#",
+		"#--------------....-",
+		"#..,.....--..--..,.#",
+		"#........--..--....#",
+		"#..~~~...------....#",
+		"#..~~~...------..,.#",
+		"####################"
+	],
+	"decor": [
+		"                    ",
+		"  *              *  ",
+		"                    ",
+		"     *        *     ",
+		"                    ",
+		"                    ",
+		"                    ",
+		"     *        *     ",
+		"                    ",
+		"                    ",
+		"  *              *  ",
+		"                    "
+	],
+	"spawns": {
+		"start": [
+			4,
+			6
+		],
+		"east_gate": [
+			18,
+			6
+		],
+		"north_gate": [
+			10,
+			1
+		],
+		"inn_door": [
+			4,
+			3
+		]
+	},
+	"npcs": [
+		{
+			"id": "elder",
+			"character": "town_elder",
+			"tile": [
+				11,
+				2
+			],
+			"facing": "down",
+			"dialog": "elder",
+			"behavior": "static"
+		},
+		{
+			"id": "kid",
+			"character": "town_kid",
+			"tile": [
+				8,
+				8
+			],
+			"facing": "right",
+			"dialog": "kid",
+			"behavior": "static"
+		},
+		{
+			"id": "smith",
+			"character": "town_smith",
+			"tile": [
+				15,
+				4
+			],
+			"facing": "left",
+			"dialog": "smith",
+			"behavior": "static"
+		},
+		{
+			"id": "carter",
+			"character": "town_carter",
+			"tile": [
+				6,
+				3
+			],
+			"facing": "down",
+			"dialog": "carter",
+			"behavior": "patrol",
+			"path": [
+				[
+					6,
+					3
+				],
+				[
+					6,
+					8
+				]
+			],
+			"dwell_min": 45,
+			"dwell_max": 90
+		}
+	],
+	"objects": [
+		{
+			"id": "well_sign",
+			"tile": [
+				4,
+				9
+			],
+			"kind": "sign",
+			"dialog": "well_sign",
+			"set_flag": "read_the_notice"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				19,
+				6
+			],
+			"map": "quest_cave",
+			"spawn": "west_gate",
+			"requires_flag": "rook_joins",
+			"locked_dialog": "road_alone"
+		},
+		{
+			"tile": [
+				10,
+				0
+			],
+			"map": "quest_village",
+			"spawn": "from_town"
+		},
+		{
+			"tile": [
+				4,
+				2
+			],
+			"map": "quest_inn",
+			"spawn": "door"
+		}
+	]
+}

@@ -1,0 +1,207 @@
+class_name GameOverScreen
+extends CanvasLayer
+## The end of a run, drawn. GameOverMenu decides; this paints and reports.
+##
+## Above everything, because there is nothing left underneath it worth seeing and no state this
+## can be opened from that it should not cover.
+##
+## It is an OVERLAY rather than a scene of its own, and so is the title it now routes to: the
+## world is torn down underneath both, so a second scene would buy nothing but a second boot
+## path. For eight milestones this file said "the day a real title exists, this becomes the
+## screen that routes to it" - M22 built it, and the Title row is that promise kept.
+## A sound this view wants played. Emitted rather than played directly, for two reasons.
+##
+## Signals up, calls down - the world owns the speaker, and a view asking for a noise is the
+## same shape as a view asking for anything else. And practically: check.sh's per-file parse
+## gate skips any file whose TEXT names an autoload, so calling the audio singleton here would
+## quietly drop this file out of that gate, along with every test that depends on it. That is
+## not hypothetical - it is how this signal came to exist. Do not name it in prose either.
+signal sound_wanted(id: StringName)
+
+signal load_requested(slot: int)
+signal new_game_requested
+## Back to the title. The class comment above used to say a title screen would have to be
+## invented before this row could exist; one does now, and this is the row it promised.
+signal title_requested
+
+const LAYER := 20
+const MARGIN := 8
+const TITLE_SIZE := UiChrome.FONT_SIZE
+const ROW_SIZE := UiChrome.FONT_SIZE
+const HELP_SIZE := UiChrome.FONT_SIZE
+const ROW_PITCH := 11
+
+var _menu: GameOverMenu = null
+var _style: SpriteStyle = null
+var _backdrop := ColorRect.new()
+var _title: Label = null
+var _blurb: Label = null
+var _help: Label = null
+var _device := Prompts.Device.KEYBOARD
+var _frame: UiChrome.Frame = null
+var _select: ColorRect = null
+var _rows: Array[Label] = []
+
+var _gate := InputGate.new()
+
+## Set once an answer is on its way. Both answers rebuild the tree on a deferred call, so there
+## is a window in which this is still on screen and must not answer again. refresh() clears it:
+## the world calling back is the world saying it is still here.
+var _committed := false
+
+
+func _ready() -> void:
+	layer = LAYER
+
+
+func setup(menu: GameOverMenu, style: SpriteStyle, viewport_size: Vector2i) -> void:
+	_menu = menu
+	_style = style
+	_build(viewport_size)
+	_paint()
+
+
+func refresh(slots: Array[SlotSummary]) -> void:
+	if _menu == null:
+		return
+	_menu.refresh(slots)
+	_committed = false
+	_paint()
+
+
+func _build(viewport_size: Vector2i) -> void:
+	_backdrop.position = Vector2.ZERO
+	_backdrop.size = viewport_size
+	add_child(_backdrop)
+
+	_title = UiChrome.label(_style, "text")
+	_title.position = Vector2(MARGIN, MARGIN)
+	add_child(_title)
+
+	_blurb = UiChrome.label(_style, "dim")
+	_blurb.position = Vector2(MARGIN, MARGIN + 12)
+	add_child(_blurb)
+
+	# The rows in a window, as everywhere else. Enough for the widest page, built once, so a page
+	# change repaints rather than rebuilding and there is no frame on which the screen is
+	# half-built.
+	var count := maxi(_menu.row_count(), _menu.slot_count())
+	var height := float(UiChrome.BORDER * 2 + UiChrome.PAD * 2) + count * ROW_PITCH
+	_frame = UiChrome.frame(_style, Rect2(MARGIN, MARGIN + 28,
+		float(viewport_size.x) * 0.6, height))
+	add_child(_frame.panel)
+	var inner := _frame.inner()
+	_select = UiChrome.select(_style)
+	_frame.panel.add_child(_select)
+	for i in count:
+		var row := UiChrome.label(_style, "text")
+		row.position = Vector2(inner.position.x + float(UiChrome.ROW_INSET),
+			inner.position.y + i * ROW_PITCH)
+		_frame.panel.add_child(row)
+		_rows.append(row)
+
+	_help = UiChrome.label(_style, "dim")
+	_help.position = Vector2(MARGIN, viewport_size.y - 12)
+	add_child(_help)
+
+
+func _paint() -> void:
+	if _style == null or _menu == null:
+		return
+	var text := _style.ui_color("text")
+	var dim := _style.ui_color("dim")
+
+	_backdrop.color = _style.ui_color("panel")
+	_title.add_theme_color_override("font_color", text)
+	_blurb.add_theme_color_override("font_color", dim)
+	_help.add_theme_color_override("font_color", dim)
+
+	_title.text = "THE ROAD ENDS HERE"
+	_blurb.text = "Someone will find the lantern eventually."
+	_help.text = Prompts.fill("{choose} to choose    {confirm} to pick" if _menu.page() == GameOverMenu.Page.TOP \
+		else "{choose} to choose    {confirm} to pick    {back} to go back", _device)
+
+	# The window is as tall as the page it is DRAWING, not as tall as the widest one it could.
+	# Built for the widest - a slot list is longer than two commands - it stood over the first
+	# page with a hand's width of nothing under the last row, which reads as a list that failed
+	# to finish rather than as a menu.
+	_frame.panel.size.y = float(UiChrome.BORDER * 2 + UiChrome.PAD * 2) \
+		+ maxi(_menu.size(), 1) * ROW_PITCH
+	_select.visible = false
+	for i in _rows.size():
+		var row := _rows[i]
+		row.visible = i < _menu.size()
+		if not row.visible:
+			continue
+		var selected := i == _menu.index()
+		row.text = _label_for(i)
+		row.add_theme_color_override("font_color", text if selected else dim)
+		if selected:
+			UiChrome.place(_select, row, _frame.inner().size.x, ROW_PITCH)
+
+
+## The row the cursor is on, or null when nothing is pressable.
+func selected_row() -> Label:
+	var at := _menu.index()
+	if at < 0 or at >= _rows.size() or not _rows[at].visible:
+		return null
+	return _rows[at]
+
+
+func _label_for(at: int) -> String:
+	if _menu.page() == GameOverMenu.Page.TOP:
+		return _menu.top_label(at)
+	# The same row text the pause menu draws, from the same function: a slot that reads one way
+	# when you save it and another when you are staring at it after dying is two menus
+	# describing one file.
+	return PauseMenu.slot_label(at, _menu.summary(at))
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _committed or _menu == null or not InputGate.is_press(event):
+		return
+	if not _gate.accept(event):
+		return
+
+	if _gate.pressed(event, &"move_down"):
+		# Only when the cursor actually went somewhere. A list too short to move is a list
+		# where a blip would say "that worked" about nothing happening.
+		if _menu.move(1):
+			sound_wanted.emit(Sfx.id_of(Sfx.Cue.MENU_MOVE))
+		_paint()
+	elif _gate.pressed(event, &"move_up"):
+		if _menu.move(-1):
+			sound_wanted.emit(Sfx.id_of(Sfx.Cue.MENU_MOVE))
+		_paint()
+	elif event.is_action(&"interact"):
+		sound_wanted.emit(Sfx.id_of(Sfx.Cue.MENU_CONFIRM))
+		_act(_menu.confirm())
+	elif event.is_action(&"cancel"):
+		_act(_menu.cancel())
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+
+## Turns one answer into one signal. A refusal repaints and says nothing, which is why the menu
+## returns NONE rather than throwing: "that did nothing" is a normal outcome here too.
+func _act(pick: GameOverMenu.Pick) -> void:
+	match pick.kind:
+		GameOverMenu.Kind.LOAD:
+			_committed = true
+			load_requested.emit(pick.slot)
+		GameOverMenu.Kind.NEW_GAME:
+			_committed = true
+			new_game_requested.emit()
+		GameOverMenu.Kind.TITLE:
+			_committed = true
+			title_requested.emit()
+		_:
+			_paint()
+
+
+## The device in the player's hands, for the words the help line uses. Handed in by the world at
+## mount and again whenever the device changes; the screen repaints if it is already built.
+func reprompt(device: Prompts.Device) -> void:
+	_device = device
+	_paint()

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="GameConfig" load_steps=2 format=3]
+
+; Every number a designer would want to try three values of. Nothing else belongs here, and
+; nothing of this kind belongs anywhere else.
+;
+; The distances are NOT here any more, and their absence is the point. They used to be doubled
+; against the template's defaults - 96 rather than 48, 24 rather than 12 - because this game is
+; drawn at 32px tiles where the defaults were written for 16, and every one of them was the same
+; distance in TILES. Now that GameConfig states them in tiles, the demo wants exactly what the
+; template already says, so it says nothing and inherits: three tiles a second, three quarters of
+; a tile of reach, a footfall every seven eighths of a tile, at any art size.
+
+[ext_resource type="Script" path="res://scripts/data/game_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+id = &"default"
+allow_diagonal = true
+rest_fade_frames = 24
+rest_hold_frames = 30

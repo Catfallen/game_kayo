@@ -1,0 +1,60 @@
+{
+	"_readme": [
+		"A second map, reachable through the east gate of demo_town. It exists to prove the",
+		"warp round-trip: two maps, two doors, and a spawn beside each one that does not",
+		"immediately send the player back.",
+		"",
+		"It also uses a different mix of tiles from the same style - stone underfoot rather",
+		"than grass - which is what a second area looks like when the palette is shared."
+	],
+	"id": "quest_cave",
+	"style": "lpc32",
+	"legend": {
+		".": "path",
+		"#": "wall_rough",
+		"~": "water",
+		"*": "bush"
+	},
+	"ground": [
+		"############",
+		"#..........#",
+		"#..........#",
+		"#...~~~~...#",
+		"#...~~~~...#",
+		"#..........#",
+		"...........#",
+		"#..........#",
+		"############"
+	],
+	"decor": [
+		"            ",
+		"  *      *  ",
+		"            ",
+		"            ",
+		"            ",
+		"            ",
+		"            ",
+		"  *      *  ",
+		"            "
+	],
+	"spawns": {
+		"west_gate": [1, 6],
+		"start": [5, 6]
+	},
+	"npcs": [
+		{
+			"id": "hermit",
+			"character": "quest_hermit",
+			"tile": [10, 2],
+			"facing": "down",
+			"dialog": "hermit",
+			"behavior": "static"
+		}
+	],
+	"enemies": [
+		{ "id": "gloom", "enemy": "gloom", "group": ["gloom"], "tile": [10, 4], "facing": "down" }
+	],
+	"warps": [
+		{ "tile": [0, 6], "map": "quest_town", "spawn": "east_gate" }
+	]
+}

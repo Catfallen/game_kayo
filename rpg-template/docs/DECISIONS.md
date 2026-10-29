@@ -1,0 +1,4123 @@
+# Decisions
+
+Forks with real alternatives, recorded as they were made. The backlog at the top is the
+one-glance menu of things still worth trying.
+
+## Backlog — alternatives worth trying later
+
+- **The katana, the scimitar and the alternate longsword** — three more swords whose swing the generator
+  draws on 128px frames, refused by the composer when M50.4 composed them: their swing files are 13 columns
+  wide with art in the first six only, where a 128px swing file is expected to be exactly six. Revisit
+  hook: the whole-size check in `LpcCompose.compose` (`scripts/spritegen/lpc_compose.gd`, "a %dpx swing file
+  is %d frames on %d rows") — accept a wider file and take its first six columns, then measure each crop
+  against the arena floor's fit.
+- **A foe that swings in a turn fight** — a foe whose sheet draws a slash playing it across its own
+  defend cue, weighed when the hero's swing came to turn fights (M50.3). No shipped foe draws one, and
+  an lpc32 foe's swing would reach half a pixel into the party window. Revisit hook: the foe loop of
+  `BattleScreen._paint_fighters`, and `FLOOR_Y`.
+- **A game that locks a play choice** — a hard mode that cannot be turned off, or a game that does
+  not offer the sword, weighed when Options gained rows about play (M51). Revisit hook:
+  `PlayChoices`, where each row's offered values are derived.
+- **A boss that holds its ground in the arena** — a per-enemy field that keeps a struck boss
+  within reach, weighed when the arena's balance gate was written (M50). Revisit hook: `EnemyDef`
+  beside `body_tiles`, read where `ArenaSim._strike` sets a struck foe's shove. Measured in M50.1: as
+  built it lets careless play win 47 fights of 48, so it needs a rule change beside it, not a number.
+- **An AI sprite source** (PixelLab or similar) for higher-fidelity art. Revisit hook:
+  `scripts/spritegen/sprite_source.gd` — implement the interface, emit PNG + sheet.json,
+  and the game does not change. Direction aliases for compass-named rows already exist in
+  `scripts/util/dir.gd`.
+- ~~**A second cell size** (32×32 characters, 32px tiles).~~ **Taken up by M40**: `lpc32` is
+  64×64 cells on 32px tiles, imported rather than rigged, and since M40d its ground is imported
+  too — `plain32`, the gb16 shapes doubled, was the stand-in and is gone. The world at that size
+  — viewport, UI scale, the demo's config — was M40 phase B.
+- ~~**Terrain transitions**~~ (an edge tile where grass meets water, placed by a rule). **Taken
+  up by M41**, and the constraint this entry named — that a cell would stop being one tile id —
+  turned out to be avoidable rather than a price: the shapes live in atlas columns no map may
+  name, so `MapData` and every map file were untouched. **Both of what this entry left out are
+  in by M48**: an edge between two ringed materials had in fact shipped in M41 and is now a rule,
+  and an editor is shown the shapes with a terrain brush that paints them - from the GROUND,
+  which is its own entry at the bottom of this file.
+- ~~**Tiled / LDtk map import.**~~ **Finished and VERIFIED for Tiled, 2026-09-01.** Both editors,
+  both directions, `tools/map_io.gd` as the command. Tiled was installed and a generated map
+  opened in it: 352 cells over both layers matching the source exactly, all five object layers
+  with their counts, and NPC fields arriving as editable typed properties. That pass also found
+  the one bug no gate here could — the tileset image was named relative to the map file, so every
+  map would have opened blank. **LDtk stays deliberately unverified** — see below; it is a
+  recorded state, not an open task.
+- **A save point that does not ask which slot** — the genre's own answer, and this template's
+  stated divergence since M39. Every reference either has one file (FF1, Pokémon) or picks it at
+  the title (DQ1, EarthBound, Chrono Trigger); none asks at the moment of saving. Revisit hook:
+  `SaveMenu` is the whole question — a `save_slots` of 1 already makes it a one-row list, so the
+  work is deciding whether `at_point` should skip the screen entirely and write the slot the run
+  was started from. That needs a title-side "which file am I playing" concept the template does
+  not have, which is why it is deferred rather than done.
+- **A real-time combat resolution** (an arena on encounter, Ni no Kuni's shape). The largest
+  open item, and the one the save axis is the small precedent for. Revisit hook is exactly two
+  functions: `world_scene.open_battle_with(defs, seen_key)` in and `finished(outcome, effects)`
+  out — everything between is `BattleScreen` + `BattleLogic`, and a second resolver honouring
+  that contract inherits encounters, rewards, persistence and music unchanged. **Researched and
+  decided in M49** (`GENRE_CONVENTIONS.md` §7d, and the entry at the bottom of this file): a screen
+  behind this seam with rules as pure as `BattleLogic`'s, which leaves `Router.player_can_move()`
+  untouched. **M50 builds it** — the owner's three calls, the picker and the integer rules are
+  the M50 entries at the bottom of this file.
+- **Asymmetric side parts** (a satchel on one hip only). Blocked by
+  `mirror_left_from_right`; revisit hook is the `left = flip_x(right)` branch in
+  `sprite_compositor.gd`.
+- ~~**Slots that say WHY they cannot be loaded**~~ ("unreadable" rather than "empty").
+  **Taken up by M32**, exactly at the hook this entry named: `peek()` returns a `SlotSummary`
+  instead of discarding what `_read` already knew, and the row says `damaged`.
+- **Using an item from the bag** (a general "Use" verb on the pause menu's item list). Still
+  deferred after M13: `ItemDef.battle_heal` is the template's first and only use verb, and it
+  is deliberately narrow — a potion heals in every RPG ever written, where "use the rope on
+  the well" is a puzzle, and a template that grew a verb for the second one would be
+  designing somebody's game. Revisit hook unchanged: `PauseMenu.confirm()` on the ITEMS page
+  already returns `NONE` where the answer would go.
+- **Flee odds, and damage variance.** M13 made both deterministic — a boss refuses every
+  escape and everyone else allows it; a hit is worth exactly what the numbers say. A designer
+  can reason about that and a QA script can rely on it. Revisit hooks: the flee branch in
+  `BattleLogic._flee()`, reached from the `Row.FLEE` arm of `_confirm_command()` (it was
+  `press()` until M27.1 collapsed the round shape), and `BattleLogic.damage()`.
+- ~~**`MOTION_MODE_FLOATING` for actors.**~~ **Taken up by M45** (#149), at the one line this
+  entry named, and measured rather than argued: along a horizontal wall the two modes differ by
+  a third. It stayed listed here as open for four milestones after it shipped.
+- ~~**A real title screen.**~~ **Taken up by M22**, and this entry sat here stale for twelve
+  milestones afterwards — which is worth more than the correction. A backlog line describing
+  work already done invites building it a second time, and it sits exactly where somebody looks
+  before starting. It is the same shape as the false genre claim M32 found in a code comment: a
+  gap invites work, and a wrong statement invites belief. `TitleScreen` + `TitleMenu` run over an
+  empty world in `Router.State.TITLE`, and `GameOverScreen` gained the Title row its own class
+  comment had promised since M13, exactly as this entry predicted.
+- **A field-menu Magic page.** M25 kept magic battle-only. Revisit hook: the day a spell is
+  useful outside a fight — a warp, a light, a partial heal cheaper than an inn — it is a
+  `PauseMenu.Row` between Items and Equipment plus a `_spell_rows()` beside `_gear_rows()`.
+- ~~**Elemental resistances.**~~ **Taken up by M33**, at exactly the hook this entry named.
+  What is still out: **elements on physical swings** (FF1's Ice Brand — and note FF1's own
+  version of this never worked, its player attack element annotated `BUGGED … always 0` in the
+  disassembly). Revisit hook: `ItemDef` gains an element and `_land_player_hit` scales the way
+  `_cast` does. Also **party-side resistance** — nothing shields the player, because no enemy
+  move carries an element; hook is the move dict plus a map on `Fighter`.
+- ~~**A casting policy for `BattleDriver`.**~~ **Taken up by M34**, and the feared cost did not
+  arrive: a casting party wins every shipped fight on every seed, so nothing needed retuning.
+  What it did find was two pairings the player could never learn. **The item half was taken up by
+  M35**, which found the same two layers and a guard with no test behind them. ~~A driver that
+  FLEES~~ **was taken up by M36** as `Policy.RUNNER`, and the assertion did turn out to have the
+  two halves this entry predicted: a boss refuses every escape. Nothing is left deferred here.
+- ~~**A width gate for the battle caption.**~~ **Taken up by M36**, at the hook this entry named,
+  and the research turned "make it fit" into a correction: a ONE-LINE caption was the divergence,
+  since every reference message area holds more than one. ~~What is still out is the multi-target
+  half~~ — **closed by M37**, which took FF1's persistent frame whole and deleted a special case
+  rather than adding one. Nothing is left deferred here.
+- ~~**Buffs, debuffs, and status effects on the PLAYER.**~~ **Taken up by M30** — `BOOST` and
+  `SAP` aim either way, enemy moves can afflict the party, and durations count in turns. What
+  is still out is **persistent affliction**: a status cannot outlive the fight it was inflicted
+  in, where FF1's and DQ's poison follow you onto the map. Revisit hook: the `Status` holder,
+  which would need a second home on `GameState` beside the party's numbers — plus a save
+  version, a map tick and a cure.
+- **Teaching a spell with an item.** Dragon Quest's scrolls, as a supplement to level
+  learning. Revisit hook: it needs a stored known-spells set, which M25 deliberately does not
+  have — so this one costs a save field and a migration, not just a verb.
+- ~~**A game-over theme.**~~ **Taken up by M32**, and the research turned it from a
+  nice-to-have into a correction: the branch that cut the music justified itself with a genre
+  claim that is false. The "does the title's theme displace it" question answered itself — every
+  way out of a game over already states its own music, so nothing had to be given back.
+- ~~**Per-encounter themes**~~ (a boss that sounds like one). **Taken up by M32** at the hook
+  named here. Both design questions dissolved: a fled boss fight cannot happen (a boss refuses
+  every escape), and **whether the fanfare should differ after a boss is still deferred** — it is
+  a second field answering a second question. Revisit hook: `_leave_battle_music`, which already
+  takes `won` and would take the foes.
+- **Moving the music player to `PLAYBACK_TYPE_STREAM` on the web.** Godot's web SAMPLE
+  playback loops by listening for the source node's `ended` DOM event and rebuilding the node
+  in JavaScript, so a web loop is one browser event away from silently not happening;
+  godotengine/godot#101111, #100955 and #105620 are open against it. Stream uses the ordinary
+  mixer and waits on nothing. NOT shipped, because it has never been needed here — see the
+  entry below. Revisit hook: one line in `AudioBus._ready`, and the symptom to watch for is
+  music that plays once and stops with nothing in the console.
+- ~~**A targeting step for ENEMIES.**~~ and ~~**Multi-enemy fights.**~~ Both **taken up by
+  M28** — the research is `GENRE_CONVENTIONS.md` §7b and the decisions are below. The hooks
+  named `SpellDef` gaining a target shape, `BattleLogic._enemy`/`_enemy_hp` becoming a list,
+  and `MapData.enemy_at` returning a group; all three are what M28 does.
+- **A boss with minions**, as a fight SHAPE rather than a formation with a boss in it. Super
+  Mario RPG's Mack summons his bodyguards back and leaves the field until they are cleared,
+  which is a rule about the encounter rather than about any enemy in it. **M29 gives the Keeper
+  an escort**, which is the formation and not the shape: its minions stay dead, and killing the
+  boss first leaves them standing. Still deferred, and the revisit hook is unchanged — the
+  encounter record, which names the foes and could name a rule about them.
+- **Followers on the overworld** (Chrono Trigger's caterpillar). M27 ships one sprite, which is
+  Final Fantasy I–VI's own answer. Revisit hook: a driver reading the leader's `Locomotion.Step`
+  history and feeding it back as an intent, beside `NpcBrain` — harder under free pixel movement
+  than it would be with grid steps to trail.
+- **A roster larger than the battle line** — a bench, a swap screen, Dragon Quest IV's wagon.
+  M27's roster IS the party. Revisit hook: `_active_party()`, which is the one place membership
+  is decided.
+- **A named or spell-scoped LEADER** (Dragon Quest II's magic-less hero). The leader is
+  synthesized from the manifest, so they are called "You" and know everything their level has
+  reached. Revisit hook: leader-override fields on `GameManifest` beside `player_character`.
+- **Reviving mid-fight**, and turn order from a stat. Both `deferred`; the hooks are
+  `ally_rows()` (which returns only the standing) and `_advance()`'s walk over `_living()`
+  (which would take an agility order rather than index order).
+
+---
+
+## LDtk is kept, and kept unverified — *2026-09-01*
+
+Tiled was installed and a generated map opened in it, which retired the feature's largest
+unknown. LDtk has no Homebrew cask, so checking it the same way is a manual download — and the
+user's answer to whether that was worth doing was that **Tiled is enough**.
+
+So the question became what to do with 604 lines of translator and 323 of tests for a format
+nobody is going to open.
+
+- **Remove it** — *Status: rejected by the user, and it was the honest alternative: a smaller
+  surface, nothing unverified in the tree, and every future map-format change made once instead
+  of twice.*
+- **Keep it but stop gating it** — *Status: rejected. It is the option this repo's rules argue
+  hardest against: untested code in the tree is worse than either keeping it proven or deleting
+  it.*
+- **Keep it, fully gated, and stop treating the verification as an open task (chosen)** — the
+  whole map step runs in 0.86s for BOTH formats, so the marginal cost is a fraction of a second;
+  it ships nothing (build-time only); and it is the second instance that makes `map_io.gd`'s
+  FORMATS table a real abstraction rather than speculative generality. One format would make that
+  design look like a guess.
+
+**What "unverified" means precisely, so nobody re-opens this by accident:** the LDtk translator
+round-trips all six shipped maps, has 20 tests and 11 mutants, and all six generated `.ldtk`
+files validate against LDtk's published 1.5.3 schema with zero errors. What has NOT happened is a
+human opening one in the editor. Revisit hook if that ever matters: install LDtk from ldtk.io,
+`tools/map_io.sh --out=ldtk --dir=build/map`, open `build/map/quest_village.ldtk`. The Tiled pass
+is decent evidence the approach is sound, since both translators share the same design and the
+one bug found applied to both.
+
+---
+
+## Maps go both ways, to two editors — *M38, finished*
+
+The Tiled half shipped in M38 and the rest was owed: LDtk, and the command. Three forks.
+
+**The fork: how a record's fields cross into LDtk.** LDtk, unlike Tiled, resolves every field
+instance through a `defUid` pointing at a definition.
+
+- **Hand-list the fields a record can carry** — *Status: rejected. A game may put anything on an
+  npc, so a fixed list silently drops whatever the template did not know about — the
+  hand-maintained-membership failure this repo has already paid for once.*
+- **Carry every field as one opaque JSON blob** — *Status: rejected. It is robust and it throws
+  away the point of the exercise: a designer editing `dialog` or `dwell` in the side panel is
+  what the editor is FOR.*
+- **Derive the definitions from the records being exported (chosen)** — scalars become real typed
+  LDtk fields, and only what has no LDtk type (an array of tile pairs, which is what a patrol
+  path is) travels as JSON behind the same marker Tiled uses. A field the records disagree about
+  becomes a String and keeps its values losslessly rather than picking a winner.
+
+**The fork: how much of LDtk's format to write.** Its schema lists 28 required root fields, and
+its own 0.9.3 test file — which current LDtk opens — is missing eleven of them.
+
+- **Trim to what the schema calls required** — *Status: rejected. `required` means "LDtk always
+  writes this", not "the loader refuses without it"; trimming to it is guessing in the direction
+  that looks rigorous.*
+- **Write what the editor itself emits (chosen)**, read off its own sample projects, and check
+  the narrower set the LOADER actually refuses by reading its source. That found three things no
+  schema reading would: `gridTiles`/`entityInstances`/`intGridCsv` are walked raw on every layer
+  with no guard, an unresolved field `defUid` crashes when it carries values, and duplicate
+  `iid`s are accepted and silently collapse entity references.
+
+**The fork: what the `--verify` gate compares.** *Status: chosen — the game's own reading, through
+`MapData.differences()`, shared with both round-trip suites.* A byte comparison was never possible
+(the legend is rebuilt, and a legend is a spelling choice), and a third private notion of "same
+map" would have been three gates that eventually disagree about what a map is.
+
+**A number both directions share, found 2026-09-02 and fixed.** The command held a
+`const TILE_SIZE := 16` and handed it to the exporter and the importer alike, so `--verify` sent 16
+out and read 16 back and every map came home identical — while the demo had moved to 32px tiles
+four milestones earlier, and every file written since declared a 16px grid over a 384x32 atlas,
+which an editor slices into quarter tiles with every object at half its cell. The size now comes
+from the generated `tiles.json` beside the ids and for their reason; both translators refuse a
+declared grid that disagrees with the size the caller reads at; and `tests/unit/test_map_io.gd`
+spawns the engine, runs the command and reads what it WROTE, because a check living only inside
+`--verify` is a step in `check.sh` that no mutant can be judged by. The general rule went to
+`docs/learnings.md`: a constant both directions of a round trip share is invisible to that round
+trip.
+
+**Stated limitation rather than a hidden one:** no gate here proves either editor OPENS these
+files. All of them are this reader understanding this writer. The one independent check made was
+validating all six generated `.ldtk` files against LDtk's published 1.5.3 schema — zero errors —
+and it is deliberately NOT in `check.sh`, because it needs a package fetched from an external
+index and a gate that reaches one is a flaky gate. Backlog entry carries the hook.
+
+---
+
+## Where a game may be saved is an axis — *M39*
+
+The first SYSTEM axis rather than a content one, and the small precedent for the real-time
+combat arc: a rule the template used to decide for everybody becomes a field a game states,
+with both sides gated. The research reversed the section that argued against it — §8 said "a
+game wanting save points ships them as an object with a `GameHooks` interaction", which was
+true and was also the template declining to have an opinion, because the pause menu's Save row
+would still have been offering the thing that design had just forbidden.
+
+**The fork: how the policy is spelled.**
+
+- **An enum on `GameConfig`** — *Status: rejected. A `.tres` stores an enum as the bare int it
+  was written as, so adding a third policy re-labels every shipped config; the same reason
+  `SpellDef.Kind` is appended to and never reordered.*
+- **A bool, `saves_anywhere`** — *Status: rejected — a two-valued field that the genre does not
+  have only two of. Chrono Trigger's split (points in maps, anywhere on the world map) is a
+  third value already, and a bool would need replacing rather than extending.*
+- **A StringName checked against a list (chosen)** — a typo FAILS THE BUILD, the npc `behavior`
+  rule; a third policy is one entry in `SAVE_POLICIES` and no migration.
+
+**The fork: what an `at_point` game does with the Save row.**
+
+- **Draw it and refuse the press** — *Status: rejected. A row that cannot be pressed is a dead
+  key, and this is a capability the game does not have rather than a price the player cannot
+  meet — the `requires_item` case, which hides, not the `spend_gold` case, which quotes and
+  refuses out loud.*
+- **Hide it (chosen)** — which costs a mapping: with a row gone, a cursor index is no longer its
+  Row. `_top_rows()` derives the list and `top_row(at)` is the one place a cursor becomes a Row
+  again, read by BOTH `confirm()` and the view's `_label_for` — two readings would draw "Save"
+  over the row that answers Load. With saving on the list IS the enum, so every counting session
+  and every `move(Row.SAVE)` test lands exactly where it did.
+
+**The fork: does the save point ask which slot?** *Status: divergence, stated rather than fixed.*
+No reference asks at the moment of saving — one file, or chosen at the title. This template's
+pause menu has picked a slot at save time since M5 and has been played that way, and a save
+point answering the question differently would be two answers to one question. Deferred entry
+at the top of this file.
+
+**The fork: does the save point heal?** *Status: no, and this one is researched rather than
+assumed.* Every free save point in the genre restores nothing — DQ's king, DQ4's church,
+EarthBound's telephone (proven structurally: no HP-recovery opcode appears in any of the five
+`{save}` scripts), Chrono Trigger's save points (the **Shelter** item heals, not the point). The
+one that heals fully is FF1's INN, a paid rest that also saves. The demo village already has an
+inn charging four gold; a free full heal standing beside it would make the innkeeper a mistake.
+
+**The demo keeps save-anywhere and gains a save point anyway** — the user's call, and it is the
+both-directions proof on the surface a player touches: the pause menu still writes slots, and
+the chronicler in the northwest corner writes them through a conversation. The `at_point`
+restriction is proven on a fixture manifest that duplicates the shipped one and varies the
+single field, which is the control-instance rule.
+
+---
+
+## A sweep tells you about one foe at a time — *M37*
+
+**A gate whose DETECTION depends on font metrics is a gate that disagrees with itself across
+machines.** M36's caption mutant killed on macOS and SURVIVED on the Ubuntu runner that gates the
+merge — and not because of the platform alone: M37 shrank the caption (per-target lines are far
+shorter than the combined one), which left the widest case landing within a PIXEL of the window
+edge, where the two platforms' metrics fall on opposite sides. Measured: 305px against a 304px
+budget.
+
+- **Widen the fixture until it is comfortably over** — *Status: done, but not sufficient on its
+  own. It moves the boundary rather than removing it, and the next content change moves it back.*
+- **Aim the mutants at the CONFIGURATION instead (chosen)** — that the label wraps, and against a
+  width somebody chose rather than the one pixel a Label falls back to. Nothing ambient can move
+  that, so the mutant means the same thing on both machines. The measured audits stay as the
+  outcome check; they are simply not what the coverage claim rests on.
+
+**And `MESSAGE_LINES` went from 2 to 3** because M37's own change made two insufficient: the
+caption is now a frame line PLUS a target line, and the target line can wrap on its own. Three is
+EarthBound's in-battle box, and there is room before the foe bars. A milestone widening the thing
+a previous milestone had just measured is the ordinary case, not a mistake — what would have been
+a mistake is leaving the declared number at a value the view no longer keeps.
+
+
+
+**Not a fork so much as a debt being paid**: M36 gathered the evidence and recorded the
+divergence rather than acting on it, and this is the acting. The one real decision inside it:
+
+**How do you express a "persistent frame" on a screen with ONE caption label?** Final Fantasy I
+holds six boxes and undraws four of them between targets; this template has a label.
+
+- **A second label for the frame** — closest to FF1 structurally. *Status: rejected — a second
+  node to keep positioned, audited and themed, for a string that could simply be part of the
+  first one.*
+- **Repeat the whole sentence per target** — "You cast Gale. Gloom takes 12." then "You cast
+  Gale. Slink takes 6." *Status: rejected — it says the frame rather than holding it, and reads
+  as three separate casts.*
+- **One label, two lines, the first identical across the sequence (chosen)** — which only became
+  available when M36 gave the caption its second line. The frame does not move because it is the
+  same string each time; nothing has to persist it.
+
+**What makes it more than a faithful port:** it deleted a special case. M34's uniform-sweep
+verdict and the content gate's matching attribution branch both existed because a combined
+caption cannot say anything useful about identical numbers. Per-foe lines make the question
+disappear rather than answering it — which is the shape worth noticing when a research finding
+argues against something already shipped.
+
+**Also folded in:** the effect clause takes its SUBJECT as an argument (one function, two call
+sites that have named the target differently) and names the ELEMENT rather than saying "weak to
+it" — which teaches the pairing instead of merely reporting that one exists.
+
+---
+
+## The caption wraps, and the fourth row gets pressed — *M36*
+
+**The fork: what should a caption too long for its window DO?** §7c is the research, and it is
+the rare case where the references genuinely disagree.
+
+- **Clip or truncate** — *Status: rejected outright. Not one of the four games surveyed clips,
+  and it is the worst option anyway: a caption that silently loses its tail is indistinguishable
+  from one that was never written.*
+- ~~**Split into sequential per-target messages**~~ — **Taken up by M37**, at the hook this entry
+  named, and the feared cost did not arrive: all 22 sessions passed unchanged, because every one
+  of them drives its fights with `fight_well` rather than counted waits. The persistent frame came
+  with it.
+- **Wrap to a second line (chosen)** — Dragon Warrior's answer, and the one the evidence made
+  obvious once gathered: every reference message area holds more than one line (Pokémon 2,
+  EarthBound 3, DW 8), so a one-line caption was this screen's divergence rather than its design.
+  `MESSAGE_LINES` is declared the way `MAX_PARTY` is, and is the number `DialogBox` already
+  draws and size-gates against, so the two surfaces agree. It was 2 here and **M37 raised it to
+  3**, because M37's own change made two insufficient.
+
+~~**Kept as a stated divergence:** the sweep caption names every foe's damage on one line.~~
+**M37 built the sequencing alternative**, so this is no longer a divergence: every clause now sits
+in a line that names its own foe, and the caller-and-spell half of the frame holds still while the
+target half cycles beneath it. The comparison M33 argued for survives, because the caption still
+puts the numbers side by side within one telling.
+
+**Not a fork, but the finding.** Containment alone is not enough, and the mutation run proved it
+rather than a reading: with no width to wrap against a Label falls back to ONE PIXEL, and the
+caption becomes a twenty-line column one word wide — absurd, technically inside the window, and
+the containment audit passes it. The line count is what says a caption is drawable.
+
+**And the flee assertion's first draft was self-fulfilling**, which is the transferable half. It
+read each record's own `boss` flag to decide what to expect of that record, so flagging a slink as
+a boss made the tutorial inescapable AND moved the expectation to match. It asserts the SET now —
+exactly one shipped encounter refuses, declared independently — which also catches the deletion
+case a per-record property check cannot see at all.
+
+---
+
+## The gate drinks, and a guard nothing had proven — *M35*
+
+**The fork: does the casting policy also use items, or is that a fourth policy?**
+
+- **Fold items into `CASTER`** — one fewer policy, and a driver that uses everything it has is
+  arguably the most realistic player. *Status: rejected — it changes what CASTER means, and M34's
+  three assertions were written against that meaning. It also makes a report ambiguous about
+  which verb produced it: a fight won while both casting and drinking says nothing about either.*
+- **A fourth policy (chosen)** — `DRINKER`, named for Final Fantasy I's own third command (Fight
+  / Magic / DRINK / Item). Each verb policy adds exactly ONE page and the other stays a fault,
+  which is what keeps each report about its own verb.
+
+**The second fork: does the balance fixture carry a bag?** It never had one, and the comment on
+`party_of` says why — the party carries nothing deliberately, so a formation it beats is one the
+real player beats.
+
+- **Give every balance fight a bag** — simpler, one fixture. *Status: rejected — it weakens every
+  difficulty assertion in the file at a stroke, trading a pessimistic guarantee for a convenience.*
+- **A defaulted argument (chosen)** — `_fight(..., items := [])`. Every difficulty assertion
+  leaves it out and stays pessimistic; only the coverage tests pass a bag.
+
+**Not a fork, but the finding.** `_battle_items` — the filter keeping a quest item off the battle
+menu — had no test anywhere. It is one comparison, and behind it is the worst failure this
+codebase can produce: using an item appends a take-effect whatever it was, so a key on that menu
+is destroyed and its door shut for the rest of the run, hours before the player notices.
+
+**Two mutants survived and neither was dead code**, which is worth recording as a pattern rather
+than an incident. Reaching always for the first row, and drinking at full health, both passed the
+content suite because the shipped bag EMPTIES — a driver that only wants the first row still
+exhausts that stack and moves on, and one that drinks regardless still stops when the bag is
+gone. The rules are real; the content masks them. They moved to `test_battle_driver.gd`, against
+a bag that outlasts the fight.
+
+---
+
+## The gate casts, and aims the other way — *M34*
+
+**The fork: how do you make a simulation gate see a subsystem it has never entered?**
+
+- **Teach PERFECT to cast** — one driver, fewer moving parts, and the difficulty statement stays
+  two policies rather than three. *Status: rejected — it changes what PERFECT MEANS, and every
+  existing balance assertion was written against that meaning. A gate you retune to accept a new
+  behaviour is a gate you have quietly weakened.*
+- **A third policy (chosen)** — `CASTER`, appended so PERFECT and MASH keep the values every
+  assertion already uses. The proof it is additive is that all 22 play sessions and all 17
+  existing balance assertions are untouched, which is the same proof M33 offered for its fields
+  and M27 for the party.
+
+**The second fork: which foe does a casting driver aim at?** This looked like a detail and was
+the milestone's main finding.
+
+- **Weakest first, like PERFECT** — the sensible play, and what the driver already did. *Status:
+  rejected — it makes the aim axis a constant across all policies, and a boss standing behind
+  two mooks is then never the target of a spell while resources last. The Keeper's answer to
+  fire was unobservable for exactly that reason.*
+- **Toughest first (chosen)** — the opposite order, defensible on its own terms (magic is
+  scarce, spend it on what takes longest to kill) and, being opposite, it reaches what PERFECT
+  only arrives at once the fight is decided. **Aim is a policy axis exactly the way skill is.**
+
+**The third fork, forced by the gate rather than chosen: should a SWEEP announce effectiveness?**
+M33 said no, on the reasoning that its caption names what each foe took side by side. The gate
+proved that reasoning holds only when the numbers DIFFER.
+
+- **Never announce** — M33's answer. *Status: rejected by measurement — against a uniform
+  formation every figure on the line is identical, so there is no baseline in view. Both hollow
+  fights are uniform, and the only wind spell in the game is a sweep, so the slink's weakness had
+  never once been announced in any fight at any level or seed.*
+- **Announce per foe** — accurate and unaffordable: the caption is already 295px of a 312px
+  budget. *Status: rejected — see the caption-width entry in the backlog.*
+- **Announce only when uniform (chosen)** — one clause exactly when the numbers cannot carry the
+  comparison themselves, nothing when they can, and the single-target wording when a sweep
+  reaches one foe.
+
+---
+
+## An element is worth a percent, and the game says so out loud — *M33*
+
+**The fork: how much is a weakness worth, and who writes the number down?** Tier words on the
+enemy (`weak`/`resistant`) with the multipliers in `BattleLogic`, or a raw percent in the data.
+
+- **Tier words + template multipliers** — reads better in a `.tres`, and the enemy file says
+  something a designer can pronounce. But it puts a bare `* 2` in a script, which is exactly the
+  literal-a-designer-would-want-to-change this project keeps out of code, and it caps the genre
+  at whatever tiers the template invented: the references run from Pokémon's quarter damage
+  (0.5 × 0.5 on a dual type) through immunity, and the day a game wants a fourth answer it has to
+  come and ask for a new word. *Status: rejected — the vocabulary would be the template choosing
+  the shape of every game's table.*
+- **Percent in the data (chosen)** — `resistances = {&"fire": 200}`. One number, no vocabulary,
+  and a game sits anywhere on the range without an edit to a script. Exactly 100 is refused
+  rather than allowed as a no-op: it reads like a decision and changes nothing, so it is a typo
+  or a note that belongs in a comment. The demo ships 200, 150 and 50, so the argument for a
+  number over a word is visible in the content rather than only in this file.
+
+**The second fork: a multiplier or a CHANCE?** Dragon Quest's resistance is not a reduction at
+all — a resisted spell does not do less, it fails outright at a rate, and "if the spells work,
+they will deal full damage". That is a real, attested genre model and it is not available here.
+
+- **A chance to negate** — the DQ answer, and arguably the more dramatic one. *Status: rejected
+  — M13 made flee odds and damage variance deterministic so a designer can reason about a fight
+  and a QA script can replay it byte-for-byte, and a roll to negate a spell is precisely that
+  kind of number.* Revisit hook: `_spell_damage`, which would draw from the fight's seeded stream
+  the way `_pick_move` does.
+- **A multiplier (chosen)** — Final Fantasy's and Pokémon's model, and the one that survives the
+  determinism rule.
+
+**The third fork: does the game TELL the player?** This is the one the reference pass reversed.
+The genre splits, and §13b's finding is that **the split tracks the arithmetic**: Pokémon
+multiplies and announces every non-neutral hit; Dragon Quest is binary, so only the failure needs
+words; Final Fantasy I multiplies and says nothing at all — 35 battle-message constants and not
+one elemental string.
+
+- **Silent, FF1-style** — what the first implementation did, and the tempting one because this
+  screen already draws a foe's health bar, so the number is visible. *Status: rejected — the bar
+  shows what is left, not what was expected, so it cannot tell a player whether 12 was big. FF1
+  is also the outlier that multiplies AND stays silent, and its elemental system shipped
+  half-broken (the physical weakness bonus is unreachable for players, annotated `BUGGED` in the
+  disassembly). It is a precedent worth not leaning on.*
+- **Announced, Pokémon-style (chosen)** — a short clause where the element told, nothing at all
+  where it did not, which is Pokémon's own dispatch: compare to neutral, return silently when
+  equal. A sweep gets no clause, and that is the same rule rather than an exception — its caption
+  names what each foe took side by side, so the comparison is already in the numbers.
+
+**Not built, and recorded rather than forgotten:** the balance gate cannot see any of this.
+`BattleDriver` only ever chooses Attack, so no element pairing can move a number it measures.
+That is in the backlog above with its hook.
+
+---
+
+## A death and a boss get their own music, and a slot says why it is unreadable — *M32*
+
+**The fork nobody expected to have:** whether a defeat should play anything at all. It was not
+on the table — `_on_battle_finished` cut the music dead and said so in a comment, "every game
+this borrows from cuts the music at a game over". The reference pass found that false. Final
+Fantasy I ships **"Dead Music"** in 1987, and each Final Fantasy since has its own Game Over
+scene. The references *change* what is playing at a death; they do not fall silent.
+
+That is worth recording as a class of mistake rather than as a fact. **A wrong genre claim in a
+code comment is more durable than a gap**, because a gap invites work and a claim invites
+citation — and this one sat in the exact place anyone would look before changing the branch.
+The rule that would have caught it is the one already in CLAUDE.md: research the surface before
+building it. M26 built the surface and wrote the convention down from memory.
+
+- **`game_over_music` on the manifest, played through `play_or_silence`** — *chosen.* "A game
+  states its game-over music or states silence" is the same sentence a map's music is written
+  as, and that function already exists for exactly it. A LOOP rather than a jingle: the screen
+  is sat on while a player decides what to do about a lost run.
+- *A jingle that plays once and then falls silent.* `rejected` — it is a fanfare's shape, and a
+  fanfare is for a moment rather than for a screen you are still looking at.
+- *Displace it with the title's theme on the way out.* `rejected — nothing had to be built`:
+  every way out of a game over already states its own music, so the question the backlog entry
+  called "a feel call" answered itself the moment the field existed.
+
+**The fork within the boss theme: where does it live?**
+
+- **A `music` field on `EnemyDef`** — *chosen*, and the references are the argument. Dragon
+  Quest I (1986) ships eight tracks with one reserved for the Dragonlord; Final Fantasy I has
+  ONE battle theme and plays it for every fight including Chaos; FF2 gives major bosses "Battle
+  Theme 2"; by FF4 it plays for all but two. They disagree about *which* fights get one, so a
+  template that decided would be deciding for every game built on it. A field on the enemy sits
+  anywhere on that range. Note also that DQ had a boss theme before Final Fantasy existed, and
+  FF1 had a game-over theme in the same game that had no boss theme — neither is downstream of
+  the other, which is why they are two fields rather than one "extra music" feature.
+- *Behind the existing `boss` flag.* Simplest, and no new field. `rejected — it fuses two
+  questions`: `boss` means "cannot be fled", and a game wanting a themed non-boss (a rival, a
+  duel) would have to make it unfleeable to get the music.
+- *On the map's encounter record.* `rejected` — the encounter is where the FORMATION lives, and
+  a theme belongs to the thing you are fighting rather than to the tile it stands on. It would
+  also have to be repeated at every record that fields the same enemy.
+- **In a formation, the first foe that STATES a track wins** — scanned in record order rather
+  than read from `defs[0]`. A formation with a boss anywhere in it is a boss fight, and reading
+  only the leader would make the Keeper's theme depend on where his escort was written down.
+
+**The fork on the slot list: one object or two arrays.**
+
+- **`SlotSummary`, replacing `Array[SaveData]` end to end** — *chosen.* The damaged fact and the
+  save are one reading of one slot.
+- *Keep `Array[SaveData]` and pass an `Array[bool]` beside it.* Much smaller — two signatures
+  instead of nine. `rejected — it is the drift hazard this repo already has a rule against`: two
+  paths answering one question, and the drift here pairs one slot's data with another slot's
+  verdict, which is a wrong answer rather than a crash.
+- *Have the world hand down finished row labels.* `rejected` — "Slot 2:" is view vocabulary, and
+  `slot_label` is the one place three screens share it.
+
+**What the type change cost, recorded because it is the interesting part.** `_has_any_save()`
+tested each entry against `null`. An empty slot is now an *object*, so that check silently went
+from "there is a save" to "there is a slot" — true of every row, and it would have offered
+Continue to a player with nothing saved. Five suites caught it. **Widening a type turns every
+null test written against the old one into a question with a different meaning**, and the ones
+that still compile are the dangerous half.
+
+## The flow model is walked, and a failing walk is shrunk — *M31*
+
+**The fork:** M23's gate drives each edge once, from a world built for it. That is silent about
+every SEQUENCE of edges — and the bug the model exists for *was* a sequence. So: how do you
+check paths without checking all of them, and what do you hand back when one fails?
+
+- **Seeded random walks, replayed from an explicit SEQUENCE** — *chosen.* Six walks of
+  twenty-four steps on one world that is never rebuilt between steps. The plan is a list of edge
+  indices, not just a seed, because minimising a failure means re-running walks the planner would
+  never have drawn. A seed identifies the walk that failed; only a sequence can identify a
+  *shorter* one.
+- *Replay from the seed alone.* Smaller to store and enough to reproduce.
+  `rejected — it makes shrinking impossible`: every candidate the minimiser wants to try is a
+  walk no seed produces, so the whole search would have nowhere to send its answers.
+- *Exhaustive paths up to length N.* Complete, and no randomness to explain.
+  `rejected — the branching factor`: WORLD has six exits, so length six is already tens of
+  thousands of walks and length twenty-four is not a number. Random walks with asserted edge
+  coverage buy the same confidence for one second of gate time.
+
+**The fork within it: how is a failing walk minimised?** A 24-step walk is not a bug report.
+
+- **Cycle elision** — *chosen.* Delete the steps between two positions that sit in the SAME
+  state. It is the one edit to a graph walk that cannot break connectivity, so every candidate is
+  drivable by construction and a failed re-run means exactly one thing. It cut its first real
+  failure from 24 steps to five: `continue, open_pause, close_pause, open_pause, close_pause` —
+  the bug stated exactly, since it takes one close before the second open.
+- *General delta debugging* (drop arbitrary steps, keep what still fails). The textbook answer.
+  `rejected — most of its candidates are not walks`: dropping a step usually leaves the next one
+  departing from a state the walk is no longer in, so the search would spend its budget on
+  sequences that cannot be driven, and would have to tell "does not reproduce" apart from "is not
+  a walk" on every one.
+- *Report the seed and let a human read the walk.* `rejected — it is the thing this replaces`,
+  and it is what makes a rare failure expensive rather than cheap.
+
+**Where the walks live, and one thing that would have been tidier.** They are test functions in
+`test_flow_model.gd`, beside the per-edge gate whose adapters they compose, rather than a new
+suite with the adapters extracted into a shared driver. The extraction is the better-looking
+shape and buys nothing today: one caller, one file, and a refactor of the gate that would have to
+be proven byte-identical first. **Revisit hook:** the day a second suite wants to drive an edge,
+`_drive`/`_arrive_at`/`_invariant_holds` are what move to `tests/helpers/`.
+
+**How a walk reaches a LOSING fight**, which is the edge with two hops and therefore the one most
+worth composing. `_drive` takes the adapter that follows it and opens an unwinnable fight when
+the walk intends to lose. Rejected: giving the model a field for it (the model would then
+describe the harness, not the game), and leaving `lose_battle` out of walks (which drops the
+defeat path, the only two-hop edge that a walk can reach twice).
+
+**What the walk actually proved, stated exactly.** It found no defect in shipped code — nothing
+was broken. What it did was kill two mutations the per-edge gate SURVIVES, both the same shape: a
+screen that is closed but never freed stays in the tree and goes on consuming input, so the
+second time the player opens the menu nothing happens. Seven candidate mutations were run twice
+each, with the walk tests collected and not collected; five behaved identically both ways. The
+measured pair is the whole argument for the layer, and it is worth saying that it had to be
+measured — the first three candidates reasoned out in advance all survived both ways.
+
+## Ordinary fights are pairs, and the second sword moved onto the road — *M29*
+
+M28 built formations and spent them on one optional encounter in a corner; a normal
+playthrough never met a crowd. M29 spends them on the game: both hollow fights and the cave
+become pairs, and the Keeper gets an escort. The research is `GENRE_CONVENTIONS.md` §7b's new
+paragraphs, and it answers the question with a date — Dragon Quest I fights one monster with
+one hero, Dragon Quest II is the first with a party AND the first with "enemies in much
+greater numbers", in the same release. A party and a formation are one design decision seen
+from two sides.
+
+Which forces the fork, because this template's companion was **declinable**. The arithmetic is
+not close: a lone player who mashes dies to the *first* slink pair, in a hollow whose own data
+comments call it a tutorial that cannot kill you, and a lone player who times **every** press
+still loses to the Keeper's escort. Sizing fights for two while letting the player travel alone
+ships two games and balances one.
+
+**The fork: how is the second character guaranteed?**
+
+- **The roads out of the village require her.** *Chosen.* `requires_flag: rook_joins` plus a
+  `locked_dialog` on the hollow and cave warps — the shape the barred keep gate has used since
+  M12, so it cost no mechanism. It keeps the recruit conversation, keeps `joins_on_flag` proven
+  as a live template seam rather than a feature only a test exercises, and Rook's existing line
+  already argues it: *"Two of us come back from it; one doesn't."* The warden's *"one sword is
+  enough for a village this size"* stops being flavour and becomes the rule the map enforces.
+  It is also the genre's answer — DQ2 hands you the Prince through the story, and only lets you
+  continue short-handed much later, when he falls ill.
+- *She joins at boot.* Simplest by a distance, and no play session would need a recruit leg.
+  `rejected — it deletes the only place the demo exercises joins_on_flag`, turning a template
+  seam into dead code the day it shipped, and throws away a written scene to save editing test
+  fixtures.
+- *Keep the solo route winnable.* Tune the pairs down until one character clears them.
+  `rejected — it makes the pairs token`: the fights would have to be weak enough that the
+  second body is decoration, which is the opposite of what was asked for. Worth naming because
+  it is the option that looks like it preserves player freedom and actually spends the feature.
+- *A difficulty setting.* `deferred — worth trying` if a solo run is ever wanted back. Revisit
+  hook: `GameManifest` would carry the alternative combat/formation data, which is a real
+  design (two authored games) rather than a multiplier.
+
+**The cost, stated:** seven QA sessions gain a recruit leg they did not need, and the village
+now has a soft wall in it. That second one is a feel question and only playing answers it.
+
+## Statuses expire with the fight, and point both ways — *M30*
+
+`GENRE_CONVENTIONS.md` §13 carried the same closing line from M25 to M29: sleep was the only
+status effect and it acted on the enemy only. §13a is the research that closed it, and it found
+that boosts and afflictions are not two systems — EarthBound's Assist branch is one branch doing
+both, "boosting or weakening the stats of an ally or foe … or inflicting a status ailment".
+
+**The fork: how long does a status live?**
+
+- **Battle-only, counted in turns.** *Chosen (user's call).* Everything lives in the pure
+  `BattleLogic`, expires when the fight ends, and writes nothing — no `GameState` field, no save
+  v10, no migration, and "a fight never writes" survives intact. It is also where the references
+  put their buffs: DQ's Buff and FF1's `TMPR`/`FOG` are all battle-only.
+- *Persistent afflictions* — FF1's poison follows you onto the map and drains as you walk, and
+  DQ's does the same. `deferred — worth trying`, and it is a milestone rather than a field: a
+  save version, a migration, a map tick that can reduce HP outside a fight, a cure to buy, and a
+  decision about what reaching zero on the overworld means. Revisit hook: the `Status` holder,
+  which would need a second home on `GameState` beside the party's numbers.
+
+**The fork: one signed number, or two verbs?**
+
+- **`Kind.BOOST` at an ally and `Kind.SAP` at a foe.** *Chosen.* Each names what it does, and
+  the target follows from the kind exactly as it does for `HEAL` and `ATTACK`.
+- *One kind with a signed `power`.* `rejected — a verb spelled as the absence of its opposite`.
+  That is the same argument `Kind.UNEQUIP` was created for: a negative boost is a decode every
+  reader has to remember, and the one who forgets ships a spell that heals when it should hurt.
+
+**The fork: rolled durations, or stated ones?**
+
+- **A fixed `status_turns` in data.** *Chosen.* DQ rolls its ranges (Buff 4–6, Sap 6–9), and
+  this template does not: M13 made flee odds and damage variance deterministic so a designer can
+  reason about a fight and a QA script can replay it byte-for-byte, and a duration is the same
+  kind of number. `rejected — a rolled duration` for that reason, and the entry is here so the
+  next person does not re-derive it.
+
+**The display divergence, stated.** Two secondary sources say FF1 replaces a character's HP
+readout in the battle block with `POIS`/`STON`/`DARK`; the manual is silent and both first-hand
+pages are bot-blocked, so §13a cites it without leaning on it. This screen **appends** a tag and
+keeps its numbers, because FF1 replaces out of necessity — one block, room for one number — and
+this one has a caption line and a bar. Imitating a constraint the screen does not have would
+cost the player information for the sake of fidelity.
+
+**`Row.STATUS` gains nothing, deliberately.** A battle-only effect cannot be true while the
+pause menu is open, so a status line there would describe a system the player can never catch in
+the act — the same reasoning that keeps an `MP 0/0` line off a member with no magic.
+
+## A scripted fight is played well by the harness, not by arithmetic — *M29*
+
+Play sessions used to land timed hits by waiting a computed number of frames between presses,
+chained off the cue and message lengths in `quest_combat.tres`. That arithmetic described a
+four-round **duel**; the moment the Keeper gained an escort every chain stopped ending the
+fight, and it failed as "the battle never ends" half a script away from what had changed.
+
+- **A `fight_well` op.** *Chosen.* Confirms through every menu and presses inside every timing
+  window, reading `BattleScreen.cue_on()`/`choosing()` — the scripted twin of the balance gate's
+  `BattleDriver.Policy.PERFECT`, so the fight the gate proves winnable is the fight the session
+  plays. Two small public reads on the view, and the harness finds the screen by TYPE, so
+  nothing in the shipped scene carries a hook that exists only for tests.
+- *Re-derive the frame offsets for the new formation.* `rejected — it buys one milestone`. The
+  next change to a cue length, a message length or a foe count breaks it again, and the failure
+  never points at the thing that moved.
+- *Let the sessions mash.* `rejected — mashing cannot win the Keeper`, by design: that is the
+  difficulty statement the balance gate proves in both directions.
+
+`press_until_state` stays, and is now the deliberate way to play BADLY — only the first press of
+a cue counts, so mashing never lands a timed hit. Both verbs are worth having.
+
+## The Keeper's escort is mixed, and fills the screen — *M29*
+
+**The fork: what stands beside the boss?**
+
+- **Keeper + Gloom + Slink.** *Chosen (user's call).* A mixed formation, which is Final Fantasy
+  I's attested shape ("a mix of up to 6 small and 2 large"), and three bodies exactly fills
+  `BattleScreen.MAX_FOES`, so the boss out-scales the ordinary pairs instead of matching them.
+  It also reuses art that already exists. Timed play wins with roughly half the party's health
+  intact; mashing loses in about three rounds — so the difficulty statement the Keeper was
+  built to make survives, now made of a formation against a party rather than a duel.
+- *Keeper + two Slinks.* A gentler version of the same idea, and the one the arithmetic
+  recommended. `rejected — the mixed pair is more interesting for the same press count`.
+- *Keeper + one minion.* `rejected — the boss fight would be the same size as every other
+  fight`, which stops "the boss has minions" reading as anything.
+- *Keeper + two Glooms.* Not offered, because it was **measured as unwinnable**: two glooms
+  plus the Keeper out-damage a level-2 party faster than the party can clear 58 health, even
+  with every press timed. Recorded so nobody re-proposes it as the obvious escalation.
+
+Killing the Keeper does not end the fight — every foe must fall, which is the template's rule
+and the genre's. The Mack shape (minions respawn, the boss leaves the field) stays in the
+backlog; this is a formation with a boss in it, and says so.
+
+## Gold halved per body, rather than prices doubled — *M29*
+
+Twice as many bodies pay twice as much. The purse is what the smith's prices and the "two
+tonics sit between the two outcomes" tuning are built against, so it had to be held.
+
+- **Halve each enemy's gold.** *Chosen.* `slink` 4 → 2, `gloom` 6 → 3, `keeper` 25 → 20, so
+  every fight that GREW pays exactly what it paid before. Two-line edit, the required economy is
+  untouched, and the play sessions' `assert_gold` values came back **unchanged through the whole
+  hollow** — which is the independent check that the arithmetic was right, rather than numbers
+  re-recorded because the suite said so.
+
+  **The exception, and it is real:** `the_pair` in the hollow's north-west pocket was ALREADY a
+  formation in M28, so its bodies did not double and its payout genuinely halved, 10 gold to 5.
+  Its xp did not move either, which means the doubled curve slid past it: it used to carry the
+  player to level 3 and now falls seven short. Optional bonus content, no required fight
+  affected, and stated here rather than quietly re-recorded — the design promises a level for
+  the optional CAVE, whose pair pays exactly one curve step and which the content gate pins.
+- *Double the prices instead.* `rejected — more edits, and it moves numbers a player reads`.
+  The inn's four gold a night is a nice number and the shop is tuned; halving a reward the
+  player never sees itemised is the quieter change.
+- *Leave gold alone and let the player be rich.* `rejected — it silently retunes the shop`,
+  which is a design change nobody asked for arriving as a side effect of a content change.
+
+XP goes the other way for the same reason: awards are left alone and the **curve doubles**
+(`[10, 12]` → `[20, 24]`, in both combat definitions), which reproduces every levelling beat
+exactly — level 2 still lands at the end of the hollow, the optional cave is still worth
+precisely one level, and the Keeper is still met at level 2 and left at 3. Halving xp per enemy
+would have needed non-integer awards; doubling the curve is one number on each side.
+
+## A fight holds a crowd, and one map record names it — *M28*
+
+The research is `GENRE_CONVENTIONS.md` §7b. What it settled first is that "one foe" was never
+a convention this template was honouring — Dragon Quest I is the only reference that fights
+one at a time, and every other game in the set fields formations. So this is a scope line
+being retired, not a divergence being abandoned.
+
+**The fork: where does a formation come from?**
+
+- **One map record names its foes.** *Chosen.* The record keeps its `enemy` and gains an
+  optional `group`, so the body you walk into is the first foe and the rest ride with it.
+  Super Mario RPG is the shape — battles "begin by moving into an enemy on a main game map"
+  while 512 formation records sit in ROM behind them — and Chrono Trigger's set encounter
+  points are the same idea. Composition stays level design. Existing records need no edit,
+  because a record with no `group` is a formation of one.
+- *Adjacent bodies merge into one fight.* EarthBound does this, and its manual is the reason
+  to refuse it: "**occasionally**, other nearby enemies may join in on the fight, even though
+  they were wandering around separately." Occasionally is a roll, and composition would then
+  depend on where a wandering NPC happened to stand — which is the objection M13 raised
+  against step-counter encounters, arriving by a different door. `rejected — it makes a
+  fight's shape a function of the movement loop`.
+- *An `encounter` resource beside `EnemyDef`.* `deferred — worth trying` the day a formation
+  needs a rule of its own rather than a list (a boss with respawning minions is the attested
+  case). Revisit hook: the record's `group`, which would become an id.
+
+**One record is one encounter is one seen key is one seed**, whatever the foe count. That
+falls out of the record being the unit, and it is what keeps a fought-and-fled crowd replaying
+identically: a foe downed before the party ran is standing again next time, because the
+encounter was never marked. Deliberate, and stated because the alternative — a seen key per
+foe — would make "which half of this fight did I already win" a thing saves have to carry.
+
+## The cursor points at one foe, and is skipped when there is only one — *M28*
+
+**The fork: how does the player say which foe?**
+
+- **An individual cursor over the living foes.** *Chosen*, and it is the ally cursor mirrored
+  exactly, down to the skip. Final Fantasy I moves a "finger" over the enemy sprites; Super
+  Mario RPG uses the D-pad and asks **only "if there is more than one enemy"** — which also
+  answers the question §7a had to leave open in M27 about whether the classics skip a
+  one-option cursor. That skip is what keeps every fight this template has already shipped
+  pressing the same keys.
+- *Dragon Quest's group cursor*, which picks a group and hits a random member. `rejected` — it
+  is a compression device for eight sprites, and at two or three it costs a whiff the
+  individual cursor does not have (DQ2 misses outright at a group that has emptied).
+
+**A stale target cannot happen here, and that is M27.1 paying for itself.** FF1's
+"Ineffective" — aiming at an enemy that died earlier in the round — is its most complained-
+about behaviour, and it exists *because* FF1 enters every command before the round resolves.
+Act-as-you-choose closes the gap: the cursor lists the living at the moment it opens, and the
+blow lands on the same beat. No retarget rule, no dead-target message, no test for either.
+
+## Every living foe takes a turn, and the cap is what keeps that bearable — *M28*
+
+- **Each living foe acts, in foe order, after the whole party.** *Chosen.* Every reference
+  game gives every living enemy a turn — FF1's nine are nine of the thirteen entries in its
+  shuffle, SMRPG interleaves both sides by Speed, DQ orders by Agility. None of them has
+  enemies act as a *block* after the party, so this extends the divergence the template
+  already recorded ("party in order, then the enemy") rather than opening a new one.
+- The cost is honest and unavoidable: **N foes mean N defend cues in a round.** SMRPG is the
+  precedent that a timed block per incoming blow is playable. What no reference does is skip
+  an enemy's attack for pacing, so the relief comes from the cap: **three foes**, declared by
+  the view and — this time — enforced by a content gate that refuses a map record asking for
+  more. (M27 declared `MAX_PARTY` and enforced nothing, which M27.1 found and wrote down; the
+  same gate now covers both sides.)
+- Status is **per foe**: FF1's sleepers each roll their own wake, so a battle-wide asleep flag
+  cannot express the rule. A sleeping foe loses its own turn and the others still swing.
+
+**The two seeded streams stay two.** Draws are ordered by foe order over the existing
+`derive("moves")` and `derive("target")`, so a one-foe fight draws exactly the sequence it
+drew before and every shipped session replays byte-identically with no compatibility branch.
+Rejected: a derived stream per foe, which would need foe 0 to keep the bare label — an
+index-zero special case whose only observable effect is the compatibility itself. The
+consequence, stated: a foe dying or falling asleep shifts the draws of foes after it *within
+that fight*. That is deterministic in the seed and the inputs, which is all the replay
+guarantee ever claimed.
+
+## A conversation shows a face, and the face is world size — *M42*
+
+The gap §6 recorded as "no portraits" since it was written, closed once the faces existed —
+M42's sheet contract measures one per character off their own standing frame.
+
+**The fork: how does a node know whose face to draw?** Put to the person this is built for.
+
+- **An explicit `portrait` on the node.** *Chosen.* A character id, validated like every other id:
+  the content gate refuses one with no sheet under the running style, naming the file and the
+  node. It costs an edit per node — 48 of them — and it is the only one of the three that can
+  express a conversation where two people speak, which the demo's own warden-and-Rook scenes do.
+- *A speaker-name map* (`"Warden" -> quest_warden` in one file). Rejected: a second place a name
+  has to match, and a miss is silent — the face simply does not appear.
+- *The world passes whoever you interacted with*. Rejected: no data change at all, and wrong the
+  moment a conversation has a second speaker or is opened by a sign, a chest or a well.
+
+**The second fork: how big is the face?** Chosen: **world size** — the same 12 design pixels the
+battle screen draws, which is the size that character is when you walk around as them.
+
+- *Twice world size*, which is closer to what the references do — Persona's bust overlaps the box
+  and is a third of the screen. `deferred — worth trying`, and the cost is MEASURED rather than
+  guessed: at 24 design pixels the text column drops from 285px to 273 and **three shipped lines
+  stop fitting** (the kid's brag, the warden's why, and one more). Those are tightenings, not
+  splits, so no play session would move — but they are prose somebody wrote. The hook is one
+  number: what `DialogBox._show_face` passes to `UiChrome.portrait`.
+
+## A spell's target shape is data, and the foe bars multiply — *M28*
+
+**Groups and multi-target magic arrive together, in the genre and here.** Dragon Quest I has
+no group spells because it has no groups; DQ2 introduces both in one game and shapes its list
+by target (Firebal at one, Sleep and Infernos at a group, Explodet at everything). FF1's
+manual says the same from the other side. So `SpellDef` gains a `Target` of `ONE` or `ALL` —
+the shape is a property of the spell, authored in data, which is what this template's own
+backlog nominated. `ALL` is refused on heals and on sleep for now: both are verbs whose
+multi-target versions are real genre nouns and neither is needed to ship a crowd.
+
+**The fork: does the enemy side show health?**
+
+- **A bar per foe.** *Chosen by the person this is built for*, and it is a divergence stated
+  out loud rather than a neutral layout call. **No reference game shows enemy HP** — FF1 lists
+  enemy *names* in their own box and spends its four HP boxes on the party, DQ2's window shows
+  names and how many are still up, EarthBound and Chrono Trigger show nothing, and Super Mario
+  RPG makes it a *reward*: Mallow's Psychopath spends a whole turn to read one enemy's
+  remaining health. Five references to zero. But the numeric foe bar has been on this screen
+  since M13 and has been played that way ever since, so the choice was between extending a
+  shipped divergence consistently and removing something the player already reads. Extending
+  it also mirrors the party's own blocks, which is one visual language rather than two.
+- *Names and a living count* (DQ2's answer, and the genre's). ~~`deferred — worth trying`~~ —
+  **superseded by M42**, which took a third answer.
+
+**The fork again, M42, and the person this is built for chose differently the second time.** The
+question was put after they rejected the battle screen on sight, with three modern references
+looked at rather than recalled: Sea of Stars draws no enemy health at all, Persona 5 draws a name
+banner only, and Clair Obscur draws exactly ONE bar, top centre, for the enemy being aimed at.
+
+- **One bar, for the target.** *Chosen.* Clair Obscur's shape. The banner names the whole
+  formation and lights whichever the bar is about, so nothing is lost about who is in front of
+  you - only the four numbers nobody was reading are.
+- *A bar per foe* (M28's answer, above). Rejected on evidence it did not have in M28: the reason
+  it had to go is not that eight references disagree, it is that three bars and three captions in
+  a corner had nowhere to go but on top of the sprites they described. The layout audit could not
+  see it because it measured `ColorRect`s and `Label`s and a fighter is neither.
+- *No enemy health at all* (Sea of Stars, Persona 5, and the 2D era). `deferred — worth trying`,
+  and the hook is now one function: `BattleScreen._shown_foe` and the bar it feeds.
+
+## A party is a list even when it is one, and membership is a flag — *M27*
+
+The largest system the audit ever listed as missing, and the two calls that decided its shape.
+
+**The fork: does a game without a party take a different path through a fight?**
+
+- **One path, with the solo player synthesized into a member.** *Chosen.* A game that declares
+  no `party` is handed a single Fighter built from `player_character` and `combat`, named "You",
+  knowing everything its level has reached — so `BattleLogic`, `BattleScreen` and the menus
+  always see a list. The evidence it worked: all sixteen scripted play sessions pass untouched,
+  the solo layout is pixel-identical, and 60 of the 79 battle-logic tests never mentioned a
+  party at all.
+- *A solo path and a party path.* Rejected. The phase machine would exist twice, and the solo
+  one would be the tested one — which makes the party path the place bugs live and nobody looks.
+- **The cost, stated:** a leader cannot be given a name or a narrowed spell list, so Dragon
+  Quest II's magic-less hero is not expressible. `deferred — worth trying`; the revisit hook is
+  leader-override fields on `GameManifest` beside `player_character`.
+
+**The fork: how is somebody recruited?**
+
+- **Membership is DERIVED from a flag.** *Chosen.* The manifest declares the roster; each member
+  carries `joins_on_flag`, and the party is everyone whose flag is set, computed every time it
+  is asked. This is `SpellDef.learn_level` applied to people, and it deletes the same things:
+  no join op, no roster save field, no migration, no way to hand out the same companion twice,
+  and no membership that can drift from the event that granted it. Recruiting is the `set_flag`
+  a dialog choice already carries, so a game recruits however its own content says.
+- *A `join` effect op with a saved roster.* Rejected — it is a second list of who is in the
+  party, and the one that goes stale is whichever the reader did not check.
+- What IS saved is each member's numbers, which is a different fact entirely.
+
+**Two more, decided with the person this is being built for.** The overworld draws ONE sprite
+(Final Fantasy I–VI ship exactly that; a follower line is `deferred — worth trying`, and the
+revisit hook is a driver reading the leader's `Locomotion.Step` history — it is meaningfully
+harder under free pixel movement, which has no grid steps to trail). And **capacity is three**,
+declared by the view and audited by the layout suite at exactly that number: the band between the
+fighters' feet and the help line holds three blocks at 320x180, and the demo ships two. This
+entry said "enforced by the build" until M27.1 went looking for the check and found none — the
+layout was proven AT capacity, which proves the drawing and not the data. **M28 made the
+sentence true**, on both sides: a content gate now refuses a manifest declaring more members
+than the screen draws and a map record naming a bigger formation, each proven by a mutant that
+zeroes the constant.
+
+## A member acts the moment they choose, in party order — *M27, reversed in M27.1*
+
+**The fork: when does a member's choice happen?**
+
+- **Each member acts the moment they choose.** *Chosen in M27.1, on play.* The turn belongs to
+  one member at a time: they pick, it happens, and the next member is asked once the blow has
+  landed. [Super Mario RPG](https://www.nintendo.com/us/whatsnew/heres-all-you-need-to-know-about-battling-in-super-mario-rpg/)
+  is the genre precedent — "all the characters will wait their turn to perform an action", and
+  "when it's your turn to act, you'll choose an action" — though it orders those turns by Speed
+  where this template uses party order.
+- *Every standing member declares, then the round resolves* (Final Fantasy I's manual; Dragon
+  Quest gives orders only at the start of a turn). **Shipped in M27 and rejected on play.** The
+  citations were sound and the implementation was correct; what they could not tell us is how it
+  feels to hold the controller. The first person to play it: *"if I choose Attack with the MC, it
+  doesn't attack right after, the new party member chooses. It shouldn't be like that."* A press
+  whose effect is invisible for a whole extra menu reads as a press the game ignored. `rejected —
+  a faithful convention that plays badly here`, and the lesson is that a convention with named
+  games behind it is still a hypothesis about feel.
+- *ATB, interleaved on per-character timers* (FF4–6, Chrono Trigger). Rejected outright:
+  `BattleLogic` has no clock by design — it is handed one physics frame at a time, which is what
+  lets a QA script press on an exact frame. ATB needs the thing this class refuses to have.
+
+**What the reversal deleted, rather than moved.** The declaration queue; the `cancel` that took
+back the previous member's order (nothing is left to unwind once each choice has already
+happened, so a menu `cancel` is refused for everybody — the pre-party rule, restored rather than
+special-cased); and the re-checks asking whether a queued cast or item could still be paid for,
+which guarded a gap between choosing and acting that no longer exists. Redundant defence that no
+test can reach is an unkillable mutant waiting to be misdiagnosed, so it went with the rule.
+
+**The fork: what decides who acts first?**
+
+- **Party order.** *Chosen.* Dragon Quest rolls agility, and rolling anything here
+  would put a random draw in the turn order of a template whose whole determinism story is what
+  makes sixteen play sessions a gate. The precedent that makes this genre-honest rather than a
+  concession: **Final Fantasy I's own resolution order is a random shuffle of all thirteen
+  combatants that ignores everyone's stats**, so the foundational entry does not derive order
+  from a stat either.
+- *An agility stat on `CombatDef`.* `deferred — worth trying`, and it pairs with the backlog's
+  "flee odds and damage variance". The revisit hook moved with M27.1: it used to be
+  `_resolve_next`'s walk over the queue, and it is now `_advance()`, which walks `_living()` in
+  index order and would instead walk it in an agility order settled once per round.
+
+**And the cursor.** `Phase.ALLY` opens only when more than one member is standing — the same
+argument that kept an enemy cursor out when fights went 1v1, applied to the ally side. Skipping
+it at one is what keeps every session written before M27 pressing the same keys. Fallen members
+are not offered as targets, because reviving mid-fight is a verb this template does not have
+(`deferred`; the hook is `ally_rows()`, which returns the standing).
+
+## Falling is not losing, and the living earn all of it — *M27*
+
+- **A member at nought hp is DOWN, not out of the game**: no turns, no xp, and the fight is lost
+  only when everyone is down. Every reference game.
+- **Every living member earns the FULL award.** *Chosen: Dragon Quest's rule.* Final Fantasy I
+  divides among survivors, which punishes a small party for being small — and the demo party is
+  two, the size division hurts most — and needs a rounding decision that one shared xp curve has
+  nowhere to put. The fallen earn nothing in both series.
+- **Revival is the inn, and it needed no new mechanism.** Dragon Quest's priest charges by level
+  and EarthBound's hospitals do it for money; this template already sells a full night through a
+  conversation, so `_rest()` loops the party and a fallen member wakes whole. *Rejected:* a
+  separate revival price or a Life spell — both are a second thing that means "full", and what
+  "full" is already belongs to the running game's `CombatDef`.
+- **`party_unset()` stopped being "nought health".** This is the one place M27 could corrupt a
+  run. Since M13, zero hp has meant "never fought" and is what makes the world derive a player
+  from the curve. With a party, **a leader at zero beside a standing companion is a real,
+  saveable state** — they fell, somebody finished the fight, and the survivors are walking to an
+  inn. Read the old way it refills them on the way into the next fight: a silent resurrection
+  that deletes the consequence the player is walking to town to undo, and **no test about a solo
+  game can see it**. The question is now "nought health AND nobody standing", asked in one
+  function that `to_save` and the refill both read.
+
+## Web audio looping was investigated and nothing was changed
+
+A player reported music not looping in macOS Safari. It turned out the in-game sound setting
+was off. Recorded because the investigation produced two things worth keeping, and because the
+outcome — shipping nothing — is the part most likely to be re-litigated.
+
+- **Kept: the finding.** Godot's web Sample playback does not use the browser's own looping.
+  It waits for the source node's `ended` DOM event and then builds a new node and starts it,
+  in JavaScript. `AudioStreamWAV.loop_mode` is therefore necessary and not sufficient there,
+  and a failure would be silent — music once, then nothing, no error. That is a real hazard
+  and it is now in the backlog above with its one-line fix.
+- **Chosen: ship nothing.** With the volume off, no music played at all in either browser, so
+  there is no observation of web looping succeeding *or* failing. The honest state is unknown,
+  not broken. Stream playback carries a cost Godot's own docs warn about — "high audio latency
+  and crackling, especially when exporting a single-threaded game" — and this build is
+  single-threaded. Paying a documented cost to insure against an unobserved bug is the wrong
+  trade, and the fix is one line the day the symptom is actually seen.
+- **Rejected: keeping it anyway, since it was already written and green.** A change is
+  justified by the defect it fixes, not by the effort spent building it. The worse half was
+  the prose: the decision entry and CLAUDE.md paragraph asserted as fact that Safari had
+  failed to loop, which would have been read later as evidence rather than as a guess.
+- **What did survive the same investigation** is in the entry on the title's voice: the title
+  played into a bus with no voice bound, which was real, reproducible headless, and had been
+  shipping silently on every platform since M22. Two of the three audio gates could not have
+  seen it. That bug was found by reading the deployed build's console while looking for
+  something else entirely.
+
+## A fanfare is a chained play, not a property of the track
+
+- **Chosen: `AudioBus.play_music_then(id, then_id)`** — one-shot-ness lives in the CALL. The
+  same file could be somebody's title theme, so "played once" is a fact about the playing, and
+  a tune that has to be declared a jingle in its own JSON is a tune that cannot be reused.
+- **Rejected: a `loop: false` flag in the track's JSON.** It would have to be plumbed through
+  `MusicTrack` into `AudioBus.reload()`, which binds streams long before anything knows what
+  they will be used for — metadata carried across two layers to answer a question asked at the
+  third.
+- **Rejected: `AudioStreamPlayer.finished` as the clock.** The signal is free and unconnected
+  and would still be wrong: headless runs on a dummy driver that never reports a stream as
+  playing, which is the same measurement that made `music_starts()` exist. Frames are what
+  every other timed thing here counts, and `--fixed-fps 60` pins them.
+- **Chosen: the one-shot is a DUPLICATE with looping off.** `_play` assigns the table's own
+  instance to every later caller, so switching its loop off in place would leave the next map's
+  theme playing once and stopping. Nearly unobservable — the frame counter replaces the stream
+  either way — but `ceili` rounds the count up, so a looping fanfare gets up to a frame of its
+  own head back before it is replaced. Asserted on the PLAYING stream, not just the stored one.
+- **Chosen: a jingle asked for twice stings twice**, bypassing the no-restart guard. A jingle is
+  an event where a theme is a state.
+
+## Defeat stops the music, and a battle's end does not check whether it started one
+
+- **Chosen: `stop_music()` on a defeat.** Every reference game cuts at a game over; the defeat
+  sting is already a cue; and every way OUT of a game over states its own music again — the
+  title plays the manifest's theme, and a restart or a load enters a map, which states one
+  either way. This is the one deliberate behaviour change for a game that had map music only.
+- **Rejected: guarding the restore on having displaced anything.** "Only put the map's music
+  back if this game named a battle theme" reads as obviously right and is a branch nothing can
+  distinguish: when nothing was displaced, the map's music is already playing and the bus
+  refuses to restart a track it is already on. A branch no test can tell from its absence is
+  decoration, and this repo removes those rather than keeping them with a mutant that cannot
+  bite (the `NpcBrain.STATIC` early return, M17). The control test proves the no-op instead.
+- **Chosen: `AudioBus.play_or_silence(id)` as the one answer to "what does this place sound
+  like".** Three callers need it — entering a map, a fanfare handing back, a fight ending — and
+  three copies of "states its music or states silence, never inherits" is two copies too many.
+
+## Knowing a spell is derived from level, never stored
+
+- **Chosen: `SpellDef.learn_level`, filtered per fight by `world_scene._battle_spells()`** —
+  a spell is known the instant the player's level reaches it, computed fresh every time the
+  way `CombatDef.attack_at(level)` is. Dragon Quest learns Heal at level 3 from a flat table
+  and Chrono Trigger unlocks a Tech at a threshold; neither asks the player to do anything.
+  What this buys is everything it does NOT need: no known-spells save field, no migration for
+  it, no learn effect op, no menu verb, and no way for the list to disagree with the level
+  that bought it. A designer retuning `learn_level` retunes every existing save.
+- **Rejected: teach-by-item** (DQ2's Words of Wisdom, later scrolls). It is a real convention
+  and a real supplement, but it *requires* the stored set this design avoids — the whole cost
+  of the alternative is the thing the chosen one is chosen for. `deferred — worth trying`;
+  revisit hook in the backlog above.
+- **Rejected: equip-a-pool** (FFVII Materia, FFVI Espers). Arrives late in its own series and
+  is a system of its own, with its own screen and its own progression. Not a template noun.
+- **Rejected: skill points / a tree.** Not attested in any of the five games surveyed
+  (FF1–6, Dragon Quest, Chrono Trigger, EarthBound, Pokémon) — a later-era and largely
+  different-genre convention.
+
+## Magic is battle-only, and MP joins the party writer rather than the purse
+
+- **Chosen: no field-menu Magic page.** FF6 and Dragon Quest do give Magic its own field
+  command, so this is a real divergence rather than an oversight — but every out-of-battle
+  job such a page would do is already done. A full restore is the inn's entire reason to
+  exist, and there is no warp, light or field-utility mechanic here to hook a spell to. The
+  page would either duplicate the inn or sit empty. `deferred — worth trying`.
+  EarthBound and Chrono Trigger's alternative (fold it into Status) is half-taken already:
+  the Status page carries the MP line, just not the spell list.
+- **Chosen: `set_party(hp, xp, level, mp)`, with mp REQUIRED**, rather than gold's
+  `give_mp`/`spend_mp` pair. Gold moves on its own — a sale, a drop, a purchase — so it needs
+  verbs of its own; MP only ever moves alongside hp, in a fight resolving, a night at an inn,
+  or a level restoring the player. A separate writer would be a second place that has to
+  remember to be called. Required rather than defaulted because a call site that omitted it
+  would silently empty the player, and that reads in play as a bug in whatever spent it.
+- **Chosen: mp inside the save's `party` dict**, not beside it like `gold`. It shares party's
+  "empty means no combat here" answer exactly: a game with no fighting has no magic either,
+  and a top-level key would be the one field claiming otherwise.
+- **Chosen: an old save migrates to nought magic, not full.** The call every migration step
+  before it made — but with a second reason of its own: what "full" is depends on the game's
+  `CombatDef`, which a migration may not reach, so a number invented in `migrations.gd` would
+  be wrong for every game but the one it was copied from.
+
+## A cast has no timing window, and a spell's damage ignores armour
+
+- **Chosen: no timed press on a cast.** The timing window is this template's own invention for
+  swinging a weapon — a thing you aim — where a spell in every game this borrows from resolves
+  because you chose it. Giving magic a window too would make the entire fight one reflex test
+  and leave the menu with nothing to decide.
+- **Chosen: flat damage, ignoring `EnemyDef.defense`.** It is what gives magic a job beside a
+  stronger swing: the answer to something armoured, and a bad deal against something soft.
+  It also means `SpellDef.power` is the damage and nothing else, which is one fewer number to
+  tune against a second one.
+- **Chosen: three kinds — attack, heal, sleep.** Two would have been thinner than anything the
+  genre shipped: Dragon Quest 1 has one character and eight spells, and even that set is
+  damage, heal, Sleep and Stopspell; Sleep is tier one in FF1. `SpellDef.Kind` is a closed
+  enum, `ItemDef.SLOTS`'s shape, so a hand-edited kind fails the build.
+- **Chosen: elements as NAMES, no resistance system.** EarthBound's own shape — PSI Fire and
+  PSI Freeze with shallow mechanical payoff — and it costs nothing where a matrix costs a
+  field on `EnemyDef` and a rule per pairing. `deferred — worth trying`.
+- **Chosen: no targeting step.** Fights here are 1v1, so an offense spell hits *the* enemy and
+  a heal targets *the* player; a cursor would be a mode with one option in it. `deferred` on
+  the day a party or a multi-enemy fight exists.
+- **Chosen: a refused cast is SAID and costs no turn.** Money's precedent exactly — a price is
+  quoted out loud, so a player reaching for what they cannot pay for hears why rather than
+  pressing a key that appears broken. Rejected: hiding unaffordable spells, which would make
+  the list change shape as the player spends, and silently refusing, which is the dead key.
+
+## NPC movement freezes with the player, and the brain is pure
+
+- **Chosen: `NpcBrain`, a pure class answering with an intent vector, driven from
+  `world_scene._physics_process` BELOW the `player_can_move()` gate.** The intent vector is
+  what makes it cheap: `ActorBody` already handles both movement modes, animation and the
+  step meter, and its own header always said the player and every NPC "differ only in what
+  drives them". This is the other driver, and no movement code was written twice.
+- *A Node per NPC with its own `_physics_process`* - rejected: it would move on its own
+  schedule, which means a second answer to "is the world running" and a speaker who can
+  wander off mid-sentence unless something remembers to pause her.
+- *Freeze only the SPEAKER during dialog* - rejected: the halt-to-face done when a
+  conversation opens would silently stop being true for everyone else, and a town walking
+  behind a dialog box while the player cannot move reads as the game having lost the input,
+  not as ambience. Freezing everything is one line's placement and covers pause, battle and
+  game-over for free. Revisit hook: the `_drive_npcs()` call site.
+- *Behaviours as a game hook rather than map data* - rejected: patrol and wander are RPG
+  vocabulary, not one game's design. A hook would mean every game writes movement code.
+- **A typo'd behaviour fails the build.** Falling back to `static` would make `"wonder"` look
+  like a shy NPC rather than a misspelling, and nothing on screen would ever say otherwise.
+- **Every shipped NPC stays `static`,** because seven of ten QA sessions use their bodies as
+  walls. Movement ships as new content placed where no session walks - a constraint found by
+  reading the sessions, not by assuming.
+
+## Two Godot MCP servers, and the addon stays out of the repo
+
+- **Chosen: add `godot-live` (`@satelliteoflove/godot-mcp`) beside `godot`
+  (`@coding-solo/godot-mcp`) in `.mcp.json`, and do NOT commit its editor addon.** The bench
+  (`tools/mcp_bench`) settled the first half: they are complements, not competitors. One
+  scaffolds and spawns a headless engine per call (250ms; 835ms for `create_scene`); the other
+  reads and drives a running editor over a WebSocket bridge at a flat 7ms and cannot create a
+  scene at all. Two entries cost nothing - with no editor running, `godot-live` reports "not
+  connected".
+- *Also commit and enable `addons/godot_mcp`* - **rejected on measurement.** Its `plugin.gd`
+  calls `ProjectSettings.save()` to force an `MCPGameBridge` autoload, and that save **strips
+  every comment from `project.godot`**: the QOA-importer explanation and the `config/game`
+  refusal note both disappeared, and restoring them by hand did not survive the next build
+  that loaded the plugin. Those comments are load-bearing - CLAUDE.md cites both. The forced
+  autoload is then a second problem with no good side: leave the addon in the pack and it
+  ships (+1MB, `exec_commands` included); exclude it and every packed boot prints three
+  `Failed to instantiate an autoload` errors, which is exactly the log noise #41 removed.
+- *Replace `godot` with it* - rejected: it has no `create_scene` and no `add_node`, so
+  scaffolding would be lost outright.
+- **Not a security problem, checked rather than assumed.** The bridge autoload gates on
+  `EngineDebugger.is_active()` and speaks the debugger protocol rather than opening a port,
+  so it is inert in a release export even though it ships. The addon's own source says so and
+  the packed run confirms it. The objection is comment loss and log noise, not RCE.
+- **Deferred - worth revisiting** if the addon gains a way to run without registering the
+  autoload, or if `project.godot` stops carrying documentation worth losing. Revisit hook:
+  `_ensure_game_bridge_autoload()` in `addons/godot_mcp/plugin.gd`, and the on-demand recipe
+  in CLAUDE.md.
+- **`npx` launch kept** for both, despite `npx` costing 494ms to connect against 64ms for a
+  resolved binary. A direct path is machine-specific or an npx cache path that can be
+  garbage-collected; portability beat 430ms once per session.
+
+## The NPC carry was fixed narrowly, not by switching motion mode
+
+- **Chosen: `platform_floor_layers = 0` on every ActorBody.** A player found NPCs being
+  dragged sideways when he walked past them - but only when they approached from ABOVE. The
+  cause is the moving-platform feature: `on_floor` against a moving body inherits its
+  velocity, measured at 0.8px a frame (exactly walk speed) until the NPC was two tiles off
+  her route. Clearing the layers opts out of exactly that and changes nothing else.
+- *`MOTION_MODE_FLOATING`* — **deferred, worth trying** — **TAKEN UP BY M45, see below.** It is
+  what Godot recommends for top-down and it removes the floor/ceiling concept the bug is built
+  on, rather than one feature that hangs off it. Rejected at the time because it is not a bug
+  fix, it is a movement change: floating alters how a body slides along a horizontal wall, and
+  all eleven play sessions then were calibrated against the current sliding. Switching it
+  diverged `finish_the_quest` at the hermit and cascaded into 16 failures - none of them about
+  NPCs. Revisit hook: one line in `ActorBody._init`, plus re-deriving the affected legs.
+- *Collision layers, so actors never touch* — rejected: the player would walk through NPCs,
+  and seven QA sessions use NPC bodies as walls. It also deletes a real interaction rather
+  than fixing it.
+
+## Terrain is authored pixel art in a bank of its own
+
+- **Chosen: a `TileBank` in `data/tiles/<id>.json`, authored in the rig's alphabet.** Tiles
+  were the one art noun still in code — a `const TILES` of six in `TileGen`, drawn by five
+  hardcoded routines (`scatter`, `speckle`, `ripple`, `brick`, `blob`). The cost was not
+  abstract: no routine can draw a door, so `quest_cave.json` built an interior out of
+  grass-world tiles, and a game that wanted a floor edited a file under `scripts/`. Authored
+  grids make a tile as expressive as a character part, and reuse the alphabet a rig author
+  already knows.
+- *Move only the LIST to data, keep the procedural kinds* — rejected: it reads like the same
+  fix and unlocks nothing. A new tile could still only look like one of five existing
+  patterns, so the interior problem would survive the refactor intact.
+- *Keep both — procedural for texture, authored for shapes* — rejected: two ways to author
+  one thing, forever, and the tile appearance would stay half in `scripts/`. The procedural
+  routines earned their keep once, as the SOURCE of the port: every pixel they drew was one
+  of three tones or transparent, so the six shipped tiles converted losslessly and the
+  committed PNGs did not move.
+- *A `tiles` key inside `data/rigs/<id>.json`* — deferred, worth revisiting if the two ever
+  turn out to move together in practice: it needs no new directory and no new style field.
+  Rejected for now because terrain and cast should swap independently — the day an AI sprite
+  source draws the characters, the ground should not have to be redrawn with them. Revisit
+  hook: `SpriteStyle.tile_bank_id`, which is the only thing keeping them apart.
+- **A tile's `ramp` is a default, not a requirement.** Every style previously carried an
+  identical six-key `tile_ramps` dict, so adding a tile was a mandatory edit to all three.
+  The bank names the default and `tile_ramps` overrides it — the same shape as the rig's
+  `slot_defaults`. All three styles dropped their dict entirely, which the drift gate proved
+  was a no-op.
+
+## The shop screen is windows over the world, and asks "how many"
+
+- **Chosen: panels over the live world, with a quantity step.** M18 shipped a full-screen dim
+  with three lines of floating text; the user played it and said, correctly, that it was not
+  a shop. Researched afterwards rather than before (the process failure is in
+  docs/learnings.md): the JRPG UI survey, Game UI Database's buying screens, and shop-flow
+  write-ups converge on list + prices + purse + description + keeper, with pick -> how many ->
+  confirm as the buy flow.
+- *Full-screen shop screen* — rejected: it reads as the game changing screens rather than the
+  player walking up to a counter, and it hides the town the shop belongs to.
+- *A shopping cart (accumulate, then check out)* — deferred, worth trying if a game wants bulk
+  trading: it is the other convention the research turned up. Rejected now because it needs a
+  second confirm surface and a cart to draw, for a template whose shops sell two things.
+  Revisit hook: `ShopMenu.Deal` already carries a count and a total, so a cart is a list of
+  Deals rather than a redesign.
+- **Rotating stock, synthesis shops and deal boards** (the jrpg-design-codex's shop patterns)
+  are GAME design, not template scope: they are what a game builds on `ShopDef`, and baking
+  any of them in would be designing somebody's game.
+
+## Equipment stays in the bag, and arrives at a fight as two ints
+
+- **Chosen: `GameState.equipment` is slot -> id, and the item never leaves the inventory.**
+  The Dragon Quest model. Moving an item out of the bag on equip would make the bag a
+  half-truth ("what you have, except what you are using"), and every existing reader — the
+  pause list, the sell counter, `requires_item` — would need to learn about a second place
+  things live.
+- *Equipment as its own container* — rejected for that reason; revisit hook is
+  `GameState.equipment`, which would become a second Inventory.
+- **Mods reach `BattleLogic` through `of()`'s parameters, already summed.** Stats are derived
+  from level, so gear must be a modifier or there are two sources of truth for one number;
+  and BattleLogic may not reach the Registry, so the world does the resolving.
+- *A stats struct passed into the fight* — deferred, worth it the day a third modifier source
+  appears (a buff, a status effect): the revisit hook is `of()`'s two int parameters, which
+  would become one object. Rejected now because two ints need no ceremony.
+- **Cursed gear (negative mods) is refused** by `ItemDef.problems()`. A game that wants it
+  wants a different noun with its own rules — the same call `battle_heal` made about negative
+  healing.
+
+## A price belongs to the item, not to the shop
+
+- **Chosen: `ItemDef.price`, with `ShopDef` listing ids only.** One price per item is what
+  makes the sell side honest without a second table: a shop that named its own prices would
+  need a buy price and a sell price per keeper, and the two would drift.
+- *Prices on the shop's stock rows* — deferred, worth trying the day a game wants a haggling
+  keeper or a discount: the revisit hook is `ShopDef.stock`, which would become an array of
+  dictionaries instead of ids. Rejected now because one keeper needs none of it.
+- **`price = 0` means not tradable, and it is the default** — the same "zero is off" shape
+  `ItemDef.battle_heal` and `GameConfig.footstep_tiles` already use. An item joins the
+  economy by being priced, never by being forgotten, so quest items are safe by construction.
+- *The shop opening inline from the effect list* — rejected because it does not work:
+  `_on_dialog_closed` applies effects and THEN closes the dialog overlay, so the counter is
+  what the close pops. Deferred instead, which is the narrow fix; applying effects after the
+  close would reorder every dialog effect there is, for a bug that is only about shops.
+
+## Gold is party state, not an item
+
+- **Chosen: `GameState.gold` as its own field, saved as its own key (v6).** It reads like an
+  item ("a thing you carry, counted"), and the Inventory would have held it for free — but an
+  item is something `ItemDef` describes, `Registry` resolves and the bag can refuse; money is
+  none of those. Making it an item would have put a currency in the item list, in the pause
+  bag page, and in every `requires_item` check that was never written to think about it.
+- *Gold as an inventory entry* — rejected: free to build, and it leaks into every surface that
+  iterates the bag. The one real benefit (saves and hooks carry it automatically) is one field
+  and one migration step here.
+- *A `Wallet` class beside `Inventory`* — rejected as premature: a wallet with one currency is
+  an integer with ceremony. Revisit hook if a second currency ever appears: `GameState.gold`
+  plus its two verbs are the only places that would change.
+- **A spend is refused, never clamped**, matching `Inventory.remove`'s all-or-nothing rule —
+  so a purse cannot go negative by construction, and no downstream check has to tolerate one.
+
+## Engine and language
+
+- **Chosen: Godot 4.7 with typed GDScript.** The user's other 2D RPG (saltcharter) is
+  Godot, so its headless gate, mutation harness and gdUnit4 setup transfer directly instead
+  of being reinvented — and a template is worth most in the engine its owner actually
+  reaches for.
+- *Phaser 3 (TypeScript)* — rejected: batteries-included tilemaps and physics would have
+  reached a first screen sooner, but Phaser's own patterns would then be the template, and
+  headless testing of movement is much harder.
+- *Vanilla TypeScript + Canvas* — rejected: everything would be ours and testable, but it
+  means writing a renderer, a tilemap and a physics layer before writing a game.
+
+## The sprite generator is procedural, with a source seam
+
+- **Chosen: a code-native paperdoll rig, deterministic from a seed, behind a
+  `SpriteSource` interface.** Consistency is the actual requirement, and a procedural rig
+  gives it *by construction*: every character is composed from the same parts, the same
+  palette ramps and the same outline rule, so they cannot drift apart. It is free, offline,
+  reproducible, and every consistency rule can be a test.
+- *AI-first (PixelLab / Retro Diffusion)* — deferred, worth trying: higher fidelity, and
+  its `character_id` does keep one character consistent across its own animations. Rejected
+  as the default because it needs an API key and credits, cannot be regenerated
+  deterministically in CI, and a template that cannot build its own art offline is not a
+  template. Revisit hook: `scripts/spritegen/sprite_source.gd`.
+- *Layered LPC art (Universal LPC Spritesheet)* — ~~rejected~~ **reversed by M40
+  (2026-09-01)**, and both objections were answered rather than waved: the licence is now a
+  per-style allow-list the importer ENFORCES by file (and 85% of the catalogue offers
+  credit-only terms — measured, 11,868 of 13,915 files in the generator's own CREDITS.csv), and
+  LPC is one value of a `sheets_from` axis beside this procedural default, which stays the
+  offline, licence-free arm every gate runs on. See "Hand-drawn art enters through an import".
+- **Expected quality tier, stated up front:** clean GB/SNES-era chibi with a strict
+  palette. Not hand-painted. Higher fidelity is a source swap, not a rewrite.
+
+## An edge is composed from QUARTERS at generation time — *M41*
+
+The demo's ground has been hand-drawn LPC art since M40d and every shoreline was a hard edge.
+The art ships the pieces for a soft one; the question was what to build them into, and the
+constraint that had deferred this twice was that an edge seems to need a cell to be more than
+one tile id.
+
+- **Chosen: a `ring` on a tile, composed into extra atlas columns at generation time.** A tile
+  names twelve transition pieces and the ground they lie `over`; `TileGen` appends a block of
+  the 47 blob shapes per group, and `MapBuilder` picks one from a cell's eight neighbours. A
+  cell is still one tile id — the shapes sit in columns past the paintable tiles, which no map
+  can spell. So the map format, both editor translators, `MapData.problems`, every map file and
+  all 23 play sessions were untouched, and a bank with no ring produces a byte-identical atlas.
+- **Quarters, not whole pieces.** *Chosen by the user, 2026-09-03, offered against the
+  alternative.* LPC's thirteen shapes cannot draw a strip ONE tile wide — it needs a north edge
+  and a south edge in the same cell — and the village and hollow ponds and half the demo's paths
+  are exactly that. The alternative was widening the maps, which moves the walls and water the
+  play sessions are anchored against. Composing each of a cell's four quarters independently is
+  RPG Maker's autotile format (named secondhand, from the format rather than a source) and
+  yields the 47-tile "blob" set Tiled's own terrain documentation names.
+- *Godot's TileSet terrain sets* — rejected. Three reasons, in order of weight: the matching is
+  engine-internal, so a partial set is scored by rules the docs do not state and a gate could
+  only assert what it observed; it is a runtime API, so testing it needs a scene where the whole
+  scheme is otherwise a pure function; and Match Corners and Sides over thirteen pieces has the
+  same one-tile-wide hole, so it would not have solved the problem that made this milestone.
+- *A second layer drawing the fringe over the ground* — rejected. It trades the atlas for a
+  transparency the ground rule forbids, and it does not remove the which-material-is-beneath
+  question, it just moves it to draw time.
+- *Composing per MAP rather than per style* — rejected. The atlas is a property of the style,
+  the drift gate compares one file per style, and 47 shapes is a few kilobytes.
+- *A `transitions` key on the STYLE* — rejected for M40d's own reason: a bank owns pixels, and a
+  style that also described a bank's contents would be two places to disagree.
+- **Two ponds were deepened rather than the shoreline thinned.** *The user's call, 2026-09-03,
+  offered against leaving water hard-edged and against shipping it as it was.* LPC's water bank
+  is about ten pixels of transparency plus six of mud per edge, so at 32px a pond ONE tile tall
+  has no water left in it - both banks meet in the middle and it reads as a mound of earth. The
+  village and hollow ponds were one tall. The bank is the artist's drawing and the pond is ours,
+  so the maps moved: one row each, and every scripted session still passes byte-identically
+  because the rows added were a dead-end corridor against a wall and a strip of grass nothing
+  walked. The first attempt deepened the hollow SOUTHWARD, which blocked the map's only
+  north-south thoroughfare and failed twelve sessions - the direction was chosen by measuring,
+  not by looking at the picture.
+- **`c` defaults to the tile's own plain art**, so the shape with nothing open is pixel-for-pixel
+  the flat tile. That is what makes the whole thing additive rather than a migration — and
+  getting it wrong once produced a pond made entirely of grass, which every structural test
+  passed.
+- **CORRECTED IN M48.** This bullet used to read *"DEFERRED — worth trying: an edge between two
+  materials that BOTH carry a ring (today the second one wins by group order and draws over the
+  first). Hook: `TerrainEdges.pick_group`, which already ranks them."* Every clause of that was
+  wrong. The case is not deferred — `water`'s `over` has named `path` since this very milestone,
+  and the cave pool has had a shoreline ever since. There is no group-order contest: `pick_group`
+  ranks ONE tile's own `over` groups and cannot see a neighbour's ring, so it was never the hook.
+  What was actually missing was a RULE, and M48 added it. **The Wang-set export this bullet also
+  deferred is taken up by M48 too** — the crop in `map_io._copy_atlas_to` is gone, and the fork it
+  turned into is the last entry in this file.
+- **Still gaps rather than forks:** animated water (needs a clock the tile runtime has not) and
+  multi-tile objects (need a map record rather than a cell).
+
+---
+
+## Terrain pixels are named by the BANK, not by the style — *M40d*
+
+The style already said where its SHEETS come from (`sheets_from`). The ground needed the same
+axis, and the question was where to put it.
+
+- **Chosen: `pixels_from` on the tile bank.** A bank already IS the recipe — the ordered list of
+  ids with `solid` and `decor` on each — so `rows` (authored in the rig's alphabet, drawn in the
+  style's ramps) and `files` (each tile a cell cut from art somebody drew, listed with its artists
+  and their licences) are two ways of filling in the same list. A style stays "which bank", and
+  one game can paint hand-drawn ground while another paints the rig's own with no third concept.
+- *A `tiles_from` axis on the style, beside `sheets_from`* — rejected. The style would then name
+  a bank AND say something about that bank's contents, which is two places to disagree; and a
+  bank moved between styles would carry a claim that no longer matched it.
+- *A separate `TileImport` class, with `TileGen` dispatching* — rejected. It would have to
+  re-answer `ids`, `solid_ids`, `decor_ids`, `at` and `size` for a contract that does not differ
+  by arm; only the PIXELS differ, and that is one function. The `TiledMap`/`LdtkMap` pattern this
+  looked like is two FILE FORMATS answering four names, which is not this shape.
+- **Flat tiles now, transitions later.** *Chosen, by the user, 2026-09-02.* Only the plain fill
+  cell of each LPC ground sheet is used. Every reference draws the edge between two materials as
+  its own tile and LPC ships the ring for it; this template paints one id per cell, so a shoreline
+  is a hard edge. `deferred — worth trying` with the hook in the backlog above. See
+  `docs/GENRE_CONVENTIONS.md` §15, which is measured from the artwork rather than recalled.
+- **Both downloads.** *Chosen, by the user.* Lanea Zimmerman's LPC base tileset and Daniel
+  Armstrong's castle floors from the OpenGameArt repository, plus bluecarrot16's plants pack for a
+  bush — the base set has none, and the demo's own dialogue names one. All CC-BY-SA, which the
+  style already accepts and the composed sheets already are.
+- *Take the bush from a treetop corner or a boulder in the base set* — rejected: it reads as a
+  shrub or a rock, and the warden's directions say "under the roots of the one bush".
+- **The credits file exists exactly when something imported went into it**, emitted after both
+  arms rather than inside the import one — so a style that draws its own characters and stands on
+  somebody else's ground still gets one.
+- **Animated water and multi-tile objects** (a whole tree) are named as gaps rather than
+  deferred forks: the first needs a clock the tile runtime does not have, the second needs a map
+  record rather than a cell.
+
+---
+
+## Hand-drawn art enters through an import, not a compositor — *M40*
+
+The user chose the Universal LPC Spritesheet Character Generator as the demo's main sprite
+tool, which reverses the entry above. How the art gets in:
+
+- **Convert the generator's own export, at build time.** *Chosen.* `data/imports/<style>/<id>/`
+  holds the two files the web app downloads; `LpcImport` re-cuts the walk block into this
+  template's sheet; `gen_sprites.gd --verify` drift-gates the output with no new step. Nothing
+  new ships and the web app is the tool — the Tiled shape exactly.
+- *Compose from the recipe (the URL hash) against a local checkout of the generator* —
+  rejected AS THE GATE'S SOURCE: the repository is 1.5 GB and a drift gate that needs it is a
+  gate CI cannot run. **Amended the same day:** a fetch-on-demand AUTHORING tool is a different
+  thing. `tools/lpc_compose.sh` pulls the ~20 small files a recipe names into a gitignored cache,
+  `LpcCompose` reproduces the browser's rendering (the palette recolour turned out to be a
+  by-index remap at ±1, ported in forty lines), and the recipe is committed beside the two
+  exports — which stay the drift-gated input, so the gate still never reaches the network.
+- *Parse the LPC sheet at runtime* — rejected for the map importer's reason: a second shipped
+  format behind `FileSpriteSource`, and the export never reads the committed file anyway.
+- *Downscale LPC 2× to keep 16px tiles* — rejected: it deletes exactly the detail that was the
+  point. LPC is 64px cells on 32px tiles, so the demo's world doubles (phase B).
+
+Idle: **walk frame 0**, the rig's own convention. *LPC's idle rows* — rejected: they exist only
+for assets redrawn for the LPCE animations, and a hat that vanishes when a character stops is
+worse than no breathing. Revisit hook: the clip table in `LpcImport.build`, the day every layer
+the demo uses covers `idle`.
+
+Licences: **both buckets** — CC0/CC-BY/OGA-BY and CC-BY-SA — the user's call once the terms were
+explained; GPL-only stays refused. Consequence: `assets/generated/lpc32/` ships CC-BY-SA and an
+in-game credits surface is owed (phase C). *Credit-only* — `deferred — worth trying` for a game
+that must ship closed: one edit to `licenses` on the style, and the importer names every layer
+that has to go.
+
+Phase B, **built 2026-09-02**: `SpriteStyle.world_scale`, the window at `UiScale.DESIGN_SIZE ×
+scale`, and every UI CanvasLayer drawn at that scale. One correction to the plan recorded above:
+the battle sprite scale is **DERIVED** (`SPRITE_SCALE / world_scale`) rather than a field on the
+style. It is a property of the battle screen's own bands — the capacity `MAX_PARTY` and `MAX_FOES`
+are declared against and the layout audit measures at — so a second copy in data would be a second
+opinion about a layout only one gate measures, and the two would drift the first time the bands
+moved. ~~*A `battle_sprite_scale` field* stays `deferred — worth trying`~~ — **taken up by M42**,
+at exactly the hook this entry named: the divisor stayed and the numerator came from data. The
+reasoning above is what M42 reversed, and the counter-argument is short. The multiple is not a
+property of the screen's bands, it is a property of the ART: how big a character is drawn is a
+consequence of how big the character IS, which a style knows and a screen cannot ask. The drift
+this entry feared is closed the other way instead — `test_battle_layout` reads the field and
+asserts what lands on the glass, so the layout audit and the data are the same statement rather
+than two.
+
+The concrete cost of deriving it: lpc32 drew a 64px cell at twice size, 128 of the 180 design
+pixels the layout has, a third of the screen for one fighter — and the readouts had nowhere left
+to go but on top of the sprites they belonged to, which is the screen the person this is built
+for rejected on sight.
+
+*Keep 320×180 with 32px tiles* (ten tiles wide) is the alternative the user can still look at.
+*A SubViewport for the world, with the UI outside it* — rejected: it moves every screen into a
+second tree and routes input through a container, where scaling the layers changes one property
+per layer and no screen at all. *`GameConfig` in TILE units rather than pixels* was
+`deferred — worth trying` and is **taken up by M44** below. Its hook was wrong, which is worth
+recording: it named `Locomotion.read_input`, which reads no config at all — the consumers are
+`Locomotion.step` and three other pure classes, none of which has a tile size.
+
+**Saves became TILE units in the same phase (v10)**, which was not in the original plan and is the
+part that could not be deferred: a save recording pixels describes a place only while the art does
+not change, so the demo's own move to 32px tiles would have moved every existing save. The field
+was RENAMED with its unit (`position` → `tile`) rather than quietly re-meaning, so the compile gate
+enumerated every reader. *Migrating positions at load time against the live style* — rejected: a
+migration that consults the running game carries one file to different places depending on which
+game loaded it, which is drift no test can reproduce; the divisor is frozen at 16 instead.
+
+## Cell size is 16×24, not 16×32
+
+- **Chosen: a 16×24 character cell on 16px tiles.** Planned as 16×32, changed while laying
+  out the rig: a 24-row cell gives a head that is a clean third of the height (the chibi
+  proportion that stays readable at 16px wide) with no dead space, and 24 = 1.5 tiles keeps
+  characters and terrain in one size family. A 32-row cell left eight empty rows above every
+  head that only a tall hat would ever use.
+- *16×32* — deferred: worth revisiting if the template ever wants hats, helmets or long
+  weapons that break the head line. Revisit hook: `cell_size` on the style plus the `at`
+  offsets in the rig; nothing in code assumes 24.
+
+## Slots that must share a colour, share it
+
+- **Chosen: `slot_ramp_from` in the rig — sleeves follow the body, hands follow the head.**
+  Randomised characters otherwise get pale hands on a dark face, which reads as a rendering
+  bug rather than as a data one. An explicit ramp on the character still wins, so gloves are
+  expressible.
+- *One ramp per slot, always* — rejected: simpler, and produces a visibly broken cast the
+  moment skin tone is randomised.
+
+## Generated colours are computed in whole bytes
+
+- **Chosen: `Color8` arithmetic for the tinted outline, not `Color.darkened()`.** An 8-bit
+  image truncates a float channel while `Color.to_rgba32()` rounds it, so a float-derived
+  colour reports one value and comes back out of the PNG one unit darker. The palette gate
+  caught it on the tinted style's first run.
+- *Loosening the palette gate to a tolerance* — rejected outright: a palette whose members
+  depend on which side of the pipeline you ask is not a palette, and a gate with a tolerance
+  cannot catch the next colour that leaks in.
+
+## Rigs and stamps are JSON, not .tres
+
+- **Chosen: `data/rigs/*.json` holding ASCII pixel grids.** Pixel art authored as text
+  (`.` transparent, `1/2/3` = ramp tones) is readable and diffable in a way a binary or a
+  `.tres` multi-line string is not, and it is the idiom that worked in the user's earlier
+  jrpg-1 sprite module.
+- *Resources (.tres) for parts* — rejected: multi-line string arrays in a `.tres` are
+  hostile to edit by hand and produce unreadable diffs.
+- *A dedicated editor* — deferred: the Sprite Lab scene shows the result; an editing UI is
+  a project of its own.
+
+## Free pixel movement, not grid-step
+
+- **Chosen: free movement with four-direction facing**, axis-separated collision so walls
+  slide. It feels better to move around in, and it is the model both of the user's earlier
+  2D projects used.
+- *Grid-step* — **shipped in M9** as a mode rather than a replacement: `grid_step_pixels` at
+  zero was free movement, and set to the tile size it was one press per tile. (M44 made it the
+  bool `grid_step`; the distance is now the bound tile size and cannot be anything else.) See "Grid stepping
+  is a distance, not a timer" below. (This bullet said "deferred" for eleven milestones after
+  the thing it deferred had shipped.)
+
+## Maps are data files, not scenes
+
+- **Chosen: `data/maps/*.json` — ASCII rows plus a legend, built at runtime.** A map you
+  can read in a diff and generate from a script is worth more in a template than one that
+  needs the editor open, and it keeps "add a game" inside `data/`.
+- *Editor-authored .tscn maps* — not rejected: `MapBuilder` accepts a PackedScene too, so a
+  project that outgrows ASCII can keep the same spawn/warp plumbing.
+
+## Committed art is PNG + JSON only
+
+- **Chosen: the generator writes PNGs and a sheet JSON; `SpriteFrames` and `TileSet` are
+  built at runtime.** A committed `.tres` referencing a texture that has not been imported
+  yet breaks on a fresh clone, and it would weld the contract to Godot — the same PNG+JSON
+  pair can feed any engine.
+- *Committing SpriteFrames/TileSet resources* — rejected: faster to load, but it puts
+  engine internals in the art pipeline and makes a fresh checkout order-dependent.
+
+## CI installs Godot itself, with a pinned checksum
+
+- **Chosen: download the official build and verify a SHA-512 pinned in the workflow.** A
+  checksum served by the same host as the file cannot detect that host serving a different
+  file, so the sum lives in the repo where a change to it is reviewable.
+- *A third-party setup-godot action* — rejected: one more supply-chain dependency to
+  SHA-pin and audit for a step that is four lines of `curl` and `sha512sum`.
+
+## The web build is single-threaded
+
+- **Chosen: `variant/thread_support=false`, pinned in the committed export preset.** A
+  threaded web build needs `SharedArrayBuffer`, which needs the COOP/COEP cross-origin
+  isolation headers — and GitHub Pages cannot send custom headers, so a threaded build would
+  export successfully, deploy successfully, and then refuse to start in the browser. Godot
+  4.3+ makes single-threaded the default and supported path for exactly this reason.
+- *Threaded, hosted somewhere that can send headers* — deferred: better audio latency and
+  real threads, at the cost of the demo no longer being one file in a repo. Revisit hook:
+  `export_presets.cfg`, one line, plus a host that is not Pages.
+
+## Deploy waits for CI rather than racing it
+
+- **Chosen: the Pages workflow triggers on `workflow_run` of the check workflow, gated on
+  `conclusion == 'success'`, and checks out that run's `head_sha`.** A plain `push` trigger
+  runs the deploy *beside* the tests, not after them — which looks identical every day until
+  the one where a red build ships. Pinning the SHA matters too: `workflow_run` checks out the
+  default branch's HEAD by default, which is not necessarily the commit that was tested.
+- *A `needs:` in one workflow* — rejected: it would couple the demo's slow template download
+  to every PR's feedback time.
+
+## The QA harness drives the real game
+
+- **Chosen: an autoload that reads a JSON script and drives the running game.** Not a choice
+  so much as a discovery: `-s tools/x.gd` cannot even *load* a scene whose script names an
+  autoload, because singletons are not registered as identifiers in that mode. Anything that
+  needs the real game must be driven from inside it.
+- Two things it must do that were not obvious. Count **physics** frames, not idle ones —
+  headless they run at wildly different rates, so "hold right for 30 frames" would mean a
+  different distance on every machine. And press through `Input.parse_input_event`, not
+  `Input.action_press` — the latter sets input *state* (what polling reads) and never
+  delivers an *event* (what handlers read), so a harness built on it can move the player
+  around perfectly and never press a button.
+
+## Testing: gdUnit4, vendored, with a mutation harness
+
+- **Chosen: gdUnit4 6.2.0 committed into `addons/`, run from the CLI, plus
+  `tools/mutants.tsv`.** Vendoring makes a fresh clone runnable with no plugin install, and
+  the mutation harness is what keeps the other gates honest.
+- *Trusting a green suite* — rejected on the evidence: gdUnit4 exits 0 when a discovery
+  crash means it ran nothing, so `check.sh` counts executed suites against suites on disk.
+
+## Which game runs is a manifest resource, chosen by a precedence that refuses to guess
+
+The fork: `world_scene.gd` held `demo_town`, `start` and `hero` as consts, so a second game
+could not exist without editing the generic world. Where should those live, and what picks
+between two games?
+
+- **Chosen: a `GameManifest` resource per game in `data/games/`, selected by
+  `--game=` > the `application/config/game` project setting > "there is exactly one".**
+  A resource rather than loose settings because a game is a *set* of decisions that travel
+  together, and because `config: GameConfig` can then be a real reference the exporter
+  follows rather than a path string that fails at first step.
+- *Extra fields on `GameConfig`* — rejected: `game_config.tres` is the numbers a designer
+  tunes, and "which map do we start in" is not a number. Two games sharing one feel would
+  also have had to duplicate every tuning value.
+- *A `--game` argument only* — rejected: the exported web build has no command line, so the
+  browser demo could never be anything but the default.
+- *A project setting only* — rejected: the QA harness cannot edit `project.godot` on its way
+  past, so a second game would only ever be reachable by walking to it through a warp.
+- *Picking the first game when nothing chooses* — **rejected on the failure mode, which is
+  the whole point of the entry.** Booting the wrong game does not present as a selection
+  bug; it presents as the game you meant to run behaving strangely, and you go and debug
+  that. Refusing costs one line of config and is unmistakable.
+- *A title screen that lists the games* — `deferred — worth trying`. It is the friendly
+  version of the same choice. **Its stated blocker is gone: M22 shipped `TitleScreen` and
+  `Router.State.TITLE` is entered on every boot** — what is left is the picker itself. Revisit
+  hook: `scripts/data/game_select.gd::ids()` already returns exactly the menu such a screen would
+  show, and `world_scene._ready()` is where a picker would consume `choose()`'s empty answer. **Taken up by M50**, as a row on the title rather than a list of its own (the M50 entry on picking a second game).
+
+## Game code lives in `games/`, is reached through `GameHooks`, and never names an autoload
+
+The fork: the template had nowhere to put gameplay. Every new mechanic landed in
+`world_scene.gd` — the file whose entire job is to be game-agnostic — and `ARCHITECTURE.md`
+said so out loud ("new mechanics → new files under `scripts/`").
+
+- **Chosen: a `GameHooks` subclass under `games/<id>/`, named by the game's manifest, handed
+  a `GameContext` rather than the autoloads.** One name in data resolves to one object with
+  one lifecycle, it is a `RefCounted` testable with no scene tree, and `on_interact`'s
+  return-`bool` shape is what a battle or a shop would need later without re-cutting the seam.
+- *A per-kind handler registry that game code registers into* — rejected: something has to
+  run before anything can register, and the only "runs at boot" slots are autoloads or
+  `world_scene._ready`, so it needs the hooks seam as its bootstrap and you end up with two
+  mechanisms. `deferred — worth trying` as an internal shape once a game outgrows a `match`;
+  hooks can hold one privately. Revisit hook: `GameHooks.on_interact`.
+- *A script path per map or per object in the map JSON* — `deferred — worth trying` as an
+  escape hatch, rejected as the primary seam: the interesting state is cross-cutting ("she
+  reacts because you opened the chest"), so it routes through flags anyway and the flag
+  vocabulary ends up spread across a dozen files with nowhere to validate it. It is also the
+  hardest to gate — there is no single function whose absence a mutant can prove.
+  Revisit hook: `Interaction.resolve`, which already takes hooks as a parameter.
+
+The **no-autoload** rule is the load-bearing half, and it is mechanical rather than stylistic.
+`--check-only` and `tools/compile_all.gd` both skip any script naming a singleton, so game
+code reaching for `GameState` would leave two of the four gates without saying anything.
+`GameContext` is therefore a snapshot plus an effect list — the `DialogRunner` pattern, which
+collects flags and lets the caller apply them — and `LintCore.RULE_AUTOLOAD` fails the build
+rather than a doc paragraph asking nicely.
+
+Three things stayed deliberately untouched, each with the reason it would have been the wrong
+work now:
+
+- *`Router`* — it owns input, not scenes, and does that correctly. `TITLE` and `PAUSED` are
+  unreachable because no title screen or pause menu exists: a missing feature, not a broken
+  router. (Its `state_name()` is a positional array literal that would mis-name every state
+  if a member were ever inserted — `deferred — worth fixing`, revisit hook `router.gd:27`.
+  **Both fixed in M10**: the pause menu reaches `PAUSED`, and the name is derived from the
+  enum.)
+- *Dialog effects* — conditional nodes, `clear_flag`, item/warp/sound nodes. An NPC reacting
+  to what you carry is three lines of game code (`ctx.say(a if ctx.has_flag(k) else b)`), and
+  `set_flag(key, false)` gives clearing for free. Inventing a mini-language instead would
+  have proven nothing about whether the hooks seam works, which is the point of the milestone.
+  `deferred — worth trying`; revisit hook `dialog_runner.gd::_go_to`.
+- *`SaveData`* — a quest is expressible in `flags` and `seen`, both already typed, persisted
+  and migrated. Adding a per-game dictionary is purely additive later and does not re-cut
+  this seam. `deferred`; trigger: the first game that needs a count rather than a boolean.
+  **That trigger fired in M12** — see "Items are the template's business after all".
+  (A `game` FIELD landed in M10 for a different reason — see below — but the per-game
+  dictionary is still deferred on the same terms.)
+
+## The second game lives in this repo rather than in one that consumes the template — *superseded in M11*
+
+The fork: the template's claim needed testing by building something else on it. Where should
+that something else live?
+
+- **Chosen: `data/games/quest.tres` plus `games/quest/`, beside the demo, in this repo.** CI
+  runs both games' play sessions on every push, the gates cover the second game's content the
+  same way they cover the first, and the acceptance criterion is checkable — the commit that
+  adds the game must not touch `scripts/`, `tools/` or `scenes/`, which `git diff --stat`
+  answers. It also makes the repo a worked example rather than a description of one.
+- *A separate repo that pulls the template in* — `deferred — worth trying`, and it tests
+  something this cannot: **starting from the template**, which is the actual use case. Cloning,
+  renaming, deleting the demo, and finding out what breaks is a different question from
+  "can a second game coexist". Not done now because template fixes would have to be ported
+  back by hand, and CI could not see the result. Revisit hook: `data/games/` — a game is
+  already a self-contained set of files, so lifting one out is a copy rather than a surgery.
+- *A branch, or a throwaway spike* — rejected: a spike answers the question once and then
+  rots, and nothing keeps the answer true. The point of the exercise is a claim that stays
+  checked, which needs the second game in CI.
+
+What it found, which is the argument for having done it at all: three template defects that
+six milestones of unit tests, mutants and gates had not — a QA op that raced the steps after
+it, an art gate that walked a different set of directories than the game did, and three
+disagreeing lists of "which directories does this project own".
+
+## Nothing choosing a game asks a human, rather than refusing — *superseded in M11*
+
+M7 decided that two games with nothing choosing between them is a **refusal**, because a
+guessed game presents as the game you meant to run behaving strangely. That was right, and it
+was right for a reason with an expiry date: there was nobody to ask. This is that entry
+landing, and it does not overturn the decision so much as finish it.
+
+> **Superseded.** One game ships as of M11, so there is nothing to choose between and the
+> picker was deleted with the second game. The precedence it consumed is unchanged, and the
+> refusal below is what a second game would meet again. Kept for the reasoning, not as
+> current behaviour.
+
+- **Chosen: the picker is what happens when `GameSelect.should_ask()` is true** — more than
+  one game, and neither `--game=` nor the project setting nor "there is only one" having
+  answered. `choose()` is untouched, so the precedence stays one pure function in one file,
+  and the picker is a new *consumer* of its "nothing chose" answer rather than a competing
+  rule. Everything that already chose still skips the menu, which is why all seven scripted
+  play sessions run unchanged.
+- *A picker that always appears at boot, with `--game=` skipping it* — rejected: it makes the
+  project setting mean "preselected row" instead of "the game that boots", and a template
+  cloned down to one game would show a menu with one entry in it.
+- *Reaching the picker only through Tab, leaving boot alone* — rejected: the deployed page has
+  no command line and no Tab-before-you-start, so the one surface where choosing matters most
+  would be the one surface that could not.
+- *A separate title scene, swapped to with `change_scene_to_file`* — `rejected — for now`. It
+  would fix the four build-once guards for free by rebuilding the world from scratch, but it
+  is the repo's first ever scene change, `Router` deliberately owns input rather than scenes,
+  autoloads survive a swap so `GameState.reset()` is still needed, and the deferred-frame
+  timing is a new source of races for a QA harness that steps in physics frames. The overlay
+  costs one `CanvasLayer` and a teardown that is testable in one file.
+
+**The setting ships empty**, which turned two gates red and both fixes were improvements:
+`smoke_boot` now validates *every* shipped manifest rather than only the one that boots — with
+a picker, every game is reachable from the first screen — and `test_game_select` asserts the
+project either boots a game or offers one, which is the real property.
+
+Closing the M7 note that pointed at `GameSelect.ids()` as the revisit hook: a menu needs
+titles, start maps and characters, so it is built on `manifests()` and `unresolved()` instead.
+
+## A second game varies only what its design demands
+
+The Barred Gate shipped with a `GameConfig` of its own, whose only difference from the
+template's was `allow_diagonal = false` — "the pure four-direction feel of the earliest
+top-down RPGs". The reasoning was fine. The decision was not mine to make quietly.
+
+The user found it in the first minute of playing and asked the right question: *what else is
+missing?* That is the real cost. A second game exists to **isolate** what building a game
+actually changes, and every gratuitous difference destroys that: once one thing differs for no
+reason the design asked for, the player cannot tell a deliberate choice from a defect, and the
+control instance has stopped being a control.
+
+- **Chosen: The Barred Gate shares `data/game_config.tres`, and `dusk16` matches `gb16`'s
+  animation timing exactly.** The only axis the second game moves is colour — palette and
+  outline. Anything that feels different from now on is a bug, by construction.
+- *Keep the four-direction feel as a shipped design choice* — rejected. It is a good idea for
+  some game; it is a bad idea for the one whose job is to hold everything else constant.
+  A game that wants it sets one field, and `GameConfig.allow_diagonal` is still there for it.
+- *Keep `dusk16`'s slower gait* — rejected for the same reason, though it was the more
+  defensible of the two: `STYLE_GUIDE` does list timing as a style axis and `nes16` varies it.
+  But the game wearing `dusk16` is the control, so its style is a control too.
+
+The rule this leaves: **a game brings its own config when its design needs one, not to have
+one.** `GameManifest.config` is still per-game — the capability is the point of the seam — and
+`docs/ARCHITECTURE.md` now says when to use it.
+
+`tests/fixtures/qa/quest/walk_diagonally.json` is the gate. Every one of the seven play
+sessions that existed held a single direction at a time, so none of them could see this — the
+new one holds two and requires both axes to move.
+
+## Grid stepping is a distance in the config, and it has no clock
+
+One press = exactly one tile, tweened, instead of free pixel movement. The first item in this
+file's backlog, now built.
+
+- **Chosen: a pure `GridWalker` beside `Locomotion`, one per actor, selected by
+  `GameConfig.grid_step_pixels > 0`** (M44: `grid_step_px() > 0`, the flag times the bound tile). The direction still comes from `Locomotion.step()`, so
+  `allow_diagonal` and the ties-go-horizontal rule have one implementation between the two
+  modes rather than two that drift.
+- *A second implementation of `Locomotion.step()`* — which the backlog entry and
+  `locomotion.gd`'s own comment both promised — **rejected once it was looked at.** `Locomotion`
+  is static and an actor holds only its facing, so there is nowhere to keep how far through a
+  step it is. The per-actor state was the entire cost, and the comment has been corrected.
+- *A `movement_mode` enum* — rejected: no enum exists in any `scripts/data/` resource,
+  `camera_smoothing > 0.0` sets the "zero means off" precedent, and an enum would leave the
+  step *distance* homeless. An actor holds a `GameConfig` and never the map's `SpriteStyle`, so
+  the distance has to live with the selector or be plumbed through `setup()`.
+  `GameManifest.problems()` checks the step against the start map's tile size, which is the one
+  place both facts are in scope.
+- *Landing the step by predicting distance-per-frame* — rejected on measurement.
+  `move_and_slide()` picks its own delta (physics inside a physics frame, idle otherwise), so a
+  prediction overshoots in exactly the hand-driven loop the integration tests use. A step ends
+  when its target stops being *ahead*. `test_engine_assumptions.gd` pins that engine fact.
+  The cost is that a step's duration quantises to whole frames — up to one frame per cell,
+  invisible and consistent, where a mispredicted landing would be neither.
+- *A pause between steps* — `rejected — not built`. Continuous walking under a held key is the
+  expected feel, and a pause of three frames or more makes any "N still ticks means blocked"
+  helper report blocked in open ground.
+- *Input buffering* (a direction tapped mid-step being remembered) — `deferred — worth trying`.
+  Today a tap during a step is lost and a direction still held when one ends is picked up on
+  that same call, so there is never an idle frame between steps. Revisit hook: `GridWalker.plan`,
+  which already sees the input every frame and could latch it.
+
+**No shipped game uses it.** `data/game_config.tres` keeps free movement, both manifests keep
+sharing it, and not one of the QA fixtures changed — about 10 of their steps encode
+"N frames = M tiles" arithmetic that grid mode would void. The honest gap: the scripted play
+gate never exercises the mode. It is covered by 21 unit cases and 8 integration cases driving a
+real body into real walls, plus 15 mutants.
+
+A blocked diagonal **slides** along its free axis rather than stopping dead, matching
+`move_and_slide` and the existing diagonal-slide gate. It is free here: the grid is
+axis-aligned, so the slid-to position is itself a cell centre.
+
+## Saves are per game, and a file must agree with the directory it sits in
+
+The fork: two games ship in one build, sharing this save format and these field names. Whose
+progress is `slot_0.json`?
+
+- **Chosen: `user://saves/<game>/slot_N.json`, and the save NAMES its game.** "Slot 1" then
+  means one thing — the first slot of the game you are playing — and the pause menu lists only
+  slots it could actually load. The name inside the file is checked against the directory on
+  every read, so a file copied, moved or hand-edited into the wrong game is refused and parked
+  rather than loaded. That check is the point: a demo save loading into the quest does not
+  present as a mismatched file, it presents as the quest being broken, and you go and debug
+  the quest.
+- *Shared slots that switch game on load* — `deferred — worth trying`: one list, and loading
+  a slot boots the game it belongs to. Rejected for now because a load becomes a full teardown
+  and boot rather than a map entry, and the slot list has to render every game's palette and
+  character to be readable. Revisit hook: `world_scene._commit_load`, which would call
+  `start_game(manifest)` before `restore(data)`.
+- *One flat namespace with the game stored inside* — rejected: the slot numbers still collide,
+  so "slot 1" means whatever was saved there last, and the menu has to filter a list whose
+  numbering then has holes in it.
+
+### The v2→v3 step takes the game as an argument
+
+A file older than v3 cannot say which game it is; the directory it was found in is the only
+evidence there is. So `Migrations.apply(raw, game)` takes it as **data**, which keeps every
+step a pure function of `(file, game)` — the frozen-forever property a migration needs.
+
+- *An adopting loader* (fill the field in from the caller after migrating) — rejected: it
+  makes "this file said nothing" and "this file said the right thing" the same case, so the
+  cross-check that catches a misfiled save can never fire on an old one.
+- *Refusing everything below v3* — rejected: the chain exists precisely so old saves survive,
+  and refusing them makes `supported_versions()` a lie.
+
+### A scripted session saves under `user://qa_saves`, wiped at boot
+
+`SaveManager.dir_for()` reads the command line: any `--qa-script=` and saves go to a separate
+directory, emptied on start. A play script that wrote to the real one would overwrite a
+player's progress on a machine that has both, and one that READ from it would pass or fail
+depending on who ran it. The QA fixture leans on this directly — it opens Load on an empty
+slot and requires the refusal, which is only deterministic because the directory is known
+empty.
+
+- *A fresh temp directory per run* — rejected: it leaks one directory per run, and nothing
+  ever proves the run started clean; wiping a fixed known path is checkable.
+
+### Reading the slot list has no side effects
+
+`peek()` is a separate, silent read: no `save_changed`, no parking, no `push_error`. Merely
+LOOKING at the pause menu must not produce `.corrupt` files. The consequence is that an
+unreadable slot is drawn as *empty*, which is why `save()` parks whatever it is about to
+overwrite — otherwise the menu, which refuses to load an "empty" slot, could never park a
+damaged one but could silently save over it.
+
+- ~~*Distinguishing empty / unreadable / another game's in the list*~~ — **taken up by M32**, at
+  exactly the hook this entry named: `peek()` returns a `SlotSummary` instead of discarding what
+  `_read` already knew, and the row reads *damaged* rather than *empty*. One object rather than a
+  second parallel array, because two paths answering one question pair one slot's data with
+  another slot's verdict.
+
+## The pause menu is Resume / Save / Load, and Escape is what opens it — *Items added in M12*
+
+The fork: a pause menu is where a game puts everything that is not playing. What goes on it?
+
+> **Amended in M12.** A fourth row, **Items**, sits directly after Resume: it is the row a player
+> opens most often, and Save/Load keep their order relative to each other. The cost was one that
+> only a mutant found - `test_pause_and_saves`' navigation helper counted two presses to reach
+> Load and silently became a SAVE, quietly writing a slot in the middle of a test about refusing
+> to load one. Any test that navigates a menu by counting is a test that re-aims itself when a
+> row is inserted; those now name the row (`move(PauseMenu.Row.SAVE)`) rather than counting to it.
+
+- **Chosen: three rows, and Escape opens it from the world.** Save and Load are the reason it
+  exists; everything else on a typical pause menu is either already a keypress here or is a
+  feature this template does not have yet. Escape (`cancel`) was the one bound action the world
+  did not handle.
+- *A "Switch game" row* — `deferred`: with one game there is nothing to switch to, and the
+  row would come back with the second game rather than before it.
+- *Settings (volume, window, bindings)* — `deferred — worth trying`: none of the three have
+  anywhere to be stored yet. `AudioBus` is the seam a volume row would use.
+- *Quit* — rejected: the web build cannot honour it, and a menu row that does nothing on one
+  of two shipped platforms is worse than no row.
+
+The pure/view split is `DialogRunner`/`DialogBox`'s exactly: `PauseMenu` is a cursor over pages
+and slots with no nodes in it, `PauseScreen` paints it from a `SpriteStyle`. Opening a slot
+page returns `NONE` — changing what is on screen is not something the world has to act on —
+which is what keeps "arriving at the save list" from writing slot 0.
+
+### Loading an empty slot is refused, not clamped
+
+`PauseMenu.confirm()` on an empty LOAD row returns `NONE`. The precedent is
+`DialogRunner.choose()`: clamping to the nearest filled slot turns a UI mistake into a
+plausible-looking wrong answer, and here the wrong answer is loading a game the player did not
+ask for. Saving is not symmetric — an empty slot is exactly where a save goes.
+
+That refusal is also the first of two fail-closed layers for a misfiled save, and it fires
+first: a save that does not read back reads as **empty**, so the menu never offers it. The
+loader's own check is the second, and the only way to reach it through the menu is for a slot
+to go bad between the frame that drew it and the frame that loaded it. That is the case the
+integration suite stages, because it is the only one that exercises the screen's latch.
+
+### The screen latches when it answers, and a refusal has to un-latch it
+
+`PauseScreen` stops accepting input the moment it has emitted `resumed` or `load_requested`,
+because a load rebuilds the world one frame later and a second press in that window would
+answer a question already settled. The cost is that a load which comes back *refused* must
+clear the latch — otherwise the menu sits there looking perfectly normal with every key dead,
+and the only way out is killing the game. A mutant covers exactly that line, and it survived
+the first time it was run: the test drove the refusal through the signal, which skips the
+latch entirely. Driving it through real keypresses is what made the rule real.
+
+## One game ships, and the picker went with the second one
+
+The fork: the repo was called `sprite-generator` and shipped two games — a demo town and a
+quest — with a picker to choose between them. The name described one feature of a project that
+had become something else, and the second game had done its job.
+
+- **Chosen: merge both worlds into one game, delete the picker, rename to `rpg-template`.**
+  The demo's town and cave became the road into *The Barred Gate*, re-styled to `dusk16` with
+  three new character specs; `data/games/demo.tres`, `GamePicker`, `GameMenu` and
+  `GameSelect.should_ask/unresolved/switchable` are gone. What a visitor now meets is a game,
+  not a menu asking which demo they would like.
+- *Keep both games* — rejected: the second game was **proof**, not content, and it had already
+  produced its findings (three template defects, plus the feel-parity correction). Kept, it is
+  two worlds to maintain, two art sets to regenerate, and a first screen that asks a question
+  nobody visiting a template wants to answer.
+- *Keep the picker for a future second game* — `deferred — worth trying`: it is a real feature
+  and it worked. It is deleted rather than left dormant because an unreachable screen rots
+  quietly. **Revisit hook:** `GameSelect.choose()` still returns `""` for "more than one game
+  and nothing chose", and `world_scene._ready()` is where a picker would consume that answer
+  again — the seam it plugged into is intact, only the consumer is gone. **Taken up by M50** as a Switch game row on the title rather than M8's screen, at exactly that seam.
+
+**What was given up, stated plainly.** The template's claim used to be checkable: *a second
+game was added without touching `scripts/`, `tools/` or `scenes/`*, provable with
+`git diff --stat`. That proof is now history rather than something CI re-runs. The seams it
+tested are all still exercised — `GameHooks` by the warden, `GameManifest` by the boot,
+`start_game`/`_teardown_game` by `restore()` and by `test_game_switch` — but nothing standing
+in the repo re-proves the claim end to end. The honest replacement is the deferred item that
+was always the stronger test: **a separate repo that consumes this one.**
+
+### The road between the two worlds
+
+The town and the village are joined by one door each, both anchored on a wall rather than on a
+tile count: the village's is the south-east corner of its own east wall, the town's is the one
+gap in its north wall. Every QA script that crosses them holds a direction into a wall and lets
+the geometry stop it, so the scripts say "walk until something stops you" rather than "walk
+4.5 tiles" — which is the difference between a fixture that survives a map edit and one that
+does not.
+
+The demo's NPCs needed `dusk16` art, and a character exists for exactly one style
+(`CharacterSpec.style_id`). So `town_elder`, `town_kid` and `town_smith` are new specs with the
+same seeds as their `gb16` originals — same parts, new palette, which is the style-swap the
+generator exists to make free. `gb16` and `nes16` and their eight specs stay: they are what
+`test_gates_consistency` compares styles across, and what Sprite Lab shows.
+
+## Items are the template's business after all
+
+The fork: the quest's key was a boolean flag, and `interaction.gd` said in as many words that
+"items with names and counts… belong in a game's own hooks". Making the quest about *carrying*
+things meant either building an inventory inside `games/quest/` or reversing that.
+
+- **Chosen: items are a template noun.** `ItemDef` + a pure `Inventory`, `give_item`/`take_item`
+  as effects, and `requires_item` beside `requires_flag` on objects, warps and dialog choices.
+  The reversal is honest rather than reluctant: a key, a coin, a potion and a quest token are one
+  mechanism wearing four names, and `docs/DECISIONS.md` had already written down the trigger for
+  this — "the first game that needs a count rather than a boolean". Every game re-inventing the
+  same dictionary-of-counts is exactly what the template exists to stop.
+- *Keep it in the game's hooks* — rejected: it works, and the second game to want items writes it
+  again, differently, with its own save-migration bug. The line the template still does not cross
+  is prices, hit points and turn order — the moment a map file needs a type system, the template
+  has started designing somebody's game.
+- *A `kind` on an object plus game code* — rejected: it moves the vocabulary into a string the
+  template cannot validate, so a typo becomes a silent no-op instead of a content error.
+
+### No stack limit, and no "use" yet
+
+A cap would let a pickup FAIL, and a chest marked `once` has already recorded being opened by the
+time the give is applied — so a full bag eats the key and the door stays shut with nothing on
+screen saying why. Unbounded counts cannot produce that; a game needing a cap enforces it in its
+own hooks, where it can also say so. "Use" is `deferred — worth trying`: it needs a verb per item
+and an effect vocabulary for what using does, which is a design decision no shipped item needs
+yet. Revisit hook: `PauseMenu.confirm()` on the ITEMS page returns `NONE` where that answer goes.
+
+### A take implies a requires
+
+`Interaction.decide` and `DialogRunner._visible_choices` both refuse *before* appending any
+effect when a `take_item` cannot be covered. Without that rule the take is emitted, fails at the
+sink, and the `mark_seen` beside it still lands — a chest that is spent and gave nothing, which
+looks like a lost item rather than a bug. It also makes an effect list all-or-nothing, so a
+failure at the sink means a hook is wrong rather than a player being unlucky.
+
+### Gifts live on choices, never on nodes
+
+A dialog node has no condition and no memory of having been entered, so a conversation that loops
+back through a gift node hands over a second key every pass. A choice can carry `set_flag X` and
+`hidden_if_flag X` naming the same flag, which is "taken once, offered never again" — and
+`_visible_choices` counts flags earned *earlier in this conversation*, because nothing has been
+written to the game state until the box closes.
+
+- *Node-level `give_item`* — rejected: it reads as the obvious place to put it and is a
+  duplication bug waiting for the first looping conversation.
+- *A `once` on a dialog node* — `deferred`: it is a second memory to persist and migrate, for a
+  case the flag pair already covers.
+
+### The dialog's second sink is gone
+
+`_on_dialog_closed` used to write flags to `GameState` directly, which was fine while a
+conversation could only earn flags. It now emits the same effect dictionaries a hook does and
+goes through `_apply_effects` — one vocabulary, one place to look for "what does this actually
+do", and one place that has to learn a new op.
+
+
+
+## Hit points and turn order are the template's business after all — *M13*
+
+`scripts/world/interaction.gd` has carried this sentence since M12: *"Prices, hit points and
+turn order are still over the line - the moment a map file needs a type system, the template
+has started designing somebody's game."* M12 wrote it while moving **items** across that same
+line, on the grounds that "a count rather than a boolean" is the one noun every game
+re-invents. M13 makes the identical argument one level up and moves hit points and turn order
+too.
+
+**The fork.** Where does a battle system live?
+
+- **In the template, with all content as data** — `BattleLogic` beside `DialogRunner`,
+  `EnemyDef`/`CombatDef` beside `ItemDef`, encounters as a map record. *Chosen.* Every RPG
+  built on this thing would otherwise rewrite "a number that ticks down, a number that ticks
+  up, and whose turn it is" — each with its own save-migration bug, its own idea of what a
+  seeded damage roll is, and its own untested defeat path.
+- **In `games/<id>/`, as that game's own code.** Rejected for the reason the second game
+  would prove: it would re-invent HP from scratch, and the first thing it would get wrong is
+  the save. This is the items argument verbatim.
+- **A `kind: "enemy"` on an NPC record plus hook code.** Rejected: the template cannot
+  validate a vocabulary it does not own. A misspelt enemy id would be an NPC that simply does
+  nothing, where `enemy_refs()` makes it a build failure.
+
+**Where the line is now.** Over it: *economy* (prices, shops, currency) and *battle
+scripting* — what a particular boss does on turn three is a game's own business, and
+`GameHooks` is where it goes. Under it: the numbers, the turn order, and the screen.
+
+**What that bought, concretely.** "A beaten enemy stays beaten" is the same map-scoped `seen`
+key an opened chest already used, so it persisted and migrated for free. A battle's results
+go through `world_scene._apply_effects` like every other effect, so there is still exactly one
+place where anything reaches live state.
+
+**Retuned after play, M13.1.** The first timing values shipped without anyone playing the
+game, and the user's verdict on the live build was one sentence: *"way too fast for human
+reaction."* They were right, and the reason is structural rather than a matter of taste — the
+`!` lights exactly WHEN the window opens (`cue_on()` is the same comparison the press is
+judged by, deliberately, so the screen and the rule cannot drift), so the window is not a
+margin around a beat the player already saw coming: it *is* the entire reaction budget. Eight
+frames is 133ms against a human's ~250ms. The window went to 24 frames and the cues to 72/84
+to keep the window a small fraction of the wind-up. Nothing about balance moved, because the
+window is not in the damage arithmetic. The lesson generalises past this game: **when a cue
+and its window open together, size the window for REACTING, not for precision** — and a feel
+number that no test can judge needs a human before it ships, not after.
+
+## Encounters are visible, presses are timed, and the fight was solo — *M13, written down M27*
+
+`GENRE_CONVENTIONS.md` §7 has said "Recorded in `DECISIONS.md`" since M20 and it was not true.
+The entry above records where a battle *lives*; nothing recorded what the battle *is*, which is
+where this template departs from its references hardest. Written now because §7's own rule is
+that a deliberate divergence without an entry behind it "is a gap wearing a nicer word", and
+because M27 is about to change the third of the three.
+
+**The fork was three separate ones, decided together in M13 and never argued in public.**
+
+- **Visible enemy records versus random encounters on a step counter.** *Chosen: visible.*
+  Every reference game rolls encounters against a step count. Doing that here would put a
+  random draw inside the movement loop, and the determinism story — same seed, same
+  everything — is what makes sixteen scripted play sessions a *gate* rather than a demo. A
+  fight that must happen is then made unavoidable by **geometry** (a one-tile gap the player
+  cannot walk around), never by a probability. Visible enemies also make a template's demo
+  game legible: you can see what the map is going to ask of you. Rejected alternative: a
+  seeded step counter, which would be reproducible but would still make "did the fight
+  happen" a function of the route rather than of the level design.
+- **A timed press versus a menu that resolves on its own.** *Chosen: timed.* A cue lights and
+  a press inside its window doubles the blow or halves the incoming one. This is the one part
+  of the fight that is not in any reference game — it is closer to Super Mario RPG's action
+  commands than to FF1 — and it exists so the template ships a battle with a verb in it rather
+  than a screen that watches numbers subtract. The cost was paid publicly in M13.1: the first
+  window was 133ms and the first person to play it said no human could hit it, which is the
+  entry above. Rejected: pure menu combat, which is more faithful and gives a player nothing
+  to do with their hands.
+- **One character versus a party.** *Chosen at the time: one* — and this is the one that was
+  never really decided, only deferred by silence. Dragon Quest I is solo end to end, so solo
+  is a shipped genre shape and not an absence; but every other reference game has a party, and
+  the template's own audit called it the largest missing system for four milestones. **M27
+  closes it**, which is why this entry exists: a divergence nobody wrote down cannot be
+  revisited, because there is nothing to reopen.
+
+**What stays diverged after M27.** The first two. Multi-enemy fights stay out of scope, so a
+party arrives with an **ally** cursor and no enemy one — and the reason is the same one that
+kept the cursor out in M25: a mode with one option in it is not a choice.
+
+**M28 closes the solo half too**, and the reason to record it here rather than only below is
+that this entry is where a reader comes to ask what the fight diverges on. After M28 the
+answer is two things, not three: encounters are still **visible** and presses are still
+**timed**. The number of foes is no longer one of them.
+
+## A view that renders data declares its capacity, and the build enforces it — *M13.3*
+
+A screenshot of the live build showed the warden's opening with a choice drawn on top of the
+second line of her text. Measuring every shipped line found worse: the text area was 22px
+against a 12px line, so only ONE line ever really fit, and four nodes were being silently
+truncated - three of them the signposting lines added the day before to tell the player where
+to go. Nine scripted play sessions pressed through those conversations on every CI run and
+could not see any of it, because headless QA never renders a pixel.
+
+**The fork.** How does a fixed 320x180 box cope with data of unbounded length?
+
+- **Reserved bands + a build-time budget** *(chosen)*. Text gets a fixed two-line band,
+  choices get their own band below it, the box grows only while a choice is up - and
+  `test_dialog_fit.gd` measures every shipped line with the real font against constants owned
+  by `DialogBox`, failing the build on an overflow and naming the node. Text too long for the
+  box becomes another node on a `next` chain, which is this format's own pagination and paces
+  the typewriter better anyway.
+- *Runtime pagination* — `deferred — worth trying`: overflowing text continues on the next
+  press, so any data ever written renders. Rejected for now because it duplicates what node
+  chaining already does and makes an unbroken paragraph legal to write, which is a worse thing
+  to have in the content than a build failure. Revisit hook: `DialogBox._show_line`, the day a
+  game on this template needs prose it cannot break up.
+- *A taller box* — rejected. It moves the cliff without telling anyone where the new one is,
+  and the worst-case line is unbounded.
+- *A smaller font* — rejected outright: 8px is already the readability floor at this
+  resolution.
+
+**The general rule.** A view that renders DATA has a capacity, and that capacity is part of
+the content contract rather than an implementation detail of the view. State it in constants
+the gate reads too - two copies is how the check and the thing checked drift apart - and
+enforce it at build time, because the failure mode of "too big to draw" is usually silence.
+
+## No fact a player needs may be single-sourced in optional dialog — *M13.2*
+
+A play-test of the live build ended with the tester holding a flask of lamp oil, told about a
+key they never found, and asking how the quest was supposed to be played. Nothing was broken.
+Every gate was green. The data was built that way.
+
+**What the audit found.** Classifying each of the eleven facts a player needs by how reachable
+its statements are — FORCED (unavoidable on the critical path), LIKELY (a refusal fired by an
+obvious attempt), OPTIONAL (needs pressing something skippable) — turned an argument about
+taste into a list of defects:
+
+- Two facts were stated **nowhere**: that the key is under the hollow's one bush, and that the
+  ending is walking back to the warden.
+- "The key is in the hollow, west" was OPTIONAL and **single-sourced** in the warden's dialog,
+  and she is a static figure two tiles off the spawn with nothing to make you press her.
+- Every statement of what the oil is FOR sat **downstream of the key** — one line requires
+  carrying it, the other requires being inside the keep — while the oil itself was obtainable
+  in the first minute, ungated. Getting oil first is a legal, natural, unpunished order that
+  produces an item the game will not explain until you have solved the other half.
+- The line carrying four facts at once (lantern dry / oil exists / hermit has it / cave east
+  of town) was **destroyed by progress**: the hook's priority puts `was_seen(keeper)` above
+  `has_item(key)` forever, so beating the Keeper first deleted it from that save permanently.
+- Both refusals were dead ends. `gate_barred` never said "key"; `lantern_dry` never said "oil".
+
+**The rule now.** No fact a player needs may be single-sourced in optional dialog. Every
+refusal names what it wants and points somewhere. An item obtainable before its purpose is
+statable carries its purpose at pickup. And a conditional line that can be permanently
+outranked must have its facts repeated by the line that outranks it.
+
+**The fork: how does the premise reach the player?** Chosen — **the opening conversation is
+forced** (`GameHooks.on_map_entered`, guarded by a flag the dialog's own first node sets). A
+quest whose premise is optional is one most players never learn they are on, and the genre has
+opened this way since the eighties. What falls out for free from state that already exists: a
+load does not replay it (`restore()` is state first, then `enter_map`), and Start Again after
+a defeat does — which is right, because that is a new run of the story.
+
+*Rejected — gating the hermit's oil on quest knowledge* (`requires_flag`, so the choice is
+hidden until you know the lantern is dry). It enforces the intended order and would have made
+the tester's confusion impossible, but at the cost of sending them back across two maps for a
+flask they had already been shown. Making the world explain itself beats making the world
+withhold. Revisit hook: the choice list in `data/dialog/hermit.json`.
+
+*Rejected — reordering the hook so `has_item(key)` outranks `was_seen(keeper)`.* It would have
+saved the lost line, but the priority order is correct as a matter of story — the warden should
+react to the Keeper being gone before she reacts to a key. Fixed by redundancy instead: the
+outranking line now carries the outranked one's facts.
+
+## Game over is an overlay, and TITLE still means nothing — *M13*
+
+Losing had to go somewhere. The user asked for "game over → title".
+
+- **A `GAME_OVER` overlay offering Continue and Start again.** *Chosen.* It reuses the slot
+  machinery the pause menu already had, and boot stays world-first — which the play scripts
+  and every integration suite assume. (**Superseded in M22**: boot is title-first now, and the
+  overlay gained the Title row this entry's own screen comment promised. Every scripted session
+  pays one press for it, deliberately.)
+- **Reusing `Router.State.TITLE`.** Rejected. TITLE has meant "nothing to drive yet" since
+  M2, and it is the state the router boots in; making it also mean "the run ended" would give
+  one honest state two meanings, and `state_name()` feeds QA assertions directly.
+- **Building a real title scene.** Deferred, not rejected — see the backlog. It is a
+  milestone of its own (a new scene, a boot path that does not go straight into a map, and a
+  New Game flow that is more than `start_game` re-entry), and doing it badly to host a
+  game-over screen would be the tail wagging the dog.
+
+The honest caveat, recorded because it will be asked: this is not a title screen, and the
+game still cannot be quit to anything. It is the minimum that makes losing mean something —
+your save matters, and a fresh run is genuinely fresh.
+
+## Sound is generated, the way art is — *M14*
+
+The template had a whole audio seam and no audio: `AudioBus` resolving ids, a
+`sound_requested` signal, a `GameContext.play()`, an `OP_SOUND` effect — and zero files, zero
+callers, and a game that has been silent since M0. `data/audio/README.md` argued that was
+correct: *"a placeholder beep committed to a template is a placeholder beep shipped in
+somebody's game."*
+
+That is the objection the ART side already answered, and answered better. The template does
+not ship an art pack; it ships a generator driven by a style resource. Sound gets the same
+answer, so nobody inherits anybody's beep.
+
+- **A synthesiser driven by a voice resource.** *Chosen.* `data/banks/*.json` says what a cue
+  is shaped like, `data/sounds/*.tres` says what it is played on, and three voices share one
+  bank exactly as three sprite styles share one rig.
+- **Shipping recorded sound effects.** Rejected on the grounds the art side already
+  established for LPC art: licensing that follows the template into somebody's game, and one
+  fixed aesthetic baked into a thing whose whole claim is that the aesthetic is swappable.
+- **Keeping the seam empty and letting each game bring audio.** Rejected — that is the status
+  quo, and the status quo is a subsystem no gate has ever exercised. A seam with no payload is
+  not a feature, it is an untested code path with documentation.
+
+*Deferred — music.* The user chose effects only for M14. A tune is content a designer writes,
+not something a generator should compose, so the shape when it comes is a note sequence in
+`data/music/*.json` performed by this same synthesiser. Revisit hook: `AudioBus.play_music`,
+which already exists and has never been called.
+
+## A cue names a shape; a voice names a sound — *M14*
+
+Whether the two-file split was real, or ceremony copied from the art pipeline.
+
+- **Bank plus voice.** *Chosen*, on the test of whether the two files fail differently: "the
+  footstep is too long" edits the bank, "the whole game is too harsh" edits the voice. Both
+  are real edits, so both files are honest. The proof it is not decorative is
+  `test_two_voices_over_one_bank_do_not_sound_the_same`, plus three shipped voices — `gb16`
+  square and bit-crushed, `nes16` square and brighter, `dusk16` a triangle pitched down for
+  the quest's late-evening look — that re-author not one cue between them.
+- **One resource holding both.** Rejected: it would make every re-voicing a full re-authoring,
+  which is precisely the cost the art side pays nothing for.
+
+## The cue vocabulary is an enum, not a lint rule — *M14*
+
+`AudioBus` warns once on an id it does not have and carries on. That is right, and it is also
+exactly how a misspelled cue ships: nobody notices a noise that was never there.
+
+- **An enum in `Sfx`, with an id table keyed by it.** *Chosen.* Template code names a cue as
+  `Sfx.Cue.HIT`, so a typo is a compile error — the strongest guarantee GDScript offers, and
+  strictly better than catching it later.
+- **A lint rule banning raw cue strings**, mirroring `RULE_DIRECTION`. Rejected: it cannot
+  tell a cue string from any other string, so it would need domain-prefixed ids invented to
+  keep it from firing on `"warp"`, `"victory"` and `"defeat"`, which are already in use as
+  effect keys and spawn names. An enum needs no prefix and no exemption list.
+- **Leaving it as strings and trusting the warning.** Rejected on the failure mode: the
+  warning fires at the moment the sound should have played, in a log nobody is reading,
+  in a build already shipped.
+
+Content still names sounds as text, because content is data — `Sfx.of()` is what validates it,
+beside every other id, at load.
+
+## The generator calls no transcendental function — *M14*
+
+The drift gate compares committed samples against freshly generated ones, on a Mac here and on
+an Ubuntu runner in CI.
+
+- **Square, triangle and saw from an integer phase accumulator; linear envelopes; noise from
+  `SeededRng` integers.** *Chosen.* IEEE-754 pins `+ - * /` to identical results on every
+  platform, so the generator is deterministic **by construction** rather than by luck.
+- **`sin`, `pow`, `exp` for smoother waveforms and curves.** Rejected. Those come from the
+  platform's libm and are not guaranteed bit-identical between architectures; one ULP anywhere
+  makes the committed WAV differ and turns the drift gate red in CI for a reason nobody can
+  reproduce locally — and a gate that flaps is a gate that gets switched off. The constraint
+  costs nothing: a chip voice has no sine in it either.
+
+## The importer is part of the pipeline, so the gate checks it — *M14*
+
+Godot's WAV importer defaults to `compress/mode=2`, which is QOA — **lossy**. Left alone, the
+drift gate would compare lossless samples while every player heard something else, and no
+surface anyone looks at would say so.
+
+- **Pin the defaults in `project.godot` `[importer_defaults]`, and have the gate compare the
+  IMPORTED stream as well as the committed file.** *Chosen.* Both halves are needed: the pin
+  makes new cues correct automatically, and the comparison is what would catch the pin being
+  removed.
+- **Setting `compress/mode` in each generated `.wav.import`.** Rejected as a list maintained
+  by hand — the next cue added comes back with whatever the default is, which is the failure
+  this project has hit twice with skip lists.
+- **Comparing raw file bytes instead of decoded samples.** Rejected for the reason the art
+  gate compares pixels rather than PNG bytes: a container header is not ours to author, and a
+  gate that fails on a file which sounds identical is a gate people learn to ignore.
+
+## A game's own file beats the generated cue — *M14*
+
+Two roots can answer a sound id, and the order between them is the seam.
+
+- **`data/audio` wins over the generated cue.** *Chosen.* A game replaces one sound by dropping
+  one file in, and never has to delete build output to do it — which matters because the drift
+  gate would put that output straight back on the next run. It is the `GameHooks` rule one
+  level down: a game is additive, or it is not using this seam.
+- **Generated wins, overrides as a fallback.** Rejected: it makes the generator authoritative
+  over the game, which is backwards for a template whose whole claim is that a game brings its
+  own look and sound.
+- **One root only** (generate into `data/audio`). Rejected: `data/` is content a human authors
+  and `assets/generated/` is output a gate overwrites. Merging them would mean the drift gate
+  competing with a designer over the same directory.
+
+An override is printed once at boot, and two files answering to one name is an **error** — the
+loser is invisible and which one loses depends on the filesystem, which is the same reason
+`Registry` refuses duplicate content ids rather than letting the last one win.
+
+## A view asks for a sound; it never plays one — *M14*
+
+Where the call to the speaker lives.
+
+- **Every screen emits `sound_wanted(id)`, and `world_scene` is the one place that plays it.**
+  *Chosen*, and not on purity grounds alone — it is the `_apply_effects` shape applied to
+  audio, and the alternative turned out to break a gate.
+- **Views calling the audio singleton directly.** Tried first, and rejected on evidence:
+  `check.sh`'s per-file parse gate skips any file whose TEXT names an autoload, so a view that
+  called it dropped ITSELF and every suite depending on it out of that gate. Two dialog suites
+  stopped parsing the moment `DialogBox` learned to make a noise. A comment naming the
+  singleton is enough to do the same thing, which is stated in `CLAUDE.md` beside the signal.
+- **A pure class playing its own cues.** Not available: `BattleLogic` may not touch an
+  autoload at all. It collects instead, and the view drains — which turned out to be necessary
+  rather than merely tidy, because a fight's cues have to survive a DEFEAT, whose effects the
+  world discards entirely. A defeat sting riding on the effect list would be silent at exactly
+  the moment the player most needs telling.
+
+## Footsteps are measured, not timed — *M14*
+
+- **One `StepMeter` counting distance actually moved, for both movement modes.** *Chosen.* It
+  slows when the player slows and stops when a wall stops them, which is what a footstep is.
+  One accumulator rather than two keeps the invariant that nothing downstream can tell free
+  movement from grid movement.
+- **Firing on grid-step completion.** Rejected: it would need a second implementation for free
+  movement, and the two would drift the first time either was touched.
+- **A timer.** Rejected on the failure mode - a player walking into a wall would keep making
+  footstep noises while standing perfectly still.
+
+The honest cost of one accumulator: a diagonal grid step covers 22.6px rather than 16, so its
+footfall lands part-way through the step. That is what walking sounds like anyway.
+
+## A setting is not a save — *M14*
+
+Where the player's volume lives.
+
+- **Its own file, `user://settings.json`, outside every slot.** *Chosen.* A save is one run of
+  one game; a setting belongs to the person at the keyboard and has to survive starting over,
+  switching game and deleting every slot.
+- **A field on `SaveData`.** Rejected: it would need a migration, it would be per-slot, and
+  loading an old save would reset the volume — which is not a thing a load should do.
+- **Not persisting at all (session-only).** Rejected on the deployed demo: every reload of the
+  page would come back loud.
+
+No version field, deliberately. There is one field; a value the enum does not contain falls
+back to the default with a warning, and the next write repairs the file. A migration chain for
+that would be ceremony, and `supported_versions()` would be describing a format that never
+changed.
+
+## Four named steps, cycled by confirm — *M14*
+
+- **Off / Quiet / Normal / Loud, advanced by the confirm button.** *Chosen.* The pause menu has
+  up, down and confirm; up and down move the cursor, so confirm is the only button left. Four
+  steps is also what a menu row can say in one word.
+- **A slider on left/right.** Rejected for now: it needs an input axis the menu does not use for
+  anything else, and a continuous value has no name to draw on the row.
+- **A plain on/off toggle.** Rejected: the honest complaint about game audio is rarely "silence
+  it", it is "quieter than that".
+
+The gains are not evenly spaced (0, 0.25, 0.6, 1.0) because hearing is roughly logarithmic and
+even spacing sounds like three loud settings and one quiet one.
+
+## The gate got 17x faster without losing an assertion — *M14.1*
+
+Four milestones of M14 cost ~17 minutes of CI each, and the profile said the time was not in
+the tests: 604 tests execute in 34 seconds. It was in engine boots and in the wall clock.
+
+- **`--fixed-fps 60` on everything driven by frames.** *Chosen.* Headless Godot still paces its
+  main loop against real time, so a play session that takes a player three minutes took the
+  gate three minutes. Measured, both ways, before anything was built on it: play sessions
+  371s → 8s with byte-identical logs, suite 37s → 8s with identical verdicts on all 595 tests,
+  and **226/226 mutants still killed** — which is the real proof it did not blunt detection.
+- **Rewriting the QA scripts to wait fewer frames.** Rejected outright: the frame counts ARE
+  the test. A battle asserted on frame N is asserting the timing window exists.
+- **Dropping the slowest two play sessions from CI.** Rejected: they are the two that play the
+  whole quest and lose a fight, i.e. the only ones that cover the game end to end.
+
+## A pull request proves what it could have broken; main proves everything — *M14.1*
+
+The full 226-mutant sweep was 57% of every CI run, on both the PR and the merge.
+
+- **Scoped on PR, full on main.** *Chosen by the user.* A change can only make decorative a
+  mutant whose file or suite it touched, so that is what a PR runs — seconds instead of ten
+  minutes. Every merge re-runs the whole sweep, where nobody waits on it, so a test that went
+  decorative because of a change somewhere else is caught one step later rather than never.
+- **Full sweep on every PR, sharded across parallel jobs.** Rejected for cost: identical rigor
+  before merge, ~4x the runner minutes, for a window that main closes minutes later anyway.
+- **Main only, nothing on PR.** Rejected: it gives up the one thing scoping is good at, which
+  is catching the author's own change making the author's own test decorative.
+
+What deliberately did NOT move: `mutants_aim.sh` runs over the whole file on every run of
+both. It costs under a second and it is the check that catches new code stealing an old
+mutant's aim — which has happened twice.
+
+## The artifact is played, not enumerated — *M15*
+
+Nothing in this project had ever looked at the `.pck` a player downloads. Two ways to fix that.
+
+- **Boot the pack and play it** with the committed QA sessions, via `--main-pack`. *Chosen.* It
+  subsumes any file list: a packed game that boots, walks, warps, talks, fights and asks for its
+  sounds has demonstrably packed the maps, tiles, sheets, dialog, manifests and cues. It also
+  needs no export templates and reuses a harness that already exists.
+- **Enumerate the pack** — mount it with `ProjectSettings.load_resource_pack` and diff the walk
+  against `ContentScan` over the source tree. Rejected as the primary gate because it proves
+  presence, not playability, and presence is the weaker claim. Still worth doing one day for a
+  different reason: it would finally test `ContentScan`'s docstring claim that "the same walk
+  works from a .pck", which nothing exercises.
+- **Grepping the raw pck for known paths.** Rejected: the packed name is `hit.wav.import`, not
+  `hit.wav`, so the obvious grep proves the sidecar shipped and says nothing about the audio.
+
+**Where it runs:** in `check.sh`, on every run, because it turned out to cost five seconds rather
+than the thirty assumed while planning. That was measured before deciding. It ALSO runs in
+`pages.yml` against the real deployed package, where `deploy needs: build` means a package that
+does not play leaves the live page on the last good build.
+
+## An assertion where the value is always full is decoration — *M15*
+
+`finish_the_quest` and `fall_at_the_keep` between them make 99 assertions and five and a half
+minutes of scripted play, and neither noticed `BattleLogic.damage()` returning three more than it
+should.
+
+The reason is exact: **every mid-run `assert_hp` in both scripts sits immediately after a
+level-up, and a level-up is a full heal.** Damage taken is overwritten before it is ever read.
+`assert_level` cannot help - xp is a per-enemy constant, so it is the same whether a fight took
+two rounds or four - and `finish_the_quest` made zero `assert_xp` calls at all.
+
+- **One `assert_hp` after a fight that does NOT level the player.** *Chosen.* That is the only
+  window in either script where hp is neither full-at-start nor refilled. Both directions of the
+  arithmetic are now caught (`+3` and `-1` both land on 13 against a pinned 14).
+- **Recomputing the expected hp from the combat numbers.** Rejected: a test that derives its
+  expectation from the thing under test cannot see that thing change. The value was read out of
+  the run's own log.
+- **More assertions everywhere.** Rejected as the fix. The file already *looked* like it asserted
+  hp three times; the problem was never the count.
+
+`mutate_check.sh` now drives a play session as a "suite" when the suite column points at
+`tests/fixtures/qa/`, so the play gate is mutation-proven like everything else. That only became
+reasonable when M14.1 made a session cost two seconds instead of ninety.
+
+## Equipment is a screen of its own, and the flow is slot-first — *M20*
+
+**The fork:** where does the verb "wear this" live, now that M19's answer has been played?
+
+- **A page of its own, entered from a top-level `Equipment` row, slot-first** — *chosen.*
+  A slot list showing what is in each slot, each opening the gear that fits it. Two reasons,
+  and the first outranks the second: the person who asked for equipment played M19 and said
+  it should be its own screen like Items; and every reference game agrees — FF I–VI, Chrono
+  Trigger and the DQ SNES remakes all put Equip beside Item and none of them equip from the
+  item list. "What am I wearing" becomes a glance rather than a scan of the whole bag.
+- **The M19 bag toggle** — *rejected, and removed.* Confirming gear in the bag toggled
+  Wear/Take-off. It was fully tested and fully green, which is exactly why it is worth
+  recording: no gate can see a screen that is in the wrong place. Its good parts were kept —
+  the `(E)` marker stays in the bag, and the stat preview moved to the candidate list.
+- **Keeping both** (equip from either surface, the Dragon Quest III shape) — *rejected.* Two
+  surfaces owning one verb drift: the bag's toggle and the picker's take-off row would have
+  to agree forever about what a confirm means, and the wording already differs ("Take off"
+  vs a row that removes). One verb, one owner.
+- **Item-first** (pick gear, then be told where it goes) — *rejected.* It reads as an
+  inventory with extra steps, and it cannot show an empty slot, which is the thing a player
+  most needs to see.
+- **Optimize / best-equip** — *deferred — worth trying.* An FF convenience for games with
+  five slots and forty items; at two slots it is a button that does what one press already
+  does. **Revisit hook:** `ItemDef.SLOTS` growing past three.
+
+**Where a third slot plugs in:** `ItemDef.SLOTS` is the one list. Adding `&"trinket"` to it
+grows the equipment page a row, teaches `problems()` the new word, and needs no screen edit.
+
+## The stats readout is worded by the world, not composed by the menu — *M20*
+
+**The fork:** the equip screen shows "Atk 5+3 Def 1+0". Who builds that string?
+
+- **The world builds it and hands the menu text** — *chosen.* Naming a stat is a question
+  about what a game calls things, and `PauseMenu` may not touch the Registry or a manifest.
+  It is the `_gold` and `_sound` precedent exactly: a readout arrives as text.
+- **The menu composes it from numbers it is handed** — *rejected.* It would need to know that
+  "Atk" is what this game calls attack, and that a game with no `CombatDef` has neither.
+- **The view reads the world directly** — *rejected outright.* A view that names an autoload
+  drops itself, and every suite that depends on it, out of `check.sh`'s per-file parse gate.
+
+- *2026-09-18, a defect and where it hid:* the readout and the purse shared the window's band at two
+  hand-written offsets (`width - 108`, `width - 60`) with neither label bounded, so with a party beside
+  them the band's 190 pixels could not hold a slot's title, a purse and a 98-pixel readout: at 33 gold
+  the purse ran into the readout's first letter, and the readout's tail left the window and was drawn
+  under the party panel. Found by photographing a real session for M50.4, after four milestones on
+  screen. **Why nothing saw it:** `test_pause_layout` never opened an Equipment page, and the readout is
+  drawn on those pages only; its containment rule skips anything whose parent is not a window, and both
+  readouts live in the header band; and the file's own notes promised "nothing unrelated shares pixels"
+  while never implementing it, though the battle and arena suites have asked it since M28.
+  **Fixed as:** both readouts laid against the band's right edge and bounded with an ellipsis, and ONE
+  of them drawn at a time - the purse everywhere, the gear readout in its place while equipping, which
+  are the two pages where nothing is being bought. The missing overlap rule is implemented now and the
+  suite walks to the candidate page to ask it. The same rule immediately found a second fault at
+  capacity: a member's health figures needed 49 pixels where the bars left 38, so a party in the
+  hundreds wrote its numbers out through the side of the panel - invisible in a demo whose numbers are
+  two digits. `PauseScreen.READOUT_CAPACITY` (999) is declared, the bars are narrowed to 28 to leave
+  room for it, the layout audit measures a block at it, and `test_battle_content` refuses a game whose
+  party could grow past it.
+
+## The status page is a readout the world words, not a screen that computes — *M20*
+
+**The fork:** the genre's fourth standard command. Who builds "Level 3 / HP 28/28 / XP 35"?
+
+- **The world builds the lines and hands the menu an array of strings** — *chosen.* Identical
+  to the `_gold`, `_sound` and `_stats` precedents, and for the same reason: knowing that this
+  game calls it a "Level", and whether it has one at all, means reading a manifest, which a
+  pure `PauseMenu` may not do. It also makes the degenerate cases free — a game with no
+  `CombatDef` simply produces fewer lines, rather than the page needing to know what a
+  combat-less game looks like.
+- **The menu composes from numbers** — *rejected.* It would need the vocabulary and the
+  `CombatDef`, and every game that names things differently would need a menu change.
+- **A structured `StatusRow` type** (label + value, so the view can column-align them) —
+  *deferred — worth trying.* It buys right-aligned values like the shop's price column. Not
+  taken now because the lines are short and one array of strings is the smallest thing that
+  works. **Revisit hook:** `_status_lines()` — change its return type and the view's
+  `_label_for` branch.
+- **Making the page interactive** (confirm on a row to do something) — *rejected.* A status
+  screen that acts is a different screen. `confirm()` answers NONE and the view draws no
+  cursor at all, so the page cannot imply a verb it does not have.
+
+**On the ordering cost:** inserting Equipment and then Status moved the two deliberately-counted
+navigations (the `_to_the_third_slot` helper and `save_and_load.json`) twice in one milestone.
+That is the price of putting rows where the genre puts them, and it is the right price: a row's
+position is what a player navigates by muscle memory, and the counted tests write their counts
+out longhand precisely so that this moves deliberately rather than silently.
+
+## Money leaves through a conversation, and a rest is a full heal — *M21*
+
+**The fork:** the genre's inn needs to charge gold and restore HP. Neither could happen from
+data before this: `OP_GOLD` only ever gave, and the only writer of `player_hp` outside a fight
+was `OP_PARTY`, which demands xp and level too.
+
+- **Two effect verbs on a dialog choice — `spend_gold` and `rest`** — *chosen.* An inn is a
+  **conversation**, not a counter (see `GENRE_CONVENTIONS.md` §10 — DQ and FF innkeepers greet,
+  name a price, ask yes/no and fade to night; there is nothing to browse), so it is built out
+  of the grammar every other conversation uses rather than out of the shop's trio.
+- **An `InnDef` + `InnMenu` + `InnScreen`, mirroring the shop** — *rejected.* It would be a
+  counter with one item on it. The shop's shape earns its keep because a shop has a list, a
+  price column, quantities and two pages; an inn has a yes and a no.
+- **A parameterised `heal(amount)`** — *deferred — worth trying.* It would cover a field-use
+  verb for potions, which §4 records as deliberately absent, and "restore to full" is the only
+  amount the genre's inn ever uses. **Revisit hook:** `GameContext.OP_REST` and the `_rest()`
+  handler in `world_scene` — an amount would ride the effect dict.
+- **Hiding the choice when the purse is short**, the way `requires_item` hides — *rejected.*
+  A hidden room is a price the player can never discover. The shop already settled this: its
+  `poor_line` exists because a refusal that makes no words reads as a dead key. So a spend
+  requires a `poor_next`, and the build refuses a keeper who charges and says nothing.
+- **Saving at the inn**, which the genre pairs with resting — *rejected.* This template
+  deliberately diverges on saves (pause menu, anywhere — recorded above and in §8), and an
+  inn save would quietly relitigate that decision as a side effect of a healing feature.
+
+## The inn is a room you walk into, and the night is a screen — *M21*
+
+**The fork:** where does the inn live, and what does resting look like?
+
+- **A room, entered through a door in the town** — *chosen*, by the user, against the cheaper
+  option. An inn in the genre is a **place**; the template's only previous keeper (the smith)
+  stands in the square, and a second keeper in the same square would have been an innkeeper
+  rather than an inn. It is also the game's first interior, and the first map to use the
+  `floor` / `wall_rough` / `door` / `table` / `rug` tiles, which the bank has carried since M16
+  with nothing using them.
+- **An innkeeper standing in the town square** — *rejected*: one NPC record and one dialog
+  file, no map change, no risk to the shipped sessions. Cheap, and not an inn.
+- **Where the building went was MEASURED, not chosen.** A building makes tiles solid, and a
+  solid tile under an existing leg breaks sessions that have nothing to do with inns. The M17
+  method: print on the tile-change hook, run all twelve sessions, overlay every tile the gate
+  actually walks. The footprint sits in the top-left quadrant, which nothing walked.
+- **`RestScreen`, a fade held for a beat** — *chosen.* Every reference inn spends a moment in
+  the dark before the "good morning".
+- **No screen at all — heal and print a line** — *rejected*: it is the M18 shop mistake in
+  miniature, shipping the mechanic without the surface the genre gives it.
+- **A general `FadeScreen`** — *deferred — worth trying.* There is one caller. **Revisit hook:**
+  `RestScreen.setup()` already takes its text as an argument, so the second caller is what
+  turns it into a fade. A warp transition is the obvious one.
+- **Four gold a night** — chosen as exactly one slink's drop, so an ambient fight pays for the
+  night it costs you. A feel number; unjudged until played.
+
+## A game is started FROM a screen, and that screen is an overlay — *M22*
+
+**The fork:** `Router.State.TITLE` has been the router's boot state and meant "nothing to drive
+yet" since M2. Giving it a meaning needed a screen, and a screen needed a boot path.
+
+- **A `TitleScreen` overlay over an empty world** — *chosen.* `world_scene._ready()` resolves
+  which game is running and then *stops*, where for twenty milestones it started one.
+- **`scenes/title/title.tscn` as the main scene** — *rejected*, and the reason is `GameSelect`:
+  four surfaces have to answer "which game is this" identically, and `_ready()` is the one
+  place `resolve()` is called. A title scene with its own boot would be a fifth answer, which
+  is the exact failure that design exists to prevent. New Game would also become a *second
+  mechanism* for a verb `start_game` re-entry already implements, and every integration suite
+  boots `world.tscn` — with the overlay, none of them changed.
+- **A shared `SlotMenu` base for the title and the game over** — *chosen.* They differ in the
+  wording of two rows and nothing else. Two copies of "nothing saved is nothing to continue
+  from" is one screen that eventually offers a list of nothing. GDScript will not let a
+  subclass redeclare an inherited enum, so the game over's extra row is a named constant one
+  past the shared ones rather than a second `Row`.
+- **The cursor opening on a row a press will DO something with** — *chosen for the title, and
+  deliberately rejected for the game over.* At a title a dud first press is pure friction. At a
+  game over the player has just lost and is already pressing, so opening on "Start again" turns
+  one more press into a restarted run. The scripted session that mashes its way to a game over
+  found this within a minute of the change: it restarted the game and then failed looking for a
+  screen that was no longer there.
+- **A Quit row** — *rejected*, still. A game that wants one ships it; the template has nothing
+  to quit *to*, and on the web there is nothing to quit at all.
+
+## The router announces every real change, and nothing else — *M23*
+
+**The fork:** building a flow model meant deciding what the model would be checked against.
+`EventBus.flow_changed` is the obvious instrument, and mapping all fourteen Router call sites
+found it could not be trusted yet.
+
+- **Route `reset()` and `to_title()` through `set_state`** — *chosen.* `reset()` assigned
+  `_state` directly, so it never emitted. Since `enter_map` resets on every map entry, **every
+  boot, warp, load and restore changed the state silently** — and the edge that hid there was
+  TITLE → WORLD, which is how a game starts. `to_title()` was worse than silent: it called
+  `reset()` first, so it always reported `{from: WORLD}` whatever the truth.
+- **Model the silence instead, marking those edges `"silent": true`** — *rejected.* A model
+  that faithfully encodes a lying signal is worse than no model: it makes the lie permanent and
+  teaches every future reader that flow events are unreliable.
+- **Emit unconditionally from `reset()`** — *rejected.* A warp resets WORLD to WORLD on every
+  doorway, and a listener woken by every doorway is a listener nobody can use. `set_state`'s
+  existing no-op guard already answers this, which is why the fix is to route through it rather
+  than to add a second emit.
+- **One `_to_base(base)` rather than a stack-clear in each** — chosen for a mechanical reason as
+  much as a tidiness one: two literal `_stack.clear()` lines in that file make the mutant aimed
+  at the first one ambiguous. The old comment said the dishonest shape existed *because* of
+  that constraint; the helper satisfies both.
+
+**A claim that did not survive measurement, recorded so it is not re-derived.** `_teardown_game`
+nulls two screens inside their `is_instance_valid` guard and six outside it, which reads like a
+dangling-reference bug: a screen freed elsewhere would keep a reference every `!= null` guard
+passes, and `open_title`'s first guard is exactly that. It is not a bug — **a freed reference
+compares equal to null in this engine**, measured and now pinned in
+`test_engine_assumptions.gd`. The nulls were made consistent anyway; the test that "proved" the
+bug passed with the code sabotaged, which is what exposed the wrong premise.
+
+## The flow is a model the agent keeps, not a diagram a human reads — *M23*
+
+**The fork:** after Continue-from-title replayed the game's opening, the question was what
+stops the next bug of that class — a legal transition sequence nobody thought about.
+
+- **The flow as machine-readable data plus a conformance gate** — *chosen, by the user*, who
+  framed it exactly right: "godot-statecharts, but for you". The model is written for the agent
+  to consult and update; `docs/FLOW.md` is a byproduct, generated and drift-gated, never a
+  source. Knowledge that was re-derived every session becomes an artifact, and the gate is what
+  stops it rotting into a comment.
+- **[GraphWalker](https://graphwalker.github.io/) / [AltWalker](https://github.com/altwalker/altwalker)**
+  — *rejected, with the research kept.* They are the reference model-based-testing tools:
+  graph models, `random(edge_coverage(100))` generators, JavaScript guards, offline path
+  generation. Adopting either puts Java (and for AltWalker, Python) into a gate that currently
+  needs only the engine. The finding that settled it: **in every option the expensive part is
+  identical** — the per-edge adapters and per-vertex invariants — and path generation over 8
+  states and 17 edges is the trivial part. Their engines earn their keep at hundreds of nodes.
+  **Revisit hook:** `tools/flow_model.json`'s edge list; if it ever outgrows a page, its
+  generators are what to borrow.
+- ~~**[Hypothesis](https://hypothesis.readthedocs.io/en/latest/stateful.html)-style stateful
+  testing**~~ — was *deferred — worth trying* for one feature nothing else has: **shrinking**,
+  which minimizes a failing 40-step sequence to the shortest one that still fails. **Taken up by
+  M31**, at the seeded-walk layer this entry named as the hook. Not by adopting Hypothesis — it
+  is Python and this gate needs only the engine — but by writing the search: cycle elision over a
+  list of edge indices, pure and unit-tested with no scene. The entry above it holds why.
+- **[godot-statecharts](https://github.com/derkork/godot-statecharts)** — *rejected.* It is a
+  runtime library with a visual debugger: it would restructure how `Router` runs, generate no
+  checks, and would not have caught this bug. This repo also has scar tissue from editor addons
+  (the MCP one strips every comment out of `project.godot`).
+
+**Why the model records traces and not just destinations.** The bug was not an action landing
+in the wrong state — Continue *did* reach WORLD. It passed through the start map on the way,
+and the entry hooks fired. So an edge declares the exact sequence of events it may emit, and an
+undeclared intermediate hop is the failure. Two edges legitimately have two hops, and writing
+them down is half the value of the file.
+
+## A tune is written down and performed, not composed — *M24*
+
+**The fork:** `AudioBus.play_music` had existed since M14 and had never been called. What
+should it play?
+
+- **Authored note sequences performed by the existing synthesiser** — *chosen*, and it was
+  named as the shape back in M14: a tune is content a designer writes, and generating melodies
+  is a different project with a much worse failure mode. The payoff is the same one the sprite
+  rig has — one tune, three voices, and switching a style re-voices the music for free.
+- **Generated (procedural) composition** — *rejected.* The template can promise a tune sounds
+  like the machine it is playing on; it cannot promise a generated melody is any good, and
+  nothing in a gate could tell us.
+- **Committing the rendered WAVs, like every other generated asset** — *chosen*, against
+  rendering at runtime. Runtime costs nothing on disk and would hitch: 176,400 samples × three
+  voices through a GDScript loop, on the main thread, on a web export that has no threads
+  because Pages serves no cross-origin-isolation headers. Committing also gives `pack_check.sh`
+  something to bite on, which is exactly the M14 defect (the audio seam's drop-in half was
+  broken in exports from the day it was written).
+- **The cost, stated rather than discovered:** 43 KB per second, per voice, three voices
+  committed. The theme is 8 seconds and takes the generated tree from 972 KB to 2.0 MB.
+  `MusicTrack.MAX_SECONDS` makes that a validator rather than a good intention, because every
+  addition would be individually reasonable.
+- **One track, played by the title AND the settled maps** — chosen over a second track for a
+  town theme. A title theme that is also the overworld theme is the genre's own habit, and it
+  demonstrates all three rules (it plays, it does not restart between town and village, it
+  stops on entering a dungeon) without a second megabyte. A battle theme is now data.
+
+**Two things measurement changed.** The no-restart guard first read
+`if id == _music_id and _music.playing:` — and headless runs on a dummy driver where nothing
+ever reports itself as playing, so the guard could not fire in the one environment every gate
+runs in. It now answers from what the bus believes, which is also what makes it testable. And
+the rule needed an observable that was neither the request log (the request happens either way)
+nor the device: `music_starts()` counts actual starts, and a mutant proved the earlier version
+was unkillable.
+
+## One workflow, and the required check is a job that always runs — *the CI audit, 2026-09-02*
+
+**Supersedes the M24.1 entry below**, which is kept because its reasoning was right and the
+thing that replaced it is a different trade rather than a correction.
+
+**The fork:** the user said the CI "doesn't make sense" and asked for an audit. It measured
+three things worth acting on: nine of the last ten pull request runs swept 513–579 of 579
+mutants, so the "fast" lane was the full sweep wearing a fast name; the sweep is 90% of an
+eighteen-minute run and was one sequential job; and two workflows both named `check` made the
+Actions tab unreadable, which is how the first finding hid for four milestones.
+
+- **One workflow, four jobs, a `check` job on `if: always()`** — *chosen.* The status the
+  ruleset requires is now a job that runs in every outcome and reports what happened above it.
+  A docs-only pull request skips the gate and the sweep and still gets its green `check` in
+  seconds, which is what the stand-in bought; and the three things the stand-in cost go away —
+  the ambiguous Actions tab, `pages.yml` matching a trigger by a name two files answered to,
+  and the re-run hole its own header documented (re-running the no-op on a red pull request
+  overwrote the real verdict). The cost: `check` is now a job whose condition is load-bearing,
+  because GitHub reports a SKIPPED required check as success. A test and a mutant pin it.
+- **Keeping the stand-in and fixing only the scoper** — *rejected.* It fixes the eighteen
+  minutes, which was the loudest problem, and leaves the fail-open one click away.
+- **A `paths:` filter on the pull request side too** — *rejected.* That is what made the
+  stand-in necessary: a job that never starts cannot report the status the ruleset requires.
+  The filter stays on the PUSH side, where no status is required and skipping the run is also
+  what keeps pages from redeploying an identical build.
+- **The rule in YAML** — *rejected, and this is the general one.* It was a `paths:` list
+  mirrored by an inverse list in a second file: one rule spelled twice, in a language neither
+  copy could be run in, pinned by a test that PARSED the workflow. It is now
+  `tools/ci_changed.sh` with a selftest, and the test calls it the way CI does.
+
+**Sharding the sweep** rides along: four shards, `fail-fast: false` because the default cancels
+the other three the moment one reports, and a surviving mutant is exactly when the rest of the
+list matters. The list is chosen once and handed down as an artifact rather than recomputed per
+shard. Main goes from ~18 minutes to ~7; a scoped pull request to ~3.
+
+*Taken up 2026-09-04, and NOT as a composite action.* The block appeared three times (gate,
+sweep, pages) and `GODOT_VERSION`/`GODOT_SHA512` were duplicated verbatim across the two files
+with nothing gating that they agreed.
+
+- **`tools/fetch_godot.sh`** — *chosen.* One copy of the version and both sums, with a
+  `--selftest` that proves the checksum refuses AND accepts, and `test_ci_paths.gd` running it
+  the way it runs the other two. The workflows ask it for the version to key their caches.
+- **A composite action** — *rejected, on this entry's own principle two paragraphs up.* It would
+  put the rule back in "a language neither copy could be run in": no selftest, no mutant, no way
+  to try it on a laptop. The measured cost of that shape is already recorded here.
+- **Leaving it** — *rejected.* Nothing gated that the two copies agreed, and the failure has no
+  symptom: you gate on one engine and deploy from another.
+
+Two things came out of doing it that were not the point of it. The plan called for
+`--dest=~/godot-bin`, and **bash does not tilde-expand after `=` in an ordinary argument** - the
+engine would have landed in a directory literally named `~` while `GODOT_BIN` pointed at
+nothing; the script now refuses a `~` path by name rather than expanding it. And **macOS's
+`/sbin/sha512sum` rejects `--check` outright**, so the workflows' own line could never have run
+on the machine that wrote it; the script computes the digest and compares the string instead.
+
+**The four `SKIP  <tool> does not exist yet` branches went with it**, and measuring them changed
+the fix. `check.sh` guarded four steps on the tool existing and printed a `SKIP` otherwise - a
+third verdict touching neither `result` nor `fail`, so a renamed generator turned its gate green
+and the run still said `ALL GATES PASS`. Deleting the guards is not sufficient: **the engine
+exits 0 when `-s` names a missing script** (measured - two `ERROR` lines, exit 0), so the step
+reports PASS either way. What closes it is `test_ci_paths.gd` deriving every tool `check.sh`
+names from `check.sh`'s own text. The rule it asserts is "the gate prints no verdict that moves
+nothing", not "no `if [ -f ]`" - the first draft banned the spelling and would have failed the
+build on `check.sh:94`'s gdUnit4 guard, which is the same shape and correct, because its `else`
+sets `fail=1`.
+
+## Docs-only changes skip the gate, and a stand-in answers the required check — *M24.1*
+
+**The fork:** the user watched a comment-only change run two nine-minute gates. A docs change
+can break nothing the gate tests, but `check` is a REQUIRED status - path-ignore it naively and
+every docs pull request waits forever on a check that never comes.
+
+- **A same-named no-op workflow on the inverse paths** — *chosen.* GitHub's own documented
+  pattern for a skipped-but-required check: `check-docs.yml` carries the same workflow and job
+  name, so the ruleset cannot tell the difference, and a docs PR merges in seconds.
+- **Accept the cost** — *rejected this time.* It was the right call when the question was the
+  two-runs-per-merge shape (that one is load-bearing); this one is pure waste, ~18 minutes of
+  runner time per wrap-up commit.
+- **Dropping the required check** — *rejected without much ceremony*: it is the merge gate.
+- **The rule that makes it safe rather than clever:** the two path lists are ONE rule in two
+  files, so `test_ci_paths.gd` asserts they are exact inverses - and the exceptions are
+  DERIVED, not listed: any `tools/gen_*.gd` whose output lands in `docs/` must have that file
+  re-included in the real gate and negated in the stand-in. `docs/FLOW.md` is the live case: it
+  is generated and drift-gated, so a hand-edit landing through the no-op would turn every LATER
+  run red while its own was green.
+- **The known edge, recorded rather than discovered:** a PR touching docs AND code runs both
+  workflows; the real one finishes last, so the final status is honest. Re-running the no-op BY
+  HAND after a red real run would overwrite the verdict - do not.
+- Three mutants aim at the workflow YAML itself - the first non-GDScript mutants in the file,
+  which works because sed edits text. `mutants_aim.sh` immediately caught the first one
+  matching both copies of the mirrored list; fixed by making the copies differ textually (a
+  trailing comment) rather than by loosening the pattern.
+
+## The credits are a screen on the title, and it names artists rather than works — *M43*
+
+The fork: the demo ships CC-BY-SA art and the licence requires the credits be reachable from
+inside the game. `credits.json` had been in the pack since M40 with no reader. What surface, and
+what does it show?
+
+**Where it lives.**
+
+- **Chosen: a Credits row on the title.** It is the placement the LPC generator's own README names
+  first — "shown on the 'Credits' screen directly, or provide a visible link" — and attribution
+  guidance says outright that a main-menu option beats an end-of-game scroll.
+- *A staff roll after the ending* — `rejected — unavailable`. It is what the 16-bit references
+  actually do, and a template that ships a vertical slice has no ending to roll after. It is also
+  the weaker route for the thing credits are for: a player who never finishes never sees them.
+- *A row on the pause menu* — `rejected — no reference puts it there`, and the pause menu answers
+  "what do you want to do while you are here", which reading a document is not.
+
+**What it shows.**
+
+- **Chosen: a notice, then every artist by name, in full.** 43 names, twelve to a page.
+- *One row per work* — `rejected — it trims the wrong thing`. A row would read *title — artists —
+  licence*, which fits the nine terrain files and not the LPC character layers, which carry up to
+  eleven authors. The rows an ellipsis would cut are precisely the ones with the most people to
+  attribute, and a truncated artist is a failed attribution rather than a cosmetic loss.
+- *Both lists* — `deferred — worth trying`. The most complete answer and about eleven pages to
+  turn. Revisit hook: `CreditsMenu.of` already has the `files` array in hand — it reads `authors`
+  and ignores it — so a second block of pages is a second `_paginate` call.
+
+**How it pages.**
+
+- **Chosen: pages, and a paragraph is never split.** `_paginate` takes blocks; a name and a
+  sentence are the same shape to it.
+- *A scrolling crawl* — `rejected — no gate could see it`. Every layout audit here collects
+  `Panel`, `Label`, `ColorRect` and `TextureRect` by EXACT class, so rows inside a scroll container
+  are invisible to the audit and rows scrolled out of view measure as drawn off the window. That is
+  M42's own failure — an audit that measured two node classes could not see a bar drawn across the
+  sprite it described. Revisit hook: the collector in `test_credits_layout._rects`, which would
+  have to learn about the container and its clip rect before the screen could use one.
+
+**Not shown, and deliberately.** `LpcImport.credits_of` drops each layer's `notes` string (the
+"original by wulax, edited for v3 base by bluecarrot16" prose), so the screen cannot show it — the
+normalised entry is `file`/`authors`/`licenses`/`urls` and nothing else. `deferred`; revisit hook is
+`credits_of`, which would keep the field, and the drift gate would then compare it.
+
+**Not a fork, but the finding.** The first build of the screen broke page one in the middle of the
+sentence "Some layers are share-alike, so the". Every gate passed it: a split paragraph is inside
+every bound, distinct, in order, and correctly wrapped. Containment gates measure GEOMETRY and a
+sentence is MEANING, and nothing headless was ever going to notice. It was found by looking at the
+screenshot, which is the third time on this arc.
+
+
+## `GameConfig` states distances in TILES, and `at()` is the one binder — *M44*
+
+**The fork:** `data/game_config.tres` carried six numbers that were DOUBLE the template's defaults
+— 96 rather than 48, 24 rather than 12 — because the demo is drawn at 32px where the defaults were
+written for 16. Its own header explained the doubling and named the fix. The cost was never the
+doubling; it was that **nothing enforced it**. A game at 24px needed six numbers re-derived by
+hand, and the only witness to a drift was 24 frame-counted play sessions failing somewhere
+unrelated.
+
+- **Chosen: rename every distance with its unit, and bind a tile size into the config.**
+  `walk_tiles_per_second`, `interact_reach_tiles`, `body_tiles`, `idle_tiles_per_second`,
+  `footstep_tiles`, `camera_tiles_per_second`; `GameConfig.at(tile_size)` returns a duplicate that
+  knows its scale, and `walk_speed_px()` and its five siblings are the only way to a pixel. Every
+  shipped value converts exactly — 3.0, 0.75, 0.625, 0.375, 0.0625, 0.875 are all sums of powers
+  of two — so ×16 and ×32 are lossless and all 24 sessions stay byte-identical by construction.
+- **The accessors are deliberately NOT named after the old fields** — `walk_speed_px()`, not
+  `walk_speed()`. In GDScript `config.walk_speed` without parentheses yields a **Callable** rather
+  than a compile error, so an accessor wearing the old name would turn every missed reader into a
+  runtime failure and throw away the entire reason for renaming. The v10 save migration is the
+  precedent: rename with the unit so the compile gate enumerates the readers.
+- *Passing `tile_size` to every accessor* — **rejected.** `Locomotion`, `GridWalker`, `Interactor`
+  and `ActorBody` have no tile size, and two of their suites advertise "no scene at all" as the
+  point. Binding it into the config an actor already holds changes no signature and costs no
+  purity.
+- *Reading `GameState.tile_size` from the pure classes* — **rejected** for the same reason: it
+  would end their purity to save one field.
+- *Defaulting an unbound config to 16 silently* — **rejected.** A fallback that fires quietly is
+  indistinguishable from a missing feature; `_tiles()` `push_error`s and then answers as if 16, so
+  a world that forgot to bind is loud rather than half-speed.
+- *Leaving `grid_step_pixels` a distance* — **rejected**, and this is the deletion that pays for
+  itself. It was a distance because "a flag would still need the tile size from somewhere", which
+  forced `GameManifest` to cross-check the step against the start map's tile size. A bound config
+  already knows, so `grid_step` is a bool and **a step that is not a tile is unrepresentable rather
+  than refused**. The cross-check, the "cannot be negative" refusal and both their mutants went
+  with the rules — which is not the "never delete a row" case, that being about a stale pattern
+  over live code.
+- *`grid_step_tiles: float`* — **rejected as more expressive and less safe.** It keeps the "zero is
+  off" idiom and a negativity check, but re-opens exactly the bug the cross-check existed to close:
+  a 0.5-tile step desyncs the player from the grid the trigger tiles sit on, and nothing would
+  refuse it any more.
+
+**The trap this was built around, and the gate that answers it: Godot silently drops unknown
+`.tres` keys.** No error, no warning, no failed load. A rename that forgot `data/game_config.tres`
+would leave every value at its script default — and here that is *invisible*, because after the
+conversion the defaults ARE the right numbers. So `test_game_config.gd` does not gate the values
+(which pass either way); it gates the FILE naming no removed field. The demo's config now states
+none of the six and inherits, which is the most legible proof the change worked.
+
+`camera_tiles_per_second` got its first test ever in the same change: it had no suite and no
+mutant, and it is the one value that converts BACK to pixels, because
+`Camera2D.position_smoothing_speed` is engine-native px/s (checked against the Godot 4.7 docs).
+
+## The game stopped running a platformer's rulebook — *M45*
+
+**The fork:** `ActorBody` never set `motion_mode`, so every body ran the engine default,
+`MOTION_MODE_GROUNDED`. That mode classifies a surface by the direction you touched it FROM -
+above a floor, below a ceiling, the side a wall - so a platformer can ask whether it may jump.
+In a top-down game screen-up is NORTH, so the classification is about the compass while calling
+itself gravity. M13.4 had already paid for that once: a body on a moving *floor* inherits its
+velocity, so an NPC walking down into the player was dragged two tiles off her route.
+
+- **Chosen: `MOTION_MODE_FLOATING`, and `platform_floor_layers = 0` deleted with it.** Every
+  contact is a wall; there is no floor to stand on, so the NPC carry is impossible by
+  construction rather than opted out of. The clear could not stay beside it - under FLOATING it
+  is a line no test could ever watch fail, and a guard that cannot fail has stopped being one.
+  Its mutant went with the rule, which is not the "never delete a row" case: that is about a
+  stale pattern over live code.
+- *Keeping the narrow opt-out* — **rejected now, correct in M13.4.** It switches off one feature
+  of a concept that does not belong here at all, and leaves every other consequence of that
+  concept in place.
+- *Making motion mode DATA* (a `GameConfig` field, the `save_policy`/`grid_step` shape) —
+  **deferred, worth trying.** It is the right answer the day a game built on this template wants
+  a real side-view section. Revisit hook: `GameConfig`, a StringName checked against a list, and
+  `ActorBody.setup()` already receives the config. Not now: one game ships, it is top-down, and
+  an axis nobody varies is a concept with no second instance to keep it honest.
+
+**What the measurement changed.** The deferred entry above records "16 cascading failures", and
+that figure was true of eleven sessions in M13.4. Re-measured against 24: **23 pass untouched and
+one diverges.** The sessions had grown more robust in between, because "held against geometry,
+never counted in tiles" became the house rule. *A deferred decision should be re-measured before
+it is re-argued - the number in the record is a fact about the day it was written.*
+
+**The one divergence was not a physics problem, and fixing it made the session better.** It was
+`finish_the_quest`'s cave entry: a hold that crosses a warp carries its remaining frames into the
+next map, so a 0.073px difference in where a body rests decided which frame the warp fired on and
+landed the player a tile apart. The cave's two bushes then amplified it - one arrival slides east
+along row 7 and is stopped short, the other is wedged against the western bush and walks the clear
+row above. `CLAUDE.md` already forbids exactly this ("a leg that follows a warp must re-anchor
+against geometry"), so the leg was fragile by the contract's own standard and had been passing on
+an accident. The fix is a south-east diagonal that brings every arrival onto the same tile -
+measured identical to a thousandth of a pixel from both - and **it passes under BOTH motion
+modes**, which is what makes it a robustness fix rather than a re-tune.
+
+**And the slide test could not see any of this.** It asserted the body slid AT ALL
+(`is_greater`), which is true under both modes. It now pins the DISTANCE: 11.31px in 20 frames
+under GROUNDED, 14.96 under FLOATING. That difference is the asymmetry being removed - along a
+VERTICAL wall the modes are identical, and only a horizontal one diverges, because only a
+horizontal one is a "ceiling".
+
+## The window is the player's to recolour, and a palette is a whole set — *M46*
+
+Every screen in this game reads its colours from the running `SpriteStyle`, and until now that
+was the whole story: a game decided what its windows looked like and the person playing had no
+say. `GENRE_CONVENTIONS.md` §16a had named that as the one convention in the chrome section the
+template did not follow.
+
+**What the references actually offer** (§16b, disassembly-derived because both wikis that would
+carry it were blocked - fandom answered 402 and wikibound 403):
+
+- **Final Fantasy VI** edits a window *pattern* (`"1 2 3 4 5 6 7 8"`) and a window *colour* on
+  three bars, `R`, `G` and `B`, aimed at either the `Font` or the `Window`, with a `Reset`.
+- **Pokémon Gen I** offers no window customisation at all - `DisplayOptionMenu` draws exactly
+  text speed, battle animation and battle style. Gen II adds a numbered `FRAME`, which is a
+  border STYLE and not a colour.
+- **EarthBound** picks a *flavour* during new-game setup; the flavours are palette swaps over one
+  set of window graphics.
+
+- **Chosen: a named `UiPalette` under `data/palettes/`, laid over the style's eight roles.**
+  A player picks *Parchment*, *Mint* or *Charcoal* and every role moves together.
+- *Three colour bars, FF6's own shape* — **rejected, and the reason is this template's chrome
+  rather than taste.** FF6's window is one colour; ours is eight ROLES, and a screen reads
+  `panel`, `border`, `header`, `select`, `text`, `dim`, `hp` and `mp` separately. Three sliders
+  would recolour one role and leave seven behind - and the roles are not independent, because
+  `text` has to stay legible on `panel`. *Parchment* is the proof: it inverts the value order,
+  dark ink on warm paper, which is only readable because all eight moved at once. Twenty-four
+  sliders is the honest version of that offer and nobody wants it. Revisit hook: `UiPalette` is
+  a Resource, so a screen that edited one and saved it is additive.
+- *A tint or a hue rotation over the style's own colours* — **rejected.** It is one number and
+  would have been cheap, and it produces colours nobody chose: `hp` and `mp` are the only two
+  colours on a screen and are picked to be told apart, which a shared rotation does not preserve.
+- *A per-STYLE list of alternative chromes* — **rejected.** The palettes would multiply by the
+  styles and three quarters of them would never be looked at.
+
+**A palette and a style are checked by ONE function**, `SpriteStyle.role_problems`, called by
+both `SpriteStyle.problems()` and `UiPalette.problems()`. Two implementations of "a complete set
+of chrome" drift the day a role is added, and the loser lets its side ship a hole - which does not
+look like a hole. A palette missing `hp` draws the health bar in whatever the style underneath
+said, so it is still the right size, in the right place, in a plausible colour, and every layout
+gate passes.
+
+**`_bind_style` is where the palette is laid on, because it is the ONE binder.** The style, the
+letterbox and the window were already three statements that must not come apart; the palette is a
+fourth. `_style_source` is kept beside `_style` for a reason a single-change test cannot see: a
+palette is composed over the STYLE, and composing over the last composed result would work once
+and never get back.
+
+**The dialog box is rebuilt and the controls hint is restyled, and the asymmetry is deliberate.**
+The box holds its colours in a StyleBox and half a dozen theme overrides made once in `setup()`,
+so a second way of applying them would be a second thing to keep in step - and no conversation can
+be open when a recolour is asked for, because the pause menu opens from `WORLD` only. The hint
+carries STATE: whether it has been dismissed, and how far through its fade it is. A fresh one puts
+"use the arrow keys" back on the screen of somebody an hour into the game, and every colour
+assertion still passes.
+
+**Deferred, with hooks:**
+
+- *Text speed*, which EarthBound, Pokémon and FF6 all offer. Hook: `DialogBox` reveals one
+  character per frame.
+- *A window PATTERN* beside the colour, FF6's other axis. Hook: `UiChrome.frame` builds one
+  `StyleBoxFlat`; a pattern is a second field on `UiPalette` and a branch there.
+- *Per-style default palettes.* Hook: `SpriteStyle` could name one, and `_palette_of` would fall
+  back to it instead of to null.
+
+## Options is one screen with two ways in, and two states — *M46*
+
+PR1 made the windows recolourable and gave no player a way to reach it. This is the surface.
+
+- **One `OptionsScreen`, opened from a row on the title AND a row in the pause menu.** *Chosen.*
+  Pokémon Gen I's placement, read out of `pret/pokered`: `OPTION` sits on the title menu
+  (`engine/menus/main_menu.asm`) and in the in-game start menu (`home/start_menu.asm`), calling
+  the same routine. This template has a title where Final Fantasy VI does not, so FF6's
+  field-menu-only answer would strand a player who wants to turn the sound down before starting.
+- *A page of the pause menu* — **rejected.** There is no pause menu at the title, so the title
+  would need its own copy of the rows, and two lists of the same settings drift.
+- *Title only* — **rejected**: the volume was already reachable mid-run and taking that away to
+  add a feature is a regression wearing a new row.
+
+**The pause menu CLOSES on the way through, and that is not a workaround.** No overlay in this
+game opens over another - `tools/flow_model.json` declares it and the flow suite proves it - so
+`_on_pause_options` closes the menu and defers the open, which is the `lose_battle` two-hop and the
+`OP_SHOP` deferral, both already here. Esc therefore returns to the world.
+
+- *Esc returning to the pause menu*, Final Fantasy's own behaviour — **deferred, worth trying.**
+  It needs the state to remember which base it was opened over, which is a second edge out of one
+  state chosen by something a player cannot see. Revisit hook: `_close_options`, plus a remembered
+  origin on the world.
+
+**`OPTIONS` and `OPTIONS_AT_TITLE` are two Router states, and the walks are what found that.**
+It shipped as one state with two exits, and the seeded journeys reached it on the first run and
+minimised to `open_options_from_title, close_options, open_battle, lose_battle` - a walk that
+opened the page over the title and then left it into a world that was not there. The two differ in
+every way a state can: a game is running behind one and not the other, and leaving them goes to
+different places. *A state whose legal exit depends on something nobody wrote down is not one
+state*, and the giveaway was already in the model file: the entry declared neither `game_running`
+nor `no_game_running`, because neither was always true.
+
+**Deferred, with hooks:** *text speed*, which EarthBound, Pokémon and FF6 all offer - hook,
+`DialogBox` reveals one character per frame. *Key bindings*, which have no seam at all: 42 bare
+`&"action"` literals across `scripts/ui/`, no `InputMap.action_*` call anywhere, and a controls
+hint that is a hand-written string - the hook is an `Actions` constants class replacing the
+literals, persistence beside the volume, and a hint DERIVED from the map (`setup_input_map.gd`
+carries a count line that would move with it). *Fullscreen*, **rejected** on the Quit row's own
+precedent: a row that does nothing on one of two shipped platforms is worse than no row.
+*2026-09-20: the key-bindings half is paid in part by M52 - the literals are tokens filled by
+`Prompts`, the hint is data in the same tokens, and the map is gated against every printed word.
+Rebinding itself is still deferred and the hook stands.*
+
+**Found after the LOOK, by the user, in the shipped screen.** Recolour from the title, press Esc:
+the title behind was still in the old palette. `_rebind_style` was a hand-kept list of the layers a
+recolour reaches - the dialog box and the hint - and the title was not on it, though PR1's own
+comment said PR2 would add it. It is a driver now: every `CanvasLayer` that answers `restyle` is
+called, and `test_options_palette` asserts the membership over both bases. Why no gate saw it: the
+one title-palette test proved the palette at BOOT and never made a live change, the scripted
+session reads states and sound cues and no QA op reads a colour, and the layout audits measure
+geometry. No OCR was needed to catch it - the colour is read off the `StyleBoxFlat` that paints the
+window, which is exact where OCR is approximate. *The thing in the screenshots that looked like a
+bug and was not, measured:* the controls hint under the options page reads "WASD / arr" and seems
+cut off; its brightest pixel is 17/255, the hint dimmed by the 85% backdrop exactly as it is under
+the pause menu, and it "ends" where the map begins because a 17-grey vanishes against an 11-grey.
+Left alone.
+
+*Reversed on the owner's call, 2026-09-15, shipped 2026-09-19.* 17/255 is still what was measured.
+**What the fix actually changes on screen is small, and was photographed rather than argued** - the
+first draft of this entry claimed the hint was drawn at FULL under a save point and under every
+conversation, which is wrong in both halves. A before/after of each state, differenced pixel by
+pixel, is what caught it: **1,544 pixels under the pause menu, 36 under a conversation, and none at
+all at a save point.** The 1,544 spell out the hint's whole line, printed straight through that
+menu's OWN help line, which is exactly the "seems cut off" the original measurement was looking at.
+The 36 are a sliver escaping past the right edge of `DialogBox`, which otherwise covers the corner
+the hint sits in. The zero is because a save point, a shop and a fight are all reached by WALKING,
+and walking is what dismisses the hint - it has faded on its own long before any of them opens. So
+the first seconds of a new game are the only time any of this is on screen. So the change is bought for the rule rather than the pixels: a layer the world
+never turned off was drawn in every state, and now it is not.
+`world_scene._physics_process` now hands it `show_while(Router.player_can_move())` at its head,
+above the player guard so the rule covers the title and the credits as well, and `test_flow_model`
+checks it after every arrival rather than as a vertex invariant - it is a property of the machine, not
+of any state. What stayed: the fade still owns the label's alpha, because "has this player learned it"
+and "do these keys work" are two questions, and keeping them apart is what lets the rule be asserted in
+both directions.
+
+## The content gates are about A game, not THE game — M47
+
+Building the scaffold wizard meant asking what actually happens when a second `data/games/<id>.tres`
+appears. Most of the answer was reassuring: `GameSelect` refuses rather than guesses, `smoke_boot`
+and `test_game_manifest` already validate every manifest, and `check.sh`'s play loop already derives
+`--game=` from the QA directory name. Two rules in `test_map_content.gd` were not.
+
+`test_the_walk_reaches_every_map_the_game_ships` loaded `res://data/games/quest.tres` **by literal
+path** and required its reach to equal every map on disk; the portrait check crossed **every** game
+with **every** conversation in the repo. So a second game's start map was an orphan, and a second
+game drawn in another style demanded the first game's whole cast be redrawn in it. Neither is a
+wizard bug — both predate it by milestones, and this is the M7 finding again, where the second game
+found "an art gate that walked a different set of directories than the game did".
+
+- **Chosen: a pure `ContentReach` in `tests/helpers/`, beside `WarpGraph`.** `reachable_union` over
+  every manifest, and `dialogs_of(manifest, map_ids)` per game — the dialog ids its maps name, plus
+  the ones its hooks declare. The portrait rule is then scoped to the games that can OPEN each
+  conversation, and a second rule says every conversation on disk belongs to somebody. Scoping
+  alone would have been a weakening; the membership rule is what makes it a generalisation, and it
+  fails in both directions the way the map one does.
+- *Leave both as they are and record coexistence as a limitation* — rejected. The wizard's whole
+  claim is that a game is files added beside the template; a wizard whose output the template's own
+  gates refuse proves the opposite of what it is for.
+- *Give `GameManifest` a `maps` list, so a game says which rooms are its own* — `rejected — a
+  second list to keep in step with the warps`, and the one that drifts is the one nobody reads. The
+  warp graph already answers "where can this game go", and it answers it the way a player does.
+- *Derive the hook-named conversations by reading the hook's source* — `deferred — worth trying`,
+  and probably never: a hook says `ctx.say(...)` inside a branch, and static analysis of a branch is
+  a parser this repo has no reason to own. Revisit hook: `GameHooks.dialog_ids()`, which is the
+  declaration that replaced it.
+
+**The mutants for both rules live in `test_content_reach.gd`, over three fixture maps and two
+manifests, and that is the point of the entry.** With one game shipped, "the union over every
+manifest" and "quest.tres, hardcoded" are the same function — the production data equalises mutant
+and original, so a mutant judged by the shipped content would have SURVIVED while saying nothing
+about the rule. The fixture is a map no game's warps reach, which is the property the shipped
+content cannot have.
+
+**A third copy of the warden's dialog list turned up while doing it.** `quest_hooks.problems()`
+listed four ids, `test_quest_hooks` listed two of them, and neither knew about the other. Both read
+`dialog_ids()` now, and the test compares that list WHOLE against a literal of its own rather than
+counting it — a list read off the thing under test is satisfied by construction, and an empty
+`dialog_ids()` makes a per-item loop run no iterations and pass.
+## A new game is a command, and the planner is pure — M47
+
+`docs/ARCHITECTURE.md` has listed what a new game changes since M11, and `game_config.gd` names
+"the scaffold wizard" by anticipation. The forks worth recording are how it writes and what it
+decides for you.
+
+- **Chosen: `.tres` emitted as TEXT.** `ResourceSaver` would drop the `;` comments and re-order
+  the fields, and a scaffolded manifest that does not read like `data/games/quest.tres` teaches
+  the wrong shape to the first person who opens it. It is the sprite generator's own answer:
+  author in the tool, write the artifact, and let it diff like something a person wrote.
+- *Write it through `ResourceSaver` and accept the loss* — rejected. The manifest is the file a
+  new author reads first; a machine-ordered one with no comments is a worse teacher than the demo.
+- **Chosen: a scaffolded game shares `data/game_config.tres` unless an axis genuinely differs**
+  (`--movement=grid`, `--save=at_point`), and its own config states nothing else. Straight out of
+  the M11 entry above: the demo shipped a config whose only difference was a knob nobody asked to
+  turn, and the first person to play it asked what else was different.
+- **Chosen: the wizard always writes `tests/fixtures/qa/<id>/boots.json`.** `check.sh` runs every
+  `tests/fixtures/qa/<dir>/*.json` with `--game=<dir>`, so the new game is inside the play gate on
+  the day it is made and the gate is not edited. A game nothing boots is a game nothing notices
+  breaking.
+- *Leave the session to the author* — rejected: it is exactly the file nobody writes, and its
+  absence is invisible.
+- **Chosen: a walled room, a spawn, the player, and one greeter who says one line.** The dialog
+  seam gets a worked example in the new game's own files, and the generated session can assert a
+  conversation opens rather than only that a map loaded. *A bare room* — rejected as too little to
+  learn from; *a room with a sign and a chest as well* — rejected as the template starting to
+  design somebody's game.
+- **Chosen: the claim is a gate, not a paragraph.** `test_scaffolded_game_boots.gd` plans into
+  `user://` and starts the game through `world.start_game(manifest)` — the `test_game_switch`
+  seam — with `MapData.root` pointed at the scaffolded room. No second manifest on disk, no engine
+  spawn, and the player is walked to prove the config bound and the body came up.
+- *Prove it by hand once and record it, the way Tiled was verified* — kept as well, for the
+  TWO-GAME case only, which is the one a test cannot stage: a second manifest in `res://data/games`
+  changes what `GameSelect` answers for every other suite in the same process.
+
+**Deferred, with hooks:** *deleting the demo* — the `docs/DECISIONS.md` entry above says the real
+use case is "cloning, renaming, deleting the demo, and finding out what breaks", and the wizard
+does the first two thirds of that. A `--replace` that removes `quest` is a different and more
+dangerous command; hook is `GameScaffold.plan`, which already knows every path a game occupies.
+*A `--style` that does not exist yet*, so a game can be scaffolded alongside new art rather than
+only onto shipped art; hook is `known_from_disk`.
+
+## What the two-game proof found — M47
+
+The wizard was scaffolded into this repo once, `application/config/game` was set as it instructed,
+and `tools/check.sh` was run with two games on disk. That is the one case no test can stage: a
+second manifest in `res://data/games` changes what `GameSelect` answers for every suite in the same
+process, so a suite cannot put one there. It is recorded here the way the 2026-09-01 Tiled pass is.
+
+**The run is the evidence, and the acceptance criterion is M7's own:** the second game added
+`data/games/proof.tres`, `data/maps/proof_start.json`, `data/dialog/proof_hello.json`,
+`games/proof/` and `tests/fixtures/qa/proof/`, and touched nothing under `scripts/`, `tools/` or
+`scenes/`. `ALL GATES PASS`, at **26** scripted play sessions rather than 25 — the wizard's own
+`boots.json` ran with `--game=proof`, found the room, walked into the greeter and had a
+conversation, with no edit to the gate.
+
+It found a third gate assuming one game, which PR1 had not:
+`test_a_map_painted_against_another_style_is_refused`, in both editor round-trip suites, named
+`gb16` as "another style". That is only another style while the demo is the only game — a second
+game drawn in gb16 makes the suite read a gb16 map as gb16, so the refusal it exists to prove
+cannot fire and the test goes red having found nothing wrong. `ArtFixtures.some_other_style`
+derives it now, and the property is asserted over EVERY style in `test_gates_consistency` rather
+than over the one that happens to ship, because with one game the literal and the derivation return
+the same answer.
+
+The same trap caught the two new suites themselves, which is worth recording rather than quietly
+fixing: `test_new_game_tool` compared `GameSelect.ids()` against the literal `["quest"]` and
+`test_scaffolded_game_boots` named its own game `proof`. Both went red over a game they had nothing
+to do with. `GameFixtures.unused_game_id` derives a free name, and the after-test assertion compares
+against the ids seen before the test rather than a list of what this project ships. **A suite that
+spells the shipped set of games into itself is the defect this milestone is about, and writing two
+new ones on the same afternoon was not enough to avoid it.**
+
+**Deferred:** the two-game run is not a `check.sh` step. It would write into the working tree on
+every gate run, and an interrupted one would leave half a game behind and three suites red for a
+reason nobody would connect to the interrupt. Revisit hook: `tools/new_game.sh --out=`, which
+already writes anywhere, plus a throwaway copy of the project to write into.
+
+---
+
+## One side of a boundary draws it, and the blend was rejected by eye — *M48*
+
+Two ringed materials meet in exactly one place in the demo: the cave pool, where `water` meets
+`path`. `water`'s `over` names `path`, so the water composes the shoreline and the path composes
+nothing. That was an authoring convention held up by `path` simply not listing `water` back — add
+that one array today and both sides fringe, refused by nothing and failed by no test. M48 turned it
+into a rule, which forced the question of WHICH rule.
+
+**The fork: should a boundary between two ringed materials be drawn once, or from both sides?**
+
+- **Once, by whichever side's `over` names the other.** One cell of transition. The material that
+  names the other is the one that spills onto it.
+- **Both sides, blending into each other.** A two-cell-wide transition where each material fades
+  into its neighbour — the softer look, and what a painter would reach for.
+
+**Chosen: once.** Both were built and photographed at `quest_cave` before deciding (with the
+refusal temporarily off, `path` given an `over` of `["water"]`, regenerated and re-imported; the
+experiment was backed out and the art drift gate confirmed the tree was clean again).
+
+**And the reason is legibility, not taste.** `TerrainEdges.compose` lays the DRAWING tile's ring
+over the OTHER material's plain art. So a `path` cell drawing its verge against water comes out
+mostly water-blue — and a `path` cell is WALKABLE. In the photographs the doubled version paints a
+thick blue band around the pool, sixteen tiles the player walks straight across, and the pool reads
+at roughly twice its real size. The game would be telling the player "water, do not go here" about
+ground they can cross. The single fringe says something true.
+
+- `rejected — reads as water on walkable ground`. Not rejected as ugly; the blend is the
+  better-looking of the two. **Revisit hook:** `TileBank._boundary_problems` becomes an opt-in
+  per-pair allowance rather than a flat refusal, and `path` gains an `over` group of `["water"]`.
+  Worth revisiting only for a pair where BOTH materials are unwalkable, or where the rings are
+  drawn so the spill reads as the drawing tile's own material rather than the neighbour's.
+
+**The rule is the first cross-tile check in this project.** Everything in `TileBank.problems()`
+before it validated one tile at a time, and `TerrainEdges.pick_group` cannot see a neighbour's ring
+at all. The shipped bank cannot express the fault, so the mutant is judged against a synthetic
+reciprocal bank rather than against `data/tiles/lpc32.json`.
+
+---
+
+## An editor is shown the shapes, and its brush paints the GROUND — *M48*
+
+The game composes a shoreline for each cell from its eight neighbours, one material drawing each
+edge. Tiled's terrain brush picks a tile per cell from colours on the sides and corners BETWEEN
+cells. **The fork: how to put the one onto the other.** Every option was measured through Tiled
+1.12.2's own filler, driven by a script with each tile it picked judged by `TerrainEdges`, before
+any of it was written.
+
+- **A Wang set coloured ground wherever any touching cell is ground, painted from the ground.** A
+  side is ground exactly when that neighbour is; a corner when any of the three cells sharing it
+  is. Painting grass around a pond put the game's own shape in 108 of 108 cells, for both the
+  water and the path blocks, through the sets the exporter really writes. Cost: the water itself
+  cannot be brushed, and a one-tile pool has no colouring of its own.
+- **Paint the water instead.** The natural gesture. Structurally impossible for a one-sided bank:
+  the brush claims a painted cell's whole border, so every water cell reads alike and the shape
+  information lands in the ground cells, which draw nothing. 40-45 cells flipped in every
+  configuration tried.
+- **Leave the corners `normalise` ignores unset (Tiled's `0`).** The obvious reading of "the shape
+  does not depend on that corner". Worse, and the reason is in the filler's source: a candidate
+  must match every painted position exactly, so an unset corner matches nothing painted, and
+  painting ground erased every cell of the pond.
+- **Tiled Automapping rules instead of a Wang set.** Would let an author paint the water and would
+  express a one-tile pool, because a rule reads cells rather than corners. Costs a rules file per
+  bank and "AutoMap While Drawing" switched on by every author.
+- **Export the shapes and fold them back, with no brush.** Is the foundation of the chosen road
+  rather than a road of its own: an editor is shown the shoreline either way.
+
+**Chosen: the Wang set, painted from the ground.** It is the one colouring every cell agrees on,
+it was exact wherever it can be used, and no shipped map has a cell it cannot make. Two ties the
+filler would otherwise settle at random are put at Tiled probability 0: the two one-colour shapes,
+which mean what a plain tile means (without it, single-tile ponds were scattered over a third of
+painted grass), and every `over` variant past the first (`grass_alt` was painted over 41-50 of 90
+cells).
+
+- Paint the water — `rejected — impossible for a bank where one side draws the edge`.
+- Unset corners — `rejected — measured to erase whole ponds`.
+- Automapping — `deferred — worth trying`. **Revisit hook:** `map_io` writing a `rules.txt` and
+  rule maps beside the export, generated from the same `TerrainEdges.MASKS` table the Wang set is
+  built from, so the two cannot disagree about which shape a neighbourhood asks for.
+- Export and fold only — `rejected — the brush was the point`; it ships anyway, underneath.
+
+**Tiled's `wangid` order was not guessed.** The JSON documentation states only `uchar[8]`. It was
+read from `wangset.h` at the installed tag (clockwise from the top — `TerrainEdges`' own order) and
+confirmed on the binary by putting one colour at each position and asking which it treats as an
+edge: 8 of 8 as predicted.
+
+## The arena is a screen behind the fight's own seam, and its rules stay pure — *M49*
+
+The largest item in the backlog is a second way to resolve an encounter: an arena that opens when
+the player meets an enemy, fought with a sword rather than chosen from a menu.
+`GENRE_CONVENTIONS.md` §7d is the research; this entry is what it decided before anything is built.
+M39 is the precedent, a rule the template decided for everybody becoming a word a game states with
+both sides gated. The seam was re-measured at `6e6a54e` and is named here by function rather than
+by line: in through `world_scene.open_battle_with(defs, seen_key)`, out through `BattleScreen`'s
+`finished(outcome, effects)` into `_on_battle_finished`, seeded by `_battle_seed(seen_key)`, latched
+by `_committed`, and reaching the world through four `GameContext` ops.
+
+**The fork: where the second resolver lives.**
+
+- **A screen.** A `CanvasLayer` opened under `Router.State.BATTLE` exactly as `BattleScreen` is,
+  holding a small arena and stepping its own rules once per physics frame. Everything on both sides
+  of the seam is inherited, from the encounter trigger and the seen key to the rewards, the music
+  and the game over, and `Router.player_can_move()` does not change: the field's player is halted as
+  for a turn fight, and the arena's fighter is a different thing.
+- **The map.** A new state in which the field's own player moves and fights. Every line below the
+  `player_can_move()` early return in `world_scene._physics_process` would be split again (the
+  player moves, the NPCs stop, the triggers stop); the one-line predicate gains a case its three
+  readers (`world_scene`, `Router.accepts_world_input`, `GameState`'s play clock) all inherit; and
+  `_drive_npcs()` sitting below that gate, a decided placement, reopens.
+- **No arena at all: the fight happens on the field, Zelda's own shape.** The option the research
+  made real rather than hypothetical. Enemies get brains on the map and the sword is a field verb,
+  with nothing to open or close. It forfeits the seam: there is no `finished`, so no single moment
+  to mark an encounter `seen`, no music takeover and no caller for the game over. It needs enemies
+  that come back when a map is re-entered, which this template has no model for; it puts hit
+  detection inside the loop every scripted session walks; and it makes a JRPG template an
+  action-adventure one.
+
+**Chosen: a screen.** It is the only shape that changes nothing on either side of the seam, and the
+reference for the shape fights on a battlefield apart from the field (§7d, secondhand).
+
+**The fork: what moves an arena's bodies.**
+
+- **The engine.** Arena bodies as `ActorBody`s driven through `apply()`, which is `move_and_slide`,
+  with `Area2D` hitboxes. The physics engine becomes the rules, so they exist only inside a running
+  scene: `BattleDriver` could not play them, no session could be replayed from pure state, and
+  bodies under a `CanvasLayer` would share the field's physics space.
+- **A pure simulation.** Positions move one physics frame at a time inside a RefCounted with no
+  nodes and no clock, and the screen only places what it draws. `BattleLogic`'s discipline, and the
+  reason the balance gate exists.
+
+**Chosen: a pure simulation.**
+
+**The fork: where the word that picks a resolver lives.** The owner's call, 2026-09-13.
+
+- **`GameConfig.combat_style`, beside `save_policy`.** A game that cannot fight would carry a word
+  nothing reads, and a game that wants the arena would need a config of its own, which M47 made the
+  sign that a game's movement or saving differs.
+- **`CombatDef.style`.** The word exists exactly when the game can fight, the frame counts an arena
+  needs already live on that resource, and `data/games/quest.tres` already argues the principle: a
+  game without battles must not carry battle knobs it will never turn.
+
+**Chosen: `CombatDef.style`**, a StringName checked against a list in `problems()`, for the
+`save_policy` reason: an enum in a `.tres` is a bare integer. `GameScaffold.COMBATS` already spells
+`turns`, so the two lists must agree about every word but `none`, and the build owes a test that
+holds them to it.
+
+**The fork: which button swings.** Every Zelda gives the sword a button of its own. The roads are
+`interact` doubling inside the arena, where there is nothing to talk to; a new `attack` action; or
+Zelda's two item buttons. Left to the owner at build time, because a control is judged in the hand.
+
+**The arena reuses `Router.State.BATTLE`** rather than adding a state. States are told apart by
+what is legal in them (`docs/learnings.md`), and an arena's legality is a turn fight's exactly: the
+field cannot move, one screen owns input, and the ways out are the same. The flow model gains no
+state; its `battle_screen_up` invariant must come to mean that a resolver's screen is up, and that
+edit is made before any code.
+
+**The contract a second resolver is held to.** *Built in M50: `CombatDef.style`, `FightScreen`, `ArenaScreen` and `ArenaSim`, each item below with a test and a mutant.*
+
+- `CombatDef.style` is `turns`, the default, or `arena`, and anything else is refused by name.
+- `open_battle_with` keeps every guard it has and chooses the screen after them. `finished(outcome,
+  effects)`, the four ops and a latch like `_committed` do not change, because the world applies
+  whatever arrives.
+- Every draw an arena makes comes from `derive("arena")` off the same seed. A third reader of
+  `moves` or `target` would move every recorded replay.
+- The rules are pure and integer. Invulnerability and a swing's live frames are frame counts on
+  `CombatDef`, and a push is a distance in tiles.
+- QA finds the screen by type, as `Qa._battle_screen()` does, and the balance gate is a driver of
+  opposed policies over the pure rules, `BattleDriver`'s shape.
+- `NpcBrain.intent(at)` reads no target, so a foe that chases needs a brain that does, drawing from
+  the arena's stream.
+- Both values are proven on a fixture manifest that varies only `style`, M39's control-instance
+  rule. Whether the demo itself carries an arena, which `demo-must-show-the-feature` argues for, is
+  the build's question. *Answered in M50: it does, as The Barred Gate: Arena beside the turn game,
+  picked on the title.*
+
+- The map — `rejected — one predicate with three readers, and a decided placement reopened`.
+- No arena — `rejected — it forfeits the seam and needs a respawn model`.
+- The engine as the rules — `rejected — no balance gate and no replay`.
+- `GameConfig.combat_style` — `rejected — a word a game that cannot fight carries for nothing`.
+- The swing button — `deferred — the owner's call when there is something to press`.
+  **Revisit hook:** `tools/setup_input_map.gd`, one `_action(...)` line and the count it prints.
+- Fleeing an arena — `deferred — worth trying`: Ni no Kuni has a way out (secondhand) and a Zelda
+  has no arena to leave. **Revisit hook:** `BattleLogic.Outcome.FLED` is already legal on the seam
+  and `_on_battle_finished` handles it; at M49 `tools/flow_model.json` declared no edge for it even
+  for the turn fight, so the first milestone that models a flee writes that edge first.
+  *The turn fight's half is taken up, 2026-09-19:* `flee_battle` is in `tools/flow_model.json` with
+  the trace `battle -> world`, which is a WIN's trace exactly - so the edge is asserted on the
+  world's own `battle_changed` announcement, which carries `fled` where a victory carries
+  `victory`, rather than on the recording, which is a negative anything could satisfy. It bought
+  real coverage: that ternary was reached by no test at all, since the only reader of the field
+  read it on a win. Fleeing an ARENA is still deferred and still has no edge; the hook stands.
+
+## The arena is played on the talk button, fought alone, and shipped as a second game — *M50*
+
+Three calls the M49 entry left open, made by the owner on 2026-09-13 before any of the build.
+
+**The fork: which button swings.**
+
+- **`interact`** — Space, Enter or E, and a gamepad's A. The turn fight is already played on it, so
+  both fights use one key: no binding, no input-map change, and the controls hint stays true. *(2026-09-20:
+  "a gamepad's A" was a binding nothing exercised until M52, which presses it through the map.)*
+- **A new `attack` action** — Zelda's shape, the sword on a button of its own. A ninth binding in
+  `tools/setup_input_map.gd` and `project.godot`, one more word in the hint, one more key to learn.
+- **Zelda's two item buttons** — two verbs, for a template with no item to put on either.
+
+**Chosen: `interact`.** There is nothing to talk to inside an arena, so the doubling costs nothing
+there.
+
+- A new `attack` action — `deferred — worth trying` when a game wants a second verb in the arena (a
+  shield, a thrown item). **Revisit hook:** `tools/setup_input_map.gd`, one `_action(...)` line and
+  the count it prints; `ArenaScreen._unhandled_input` is the one reader.
+- Two item buttons — `rejected — no item verb exists to put on them`.
+
+**The fork: where the arena shows up for a player.**
+
+- **A second game, both on the web behind a picker.** `data/games/quest_arena.tres` is The Barred
+  Gate with every map, enemy, companion, conversation and hook shared, and only its combat
+  definition saying `arena`. The title offers the choice.
+- **A second game, local only** — the deployed page stays the turn fight and the arena is played
+  with `--game=`.
+- **Tests only** — an in-memory manifest in the integration suites and `new_game.sh --combat=arena`.
+- **The demo switches** — The Barred Gate becomes a sword game.
+
+**Chosen: both on the web, behind a picker.** The second game is also M49's control instance: it
+varies `style` and the numbers only an arena reads, so anything a player feels differently is the
+resolver.
+
+- Local only — `rejected — the one surface where the choice is visible would be the one missing it`.
+- Tests only — `rejected — a system the demo never shows is one its owner reports as missing`.
+- The demo switches — `rejected — it retires magic, items in a fight, statuses and formations from
+  play to show one system`.
+
+*Reversed by M51, on the owner's call of 2026-09-14:* one game again, with the sword reached from a
+Fights row in Options, and The Barred Gate: Arena retired. See the M51 entry at the bottom.
+
+**The fork: who fights.**
+
+- **The leader alone, the whole party sharing the award** — Zelda's one sword on the floor. Every
+  member earns the experience and whatever level it buys, as in a turn fight, and a companion takes
+  no damage.
+- **Every member on the floor** — each companion a body with a brain, a target of its own and hits
+  of its own taken.
+
+**Chosen: the leader alone.**
+
+- Every member on the floor — `deferred — worth trying`. **Revisit hook:** `ArenaSim` is already
+  handed every member; the work is a brain for an ally and a body per member.
+
+## A second game is picked from a row on the title, not a screen in front of it — *M50*
+
+M8 shipped a picker as its own screen before the game, and M11 deleted it with the second game,
+because what a visitor met first was "a menu asking which demo they would like". M50 ships a second
+game again, so the question comes back.
+
+- **A row on the title, appended last, shown only when nothing chose.** "Switch game" re-opens the
+  title wearing the next game's name, palette, voice, music and save slots, all of which the title
+  already reads from the one field `_offered`. `GameSelect.should_ask` returns from M8 unchanged,
+  and `--game=` still beats everything, so every scripted session sees the rows it always did.
+- **M8's screen** — a menu before the title.
+- **The last game played, remembered in `Settings`** beside the palette, so a returning player lands
+  where they left.
+
+**Chosen: a row on the title.** A visitor still meets a game, which is what M11 wanted, and reaches
+the other in one press. The row goes LAST because scripted sessions count presses and have no enum
+to name.
+
+- M8's screen — `rejected — M11's objection still stands`.
+- Remembered in `Settings` — `deferred — worth trying`. The hazard is named before anyone builds it:
+  anything that boots the world without `--game=` would start whichever game the machine last
+  played, so a suite could go red on one developer's machine and nowhere else. **Revisit hook:**
+  `Settings`, beside `palette`, and read only after the redirect `test_settings.gd` already asserts.
+
+*After M51* one game ships, so there is no game to remember. The hazard this names is real for M51's
+own play choices, which DO live in `Settings`, and the M51 entry is where it is answered.
+
+## The arena's rules are integer — *M50*
+
+- **Integer.** Positions in 256ths of a tile, a heading of -1, 0 or 1 per axis, speeds carried
+  forward as a remainder (Bresenham's line, used as a clock), and every box a `Rect2i`.
+- **Floats**, the way the world's own movement is: `Vector2` positions moved by normalised
+  velocities.
+
+**Chosen: integer.** The world can afford floats because no gate replays a walk against a recorded
+number; the arena is replayed from a seed and a list of inputs by the balance gate and the scripted
+sessions, on a Mac and on the Linux runner. IEEE-754 pins `+ - * /`, but a compiler allowed to fuse a
+multiply and an add into one step is not promised to agree with one that does not, and a difference
+in the last place, over a thousand frames, is enough to flip a box test on one seed of twelve. It was
+not measured happening: it is designed out rather than waited for, because a difference nobody can
+reproduce on their own machine is the expensive kind, and the M49 contract already said "pure and
+integer".
+
+- Floats — `rejected — a replay that is allowed to differ between the two machines the gate runs
+  on`. **Revisit hook:** `ArenaSim.UNITS_PER_TILE`.
+
+## The arena's balance gate lets a careless player win one seed in eight — *M50*
+
+The turn fight's gate asserts both ends on every one of twelve seeds: timing beats the Keeper and
+mashing loses to him. The arena was measured the same way on 2026-09-14, before any threshold was
+written, and neither half kept that shape.
+
+- The careless driver as first built swung whenever a foe came within a quarter tile, and it won
+  every shipped fight on twelve seeds without once being touched, exactly as the skilled one did.
+  The blade reaches three quarters of a tile past the body and a touch reaches none, so swinging a
+  moment early IS using the reach. No enemy speed or chase period separated the two either: a
+  faster, more eager Keeper beat the skilled driver first. So CHARGE now swings only once it has
+  walked into what it is fighting, and the enemy numbers stayed where they started.
+- That player loses to the Keeper at level 2 on most seeds, not all of them: 44 of 48, and 45 or 46
+  at every flash length tried from 32 frames to 48. The skilled driver won all 48, at every level.
+
+**The fork: what the gate asserts about the careless player.**
+
+- **A rate over 48 seeds** — it may beat the Keeper at most 6 times. A change that made the sword's
+  reach decorative moves that count to most of the 48.
+- **Every one of twelve seeds**, the turn gate's shape — seeds 1 to 12 hold 11 losses, and tuning
+  until they hold 12 fits the numbers to twelve particular seeds rather than to the fight.
+- **A boss that is not knocked back** — a per-enemy field keeping the Keeper within reach after a
+  blow. Unmeasured: nothing yet says the careless player's few wins come from the shove.
+
+**Chosen: a rate over 48 seeds.** An arena is bodies wandering at random, so "almost never" is the
+fact, and "never" would be a claim about which seeds were picked.
+
+- Every one of twelve seeds — `rejected — tuned to the seeds, not the fight`.
+- A boss that holds its ground — `deferred — worth trying` when a game wants one. **Revisit hook:**
+  `EnemyDef` beside `body_tiles`, read where `ArenaSim._strike` sets a struck foe's shove; its effect
+  shows in `CARELESS_WINS_ALLOWED` in `tests/unit/test_battle_content.gd`.
+
+*Measured 2026-09-14 (M50.1), and no longer "unmeasured":* a Keeper who holds his ground, keeps coming
+while he flashes, and is never pushed makes the careless player win **47 of 48** at level 2 (4 as
+shipped); flinching in place without the push wins **48 of 48**; the skilled player wins 12 of 12 in
+every variant. A Keeper who is not pushed stays in reach, a frame resolves the sword before the touch,
+and a flashing foe cannot bite, so walking into him chains hits. No single Keeper number repairs it:
+with the holder, health 60 wins 46, attack 16 wins 17, speed 3.0 and a re-aim every 8 frames win 48,
+defense 6 wins 46. Put to the owner the same day and not yet decided; the code is a local branch,
+`m50-1-keeper-holds-ground`, and nothing ships.
+
+## The arena's swing is the art's own slash, and a drawn one only where the art has none — *M50*
+
+The arena's first photographs showed the sword as a flat block over its reach. §7d found that both
+Zeldas draw the sword as a sprite stepped by the counter that paces its hitbox, with nothing trailing
+an ordinary swing.
+
+- **The art's own slash** — LPC's `slash` animation, rows 12-15, composed with a weapon layer and
+  held one picture at a time from the swing's own frames.
+- **A drawn slash for every style** — a sweep over the reach in the window colours, and no art.
+- **A small sword drawn by the procedural rig** — a weapon part in every rig and every style.
+
+**Chosen: the art's own slash**, the owner's pick on 2026-09-14, with a drawn sweep where the art has
+none. At the pinned generator commit only the **dagger** draws its slash on the 64px frames the rest
+of a character uses; every other sword draws on 128 or 192px frames below the universal sheet.
+
+- A drawn slash for every style — `rejected — it hides a swing the artists drew`; kept only as the
+  fallback for art without one.
+- A sword drawn by the rig — `rejected — a weapon part in every rig and style, for a fallback`.
+- Oversize swords (arming sword, longsword, saber, rapier) — `deferred — worth trying`; the arming
+  sword has a bronze variant matching the game's Bronze sword. **Revisit hook:** `SheetMeta.cell` is
+  one cell size per sheet, so a 128px swing beside 64px walking cannot be described; the work starts
+  at `LpcCompose.CLIP_ROWS` and `LpcImport`.
+  *Pursued by M50.2, on the owner's call of 2026-09-15:* the bronze arming sword, chosen from the
+  bronze and iron arming swords, the longsword and the saber after previews. See the M50.2 entry at
+  the bottom.
+- **Unjudged by hand:** the dagger's drawn reach is shorter than the 0.75-tile hitbox. **Revisit
+  hook:** `CombatDef.swing_reach_tiles`.
+  *Measured again for the arming sword, 2026-09-15:* its drawn swing now reaches PAST the hit - about
+  0.4 of a tile facing left or right, a third of a tile facing up - and short of it facing down, where
+  the arc is drawn sideways. Still unjudged by hand, and the reach is unchanged.
+  *Played, 2026-09-15:* the owner played the branch with the sword before it merged and approved
+  it as it is. The reach stays 0.75 tile.
+
+## A recipe layer may be drawn in some of its animations only — *M50*
+
+- **A layer `only` key**, which only this composer reads.
+- **The dagger in every animation**, the browser's behaviour.
+- **A second character id for fights**, sheets for an armed hero beside the unarmed one.
+
+**Chosen: `only`.** Drawn in every animation, the hero walks the village armed, and his portrait - cut
+from a walk frame - holds a blade.
+
+- The dagger in every animation — `rejected — a weapon on somebody with none equipped`.
+- A second character id — `rejected — two sheets for one person, free to drift apart`.
+
+## An arena is fought on the ground under its encounter — *M50*
+
+- **The ground tile under the map record the player walked into**, read from the map.
+- **A `ground` field on the enemy record** — a second statement of what the map already says.
+- **A floor tile on `CombatDef`** — one floor for every fight a game has, wherever it happens.
+
+**Chosen: the ground under the record**, the owner's pick on 2026-09-14. Zelda II picks its side-view
+scene from the terrain its fight began on (§7d). A solid or decorative tile, a key that names no
+record, and a caller with no map all keep the plain window.
+
+- A field on the record — `rejected — two statements of one fact`.
+- A floor on `CombatDef` — `deferred — worth trying` for a game whose fights happen somewhere else
+  entirely. **Revisit hook:** `world_scene._arena_ground`.
+
+## The arena's help line names both verbs, laid out for a three-digit readout — *M50*
+
+- **"WASD to move    E to swing"**, with the leader's bar shortened so a 999/999 readout still clears
+  it.
+- **"E to swing"**, as first built.
+- **The controls hint's own wording**, "WASD / arrows to walk".
+- **A second row** for the help.
+
+**Chosen: both verbs, in the house style** every other screen's help line uses.
+
+- "E to swing" — `rejected — names half of what a player does there`.
+- The hint's wording — `rejected — "look" is the map's verb, and the line is too wide to sit beside
+  a readout`.
+- A second row — `rejected — dusk16's floor window and panel already reach 174 of the 180 design
+  pixels`.
+
+## The arena draws its bodies front to back, as the floor's child order — *M50.1*
+
+- **The floor's children re-ordered on every paint** by where each body's feet stand, with the ground
+  first and the drawn slash last.
+- **A sorting node with `y_sort_enabled`** holding the bodies, the tool the map already uses.
+- **Creation order**, as M50 shipped it: the player first, then the foes in slot order.
+
+**Chosen: the child order.** M50 drew a foe standing just above the hero over the hero's head, because
+the hero's view was made first. A sorting node would fix the picture and hide it from every check: the
+layout audit reads each window's direct children, so bodies inside a node of their own would stop
+being measured, and which y-sorted child the renderer draws last is visible only in a photograph. A
+child's index is a number a test can assert. When two bodies' feet are level the later slot is drawn
+in front, and the slot is folded into the sort key, so the order never rests on whether the engine's
+sort is stable.
+
+- A y-sorting node — `rejected — hides the bodies from the layout audit, and its order shows only in a
+  picture`.
+- Creation order — `rejected — a foe standing behind the hero drawn over his head`.
+
+Left as it is: the drawn slash, for art with no swing of its own, stays over every body, including one
+standing in front of the swinger. **Revisit hook:** `ArenaScreen._order_by_depth`.
+
+## How to play is the player's to choose, from Options — *M51*
+
+Asked by the owner on 2026-09-14, after the arena had shipped as a second game behind a title row:
+"instead of it being a different game, why not allow the user to choose from a menu of some sort...
+can't that be changed on the spot?"
+
+**The fork: where a choice about how to play lives.**
+
+- **A game per choice**, M50's shape. Each combination is its own manifest, save slots and title
+  row, so two axes make four games.
+- **A choice per save, made at New game**, EarthBound's shape (§16b). Stored in the save, which
+  means a version bump and a migration, brought back by loading, and fixed for the run.
+- **A setting in Options, changeable at any time**, Sea of Stars' shape (§16c). Stored beside the
+  volume and the palette in `Settings`, outside every save.
+
+**Chosen: a setting in Options, the owner's call.** Three rows appended after Window - Fights (turns
+or the sword), Movement (free or one tile per press) and Saving (anywhere or at save points only) -
+each taking hold the next time it is read, which is FF6's and Pokémon's rule (§16c): a fight style at
+the next fight, movement and saving when the page closes. A game's data still states the default,
+and a row that would offer fewer than two values is not drawn, the pause menu's Save-row rule.
+
+- A game per choice — `rejected — games multiply with the choices, and the sword sat behind a row
+  that swapped the whole title`.
+- A choice per save — `rejected — the owner asked for a change on the spot`.
+
+**This reverses two earlier calls, and says so.**
+
+- On 2026-09-01, planning the systems axes, the owner chose a developer's scaffold wizard over a
+  player-facing pick, which is what `tools/new_game.sh` became in M47. That call was made in
+  conversation and never recorded here as a fork. The wizard stays: it writes a game's defaults, and
+  the player now picks among what the build can honour.
+- M50 shipped the arena as a second game behind a title row (the entry "The arena is played on the
+  talk button, fought alone, and shipped as a second game"). The Barred Gate: Arena is retired and the
+  arena is reached from the Fights row.
+
+**Why this is not M11's fault again.** M11's rule is that a second instance may not vary a knob nobody
+asked to turn, because one unexplained difference makes every difference a suspected defect. A row
+the player pressed is the opposite of unexplained. The control-instance test that held the two games
+apart goes with the second game; both fight styles are still proven on an in-memory manifest.
+
+**The hazard M50 named, answered.** M50 deferred remembering the last game in `Settings` because
+anything booting the world "would start whichever game the machine last played, so a suite could go
+red on one developer's machine and nowhere else". A fight style in `Settings` is exactly that hazard.
+So the redirect that already moves saves and settings aside under `--qa-script=` extends to any run of
+the test runner, and the scripted sessions' settings file is emptied at boot the way their saves
+already are: sessions run one after another, and one that chose the sword would otherwise hand it to
+every session after it.
+
+- **Art as a player choice** — offered on 2026-09-14 and declined by the owner on 2026-09-15,
+  `deferred — not wanted now`. What it would cost, so it is not worked out twice: only `lpc32` and
+  `dusk16` draw the quest's whole cast (`gb16` and `nes16` draw none of it); a change mid-run means
+  re-entering the map at the player's fractional tile and resizing the window between 640x360 and
+  320x180; and the player's sprite and config are bound once, in `ActorBody.setup`. **Revisit hook:**
+  the style load in `world_scene.enter_map`, and `_style_for`.
+- **A game that locks a choice** (a hard mode that cannot be turned off, a game with no sword) —
+  `deferred — worth trying`. **Revisit hook:** `PlayChoices`, where each row's offered values are
+  derived.
+
+## A clip may be drawn on a grid of its own — *M50.2*
+
+The hero swings an LPC dagger because, at the pinned generator commit, it is the only sword drawn on the
+same 64px frames as the rest of a character. Every other sword draws its swing on 128 or 192px frames, in
+a block below the standard sheet, and a sheet here held one cell size. The owner chose the bronze arming
+sword on 2026-09-15, after previews, so the sheet format had to hold a swing bigger than the walk.
+
+- **A clip carries its own `cell`, `origin` and `anchor`**, optional keys on the animation, read by the
+  factory, the view and the arena's margins.
+- **Every cell padded to the swing's size**, so a sheet keeps one grid.
+- **The swing cropped to 64px.**
+- **The browser's layout recomputed at import**, finding the block from the generator's own tables.
+- **A weapon sprite over the character**, the way both Zeldas draw the sword as tiles of its own
+  (`GENRE_CONVENTIONS.md` §7d).
+
+**Chosen: a clip's own grid.** It is additive. A sheet with no clip on a grid of its own reads and writes
+back as the same text, which a test holds over every committed sheet, and `SheetMeta.VERSION` did not move:
+an absent key means the sheet's own grid, and a sheet ships with its reader. The texture must be EXACTLY the
+box the grids make, because a minimum lets a sheet pass with the part that matters never read.
+
+- Every cell padded — `rejected — it quadruples every imported sheet, and the battle screen draws a
+  fighter by its cell (test_battle_layout expects an lpc32 fighter 64 pixels tall)`.
+- The swing cropped to 64 — `rejected — it cuts up to 17 pixels off the arming sword's blade`.
+- The layout recomputed at import — `rejected — it needs the sheet definitions, which live only in the
+  gitignored build/lpc cache`.
+- A weapon sprite over the character — `rejected — the blade is drawn behind the body facing up and in
+  front of it otherwise, so it is two overlay nodes interleaved with the depth order, and a second art
+  contract to keep`.
+
+**Revisit hook:** `SheetMeta.cell_of`, `origin_of` and `anchor_of`.
+
+## A turn fight plays the hero's swing across the press window — *M50.3*
+
+Since M50.2 the hero's sheet draws a bronze arming sword's swing, and the arena plays it. A turn fight
+still showed his attack as a lean with his walk cycle: `BattleScreen` moved the node rather than play an
+attack clip, because, its comment said, a clip would mean new rig parts and a change to the sheet contract.
+M50.2 made a clip on a grid of its own additive, so that reason is gone. The owner asked for the swing in
+turn fights on 2026-09-15 and made the first two calls below; `GENRE_CONVENTIONS.md` §7e read how five
+references show a blow before anything was built.
+
+**When the swing's six pictures play**
+
+- **Across the press window, landing on the hit** — the last `timed_window_frames` of the attack cue (24
+  of 72 in the quest), with the last picture on screen the frame before the damage lands.
+- **Straight after Attack is chosen** — the whole swing at the start of the cue.
+- **Across the whole cue** — one picture every 12 frames, ending on the hit.
+
+**Chosen: across the press window**, the owner's call. The blade and the `!` then say the same thing: the
+swing comes down while a press counts. §7e's references that draw the attacker all finish the attack
+before the damage is told; this keeps that order and takes out the gap between them.
+
+- Straight after choosing — `rejected — the swing is over 48 frames before a press counts, so the picture
+  says "now" while the rules still say "wait"`.
+- Across the whole cue — `rejected — twelve frames a picture reads as slow motion, and the blade is still
+  rising when the window opens`.
+
+**Whether he still steps forward**
+
+- **Step in, then swing** — the lean stays exactly as it is, and inside the window the pose is the swing
+  instead of the walk.
+- **Swing where he stands.**
+
+**Chosen: step in**, the owner's call. The lean starts with the cue, so it shows whose blow is coming
+before the window opens, and Final Fantasy I and VI both move the attacker toward the foe (§7e).
+
+- Swing where he stands — `rejected — for the first 48 frames of the cue nothing would show who is
+  attacking`.
+
+**Who swings**
+
+- **A party member whose sheet draws a slash.**
+- **Foes as well.**
+
+**Chosen: party members.** No shipped foe draws a swing, and Final Fantasy I's enemies do not move to
+attack (§7e). Worked out from the layout constants and not yet measured: an lpc32 foe swinging at
+`FLOOR_Y` 104 would draw from y 79.5 to 106.5, half a pixel into the party window that starts at 106.
+
+- Foes as well — `deferred — worth trying`. **Revisit hook:** the foe loop of
+  `BattleScreen._paint_fighters`, and `FLOOR_Y`.
+
+**The picture comes from the fight's own count.** `BattleLogic.swing_step` answers which picture belongs
+to this frame, the way `ArenaSim.swing_step` paces the arena's, and the screen holds it with
+`SpriteView.hold_frame`. So a replayed fight draws the same picture on the same frame, and nothing about
+the fight's rules, its sessions or its balance gate changes. Art with no slash (the procedural rig's,
+Rook's, every foe's) keeps today's lean exactly.
+
+## Three swords are equipment, and the hero swings the one he wears — *M50.4*
+
+The owner asked for a longer sword on 2026-09-16. Six were composed at the pinned generator commit and
+measured. Three of them — the katana, the scimitar and the alternate longsword — the composer refuses:
+their swing files are 13 columns wide where it expects six (backlog, top). Shown the other three with
+their measurements, the owner chose to ship all three rather than pick one. Worn equipment has moved the
+NUMBERS since M19 and never the picture; this is the milestone that makes it visible.
+
+| sword | swing crop | feet | arena floor at 16 tiles | at the shipped 14 |
+| --- | --- | --- | --- | --- |
+| bronze arming (ships today) | 97 × 54 | (48, 49) | 313 | 281 |
+| saber | 93 × 55 | (44, 49) | 311 | 279 |
+| longsword | 162 × 85 | (81, 66) | 346, past the 320 screen | 314 |
+| rapier | 162 × 85 | (81, 66) | 346, past the 320 screen | 314 |
+
+The longsword and rapier crop identically. That was checked for an instrument fault rather than assumed:
+their sheets differ in hash, size and picture, and the two blades reach the same outermost pixels of their
+192px cell.
+
+**Which sword**
+
+- **One sword in place of the bronze one** — an art swap, M50.2's shape.
+- **All three, as equipment the hero swings while wearing.**
+
+**Chosen: all three**, the owner's call.
+
+- One replacement — `rejected — the owner wants the blade to be the player's to find or buy, not the
+  template's to pick`.
+
+**Where they come from**
+
+- **One bought, two earned** — the saber on the smith's shelf, the longsword the Keeper's, the rapier the
+  hermit's.
+- **All three on the smith's shelf.**
+- **All three earned.**
+
+**Chosen: one bought, two earned**, the owner's call. It spreads the swords over the map and gives the keep
+a reward.
+
+- All on the shelf — `rejected — nothing in the world changes, and the keep still pays nothing`.
+- All earned — `rejected — the shop gains nothing new to spend a purse on`.
+
+**How the picture follows the equipment**
+
+- **One composed character per sword** (`quest_wanderer_saber`, `_longsword`, `_rapier`), each the hero's
+  recipe with its sword layer swapped, and the leader's art read from the worn weapon at
+  `world_scene._battle_members` — the one place a fighter's art is named, which both resolvers take their
+  fighters from.
+- **Three swing clips in one sheet.**
+- **A weapon sprite drawn over the body.**
+
+**Chosen: one character per sword.** A character is a folder here, so nothing about the sheet contract
+moves, and a test holds the four recipes to differing only in the sword.
+
+- Three clips in one sheet — `rejected — a sheet holds one swing block (LpcCompose) and FightScreen.SLASH
+  is one clip name, so a contract change to save about 150 KB`.
+- A weapon sprite — `rejected — M50.2's reason stands: the blade is drawn behind the body facing up and in
+  front of it otherwise, so it is two overlay nodes interleaved with the depth order`.
+
+**How the keep's sword is given**
+
+- **The Keeper drops it** — `EnemyDef` gains a drop, paid through the fight's effect list beside gold and
+  experience, so a defeat still pays nothing.
+- **A chest in the keep, opened once he is beaten.**
+
+**Chosen: a drop.** A won fight writes a SEEN key, and a map object can check flags and items only.
+
+- A chest — `rejected — nothing an object can check says the fight was won, and gating it by geometry is
+  not airtight because a fight can be fled`.
+
+**The arena floor's limit**
+
+- **A measured fit** — the floor's tiles plus the widest reachable swing's margins, against the screen.
+- **Declare 14 tiles.**
+- **Keep 16 tiles and leave the longsword out.**
+
+**Chosen: a measured fit**, the owner's call. The longsword fits the 14-tile floor the game ships and not
+the 16 tiles the screen declared, so the declared count was an approximation of a sum that can be worked
+out exactly. `FLOOR_MAX_TILES` stays as the layout audit's capacity.
+
+- 14 tiles — `rejected — it leaves no headroom for a wider arena in any game built on this template`.
+- Leave the longsword out — `rejected — the owner wants all three`.
+
+**Revisit hook:** `world_scene._battle_members` for the art, and the floor sum in `ArenaScreen`.
+
+- *2026-09-17, as built (the second pull request):* the art is a map on `ItemDef` KEYED BY THE WEARER
+  (`worn_art`), not one `character` per item as planned. One name would draw a companion who picked up
+  the hero's sword as the hero, or leave a hidden rule that gear redraws the leader and never anyone
+  else, in a template whose party is a list. The fit checks HEIGHT as well as width, because under the
+  floor sits the leader's panel, and is measured per encounter over every art the leader could wear and
+  the foes that record fields. Measured with the committed art: at 16 tiles the floor is 313 pixels
+  across with the bronze sword, 311 with the saber and 346 with the longsword and rapier; at 14 tiles
+  the longsword's is 314 across and 115 tall, which leaves the panel ending at 169 of 180.
+- *2026-09-18, as built (the third pull request), the owner's calls on the money and the gift:* the
+  saber costs **12 gold** and the bronze sword drops from 20 to **8**. The quest pays about 40 gold in
+  all - 13 from the hollow, 25 from the keep - so at 12 the saber is affordable on the first trip to
+  town and is the sword carried INTO the keep, which is the one moment a bought sword decides anything;
+  and a better sword must not cost more than a worse one, which is what re-priced the bronze. The
+  longsword and the rapier carry no price, so neither counter will trade them. The hermit offers the
+  rapier only once his oil has been taken (`requires_flag: took_oil`): a blade offered in the same
+  breath as the errand is a shelf, where one offered on the way back is a thank-you.
+  - The drop is `EnemyDef.drop` + `drop_count`, turned into give-item effects by
+    `BattleLogic.drops_of` and appended by `seal_effects`, whose fifth argument is REQUIRED rather than
+    defaulted - two callers, one per resolver, and a default would let the one nobody edited go on
+    paying nothing. So the arena pays the Keeper's sword because it pays through the same lines, which
+    is why those lines are statics.
+  - **A defect found on the way**, by a gate written for the three new descriptions: the counter's
+    description bar is a Label with no width, and a Label with no width does not clip, wrap or complain.
+    Every shipped description ran 27 to 112 pixels past the bar and off the 320-pixel screen, in the
+    real game only, because every audit measured fixture rows. Fixed on both sides: the label is bounded
+    and trimmed with an ellipsis (the item rows' own rule), and the nine shipped descriptions were
+    shortened to fit it, with a gate per side - the words measured against the bar, and a fixture
+    sentence too long for it held inside the window.
+
+## Prompts follow the pad, Menu pauses, and the stick walks at one speed — *M52*
+
+The owner asked for Xbox-controller support on 2026-09-20. The input map had carried pad bindings
+since the first commit - the D-pad and the left stick on the four moves, A on `interact`, B on
+`cancel`, Start on `menu` - and what was missing was every word on screen, which named keys, and any
+proof that a pad button reached the game at all: the harness presses ACTIONS, which bypass the map.
+`GENRE_CONVENTIONS.md` §17 read how the references teach their buttons before any of this was built.
+Five calls, all the owner's, made the same day.
+
+**Which words a prompt shows once there is a pad**
+
+- **Follow the last device used** - every help line and the walk hint switch between the keyboard's
+  words and the pad's the moment a key or a pad button is used.
+- **An Options row** - `Prompts: Keyboard / Controller`, remembered like the volume.
+- **Both on one line** - "E or A to look".
+- **Glyphs** - a picture per button, the modern games' shape.
+
+**Chosen: follow the last device used.** It is the only reading that is always about the device now in
+the player's hands. A choice made once is then wrong - Hades' title screen showing one pad's icons and
+its loaded save another's (§17) - and a first-time player on the web page never finds a row before the
+hint has faded.
+
+- An Options row - `rejected — one more row about a fact the pad already states`. **Revisit hook:**
+  `OptionsMenu`'s row list and `Settings`, the volume's shape, if a player ever needs to pin the words
+  against a pad that sends phantom input.
+- Both on one line - `rejected — every line doubles, and the walk hint already ran 42 px off a 320 px
+  window at 356`.
+- Glyphs - `rejected — one pixel font, and a glyph set is art the template would be choosing for every
+  game`. **Revisit hook:** `Prompts.WORDS`, where a word could become a texture. A PlayStation or
+  Switch word table keyed by `Input.get_joy_name` is `deferred — worth trying` the day a pad that is
+  not an Xbox one is in the owner's hands; the Xbox letters are what Godot's own `JoyButton` constants
+  name.
+
+**Which pad button pauses**
+
+- **`menu` (Start, the pad's "Menu" button) beside `cancel` (B)** - nothing removed; Tab joins Esc on
+  the keyboard, where it was bound to `menu` and read by nothing.
+- **`menu` alone** - B only ever means "go back".
+- **`cancel` alone** - today's behaviour, B pauses.
+
+**Chosen: both, and Menu also CLOSES the pause menu from its top page.** Every Xbox game toggles pause
+on that button, and thirty sessions and every keyboard player's Esc are untouched.
+
+*2026-09-20, after playing it: B removed.* The owner's call at the pad: B is "go back" and there is
+nothing in the world to go back from, so only Menu pauses on the pad. Esc and Tab are unchanged - the
+world refuses a `cancel` that arrived as a pad BUTTON, by class, because a harness action on `cancel`
+is how thirty sessions pause. B still closes the pause menu, which is going back.
+
+- `menu` alone - `rejected — thirty sessions open the menu on cancel, and Esc is muscle memory`.
+- `cancel` alone - `rejected — an Xbox player presses Menu to pause and nothing happens`.
+
+**How fast a half-pushed stick walks**
+
+- **Full speed past the deadzone** - one walking speed for keys, D-pad and stick.
+- **Analogue** - a half-pushed stick walks at half speed, which is what the code did: a rule an agent
+  wrote and `test_a_partial_stick_deflection_is_not_scaled_up` pinned, and no person had played.
+- **`Input.get_vector`** - the engine's circular deadzone in front of it.
+
+**Chosen: full speed.** `GridWalker` and `ArenaSim` already digitise, nothing else in the game has a
+speed, and every reference JRPG moves at one.
+
+- Analogue - `rejected — the arena ignored anything under half a push, so one stick would have felt
+  different on the map and in the fight`.
+- `get_vector` - `rejected — a second deadzone in front of Locomotion's own normalisation, a second
+  policy where this removes one`. **Revisit hook:** `Locomotion.read_input`, the one place the four
+  actions are read.
+
+**A fifth call, about the file.** The pad bindings were written with `"device":0`, and the engine
+fires a stored joypad event only for that pad index or for the `-1` "all devices" sentinel
+(`core/input/input_map.cpp`, `_find_event`, at the 4.7.1 tag). The owner chose to hand-edit the twelve
+fields to `-1` rather than ship a first-pad-only map - and never through `tools/setup_input_map.gd`,
+whose `ProjectSettings.save()` strips every comment from `project.godot` (`docs/learnings.md`).
+
+**As built, 2026-09-20 (#197):**
+
+- The map has ELEVEN joypad lines, not twelve - seven buttons and four axes - and it is eleven
+  fields that moved to `-1`. `test_engine_assumptions` presses A from pad index 3: red on the
+  committed file, green after the edit.
+- **Found by reading the engine, then measured:** a joypad motion event matches an action by AXIS
+  (`core/input/input_event.cpp`, "Matches even if not in the same direction, but returns a 'not
+  pressed' event"), and its own `is_pressed()` is the engine's 0.5 toggle, not the action's 0.2.
+  Every cursor here read `is_action(&"move_down")` first, so on the shipped pause screen a real
+  stick pushed UP moved the cursor to row 1 and one held push moved it three rows - one per motion
+  event. No test could see it: every test presses actions. `InputGate.pressed` latches a stick per
+  action and reads the sign; `test_menus_on_a_stick` drives the real event.
+- **The one-speed rule lives in `Locomotion.read_input()`, not in `step()`** as the plan had it.
+  `step()` is also what an NPC's brain walks by, and normalising every vector there changed what a
+  brain's vector means and made the idle-epsilon rule unreachable. The player's axes are
+  normalised at the seam where the map hands them in; a brain still asks for what it asks for.
+- **`ArenaSim.AXIS_THRESHOLD` stays**, as a sector rather than a strength: over the unit vector it
+  now receives, 0.5 is thirty degrees off an axis, and a stick a little off true walks straight.
+  Folding it, as the plan proposed, would have made any off-axis push a diagonal.
+- Adding two ways out of `world` and `paused` re-rolled every seeded walk, and `game_over_new_game`
+  fell out of six walks of twenty-eight; the sweep shows eight walks of twenty-eight cover every
+  edge where six need forty. Eight walks, not longer ones.
+- The hint: 356 design pixels on a 320 window, measured; the four strings are "{move} to walk
+  {confirm} to look    {pause} to pause", 252 and 264 pixels filled. The one keyboard wording
+  that changed anywhere is the save point's "Enter: save", now "E: save".
+- Twenty-one mutants, two older rows re-aimed, all killed; 314 rows scoped and run.
+
+## The walk hint sits on a strip of window — *M52.1*
+
+The walk hint is drawn in the style's `dim`, a colour chosen to be read against a window's `panel`,
+and it was drawn straight onto the world. A windowed photograph of the pad session found it: over the
+village's bottom row, grey brick, the words right of the letterbox could not be read. The README's own
+village picture, taken 2026-09-03 (#141), had shown the same thing ever since. Measured in WCAG contrast with the
+demo's colours (`dim #75758a`, `panel #0a0a14`): over every colour in the village frame, the bare hint
+bottoms out at 1.00, because the ground can be the hint's own colour, and a mid-grey brick gives
+about 1.3.
+
+- **A band behind the line** - a strip of the window's fill across the bottom of the screen.
+- **The loud role with an outline** - the hint in `text`, ringed in `panel`.
+- **Leave it.**
+
+The owner said "fix the visual grey glitch" on 2026-09-21, and then chose between two bands:
+
+- **Solid** - `panel`, opaque, the full width of the window and down to its bottom edge.
+- **See-through** - `panel` at the pause backdrop's 0.85, so the bricks show faintly.
+
+**Chosen: a solid band.** It is `dim` on `panel` whatever the map draws - 4.38:1 in the demo's
+colours and 4.38 to 6.44 across every style and palette, the pairing every help line inside a window
+already uses. The letterbox is painted `panel` too (`world_scene._bind_style`), so on a map narrower
+than the window the band joins it with no seam. It hides the bottom 14 design pixels of the map, but
+only until the player first moves and the hint fades - and the band fades with it.
+
+- See-through at 0.85 - `rejected — its worst pixel over the village frame gave 3.02:1, and 2.96 over
+  a white ground, right on the usual floor for large text, where solid cannot move at all`.
+- The loud role with an outline - `rejected — it takes the hint off the quiet role every help line
+  uses, and an outline still depends on what the map draws beside each stroke`.
+- Leave it - `rejected — 1.0:1 at worst, measured`.
+
+**Revisit hook:** `ControlsHint.restyle`, the one place the band is coloured, and `BAND_HEIGHT`.
+
+**As built, 2026-09-21:** differenced against `main`, 12,428 pixels change, every one of them inside
+the bottom 28 screen pixels and none above. The band holds exactly two colours, fill and text, so the
+glyphs land on whole pixels, with six screen pixels above and below the words.

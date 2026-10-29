@@ -1,0 +1,520 @@
+{
+	"_readme": [
+		"THE FLOW MODEL. The Router's state machine, declared as data.",
+		"",
+		"This file is the single source of truth for how a player moves between screens, and it",
+		"is not documentation: tests/integration/test_flow_model.gd drives every edge below",
+		"through the real world scene, records what EventBus.flow_changed actually emitted, and",
+		"fails if the recording differs from the `trace` written here. A model nothing checks is",
+		"a comment that rots, which is why this sits beside mutants.tsv rather than in docs/.",
+		"",
+		"UPDATE THIS FILE BEFORE CHANGING FLOW CODE, not after. It exists because the knowledge",
+		"of what a transition passes THROUGH lived only in five milestones' worth of scattered",
+		"code, and the question nobody asked - what does this new edge go through? - shipped a",
+		"Continue button that replayed the game's opening conversation over the loaded save.",
+		"",
+		"WHAT A TRACE IS. The exact sequence of flow_changed events an action may emit, in order.",
+		"Most edges are one hop. Two are not, and both are real rather than accidents:",
+		"  - a defeat is battle -> world -> game_over, because _close_battle runs before",
+		"    open_game_over: the fight screen is torn down first so two full-screen views are",
+		"    never stacked.",
+		"  - leaving a game over for the title is game_over -> world then world -> title, for the",
+		"    same reason one step earlier.",
+		"An EMPTY trace is a legal answer and means the action changed no state at all. The one",
+		"that surprises people: a warp re-enters a map from WORLD, and WORLD to WORLD is not a",
+		"change.",
+		"",
+		"WHAT AN INVARIANT IS. A named fact that must hold while the machine is in that state,",
+		"asserted after every arrival. The names are resolved by the suite, so a vertex naming an",
+		"invariant nothing implements fails the build rather than passing silently.",
+		"`battle_screen_up` means a RESOLVER's screen is up, whichever one. Since M50 a fight is",
+		"the turn fight or the arena, and they are one state because nothing a player may do",
+		"differs between them (docs/DECISIONS.md, M49). The name stayed so no session had to",
+		"move; what it asks is world_scene.fight_screen(), and it was changed before either screen",
+		"existed to answer it.",
+		"",
+		"WHAT IS CHECKED HERE AND NOT WRITTEN DOWN HERE. One thing, deliberately: the controls hint",
+		"is drawn exactly while Router.player_can_move(), asserted after every arrival and every walk",
+		"step in every state. It is not an invariant because it is not a property of any ONE state -",
+		"naming it on all twelve vertices is twelve places to forget it on the thirteenth. A rule",
+		"true of the whole machine belongs to the whole machine: test_flow_model._hint_fault.",
+		"",
+		"WALKS. Since M31 the same edges are also driven in SEQUENCES: eight seeded walks of",
+		"twenty-eight steps, on one world that is never rebuilt between them, asserting the same",
+		"trace and the same invariants after every step. Per-edge checking is silent about",
+		"anything that only goes wrong on a second visit - it found a pause screen and a shop",
+		"screen that were closed but never freed, and went on eating the key that opens them.",
+		"A failing walk is minimised by tests/helpers/flow_walk.gd before it is reported, so the",
+		"message names the shortest sequence that still fails rather than the one chance drew.",
+		"Every walkable edge must be driven by one of the seeds, which is asserted: a random walk",
+		"that never reaches a game over would report green otherwise. `boot` is not walkable - it",
+		"describes the process opening, not an action - and the per-edge gate still checks it.",
+		"",
+		"NOT REACHABLE IN PRODUCTION, on purpose: no overlay opens over another. The stack",
+		"supports it (test_router.gd proves that) and world_scene never does it, because",
+		"_unhandled_input refuses world input unless the state is WORLD."
+	],
+	"states": {
+		"title": {
+			"about": "The screen a run is started from. No game is built behind it.",
+			"invariants": [
+				"title_screen_up",
+				"no_game_running",
+				"player_cannot_move"
+			]
+		},
+		"world": {
+			"about": "The only state the player moves in.",
+			"invariants": [
+				"player_exists",
+				"map_is_named",
+				"player_can_move",
+				"no_overlay_up"
+			]
+		},
+		"dialog": {
+			"about": "A conversation is open; movement is suspended.",
+			"invariants": [
+				"dialog_box_open",
+				"player_cannot_move"
+			]
+		},
+		"paused": {
+			"about": "The menu is open over the world.",
+			"invariants": [
+				"pause_screen_up",
+				"game_running",
+				"player_cannot_move"
+			]
+		},
+		"battle": {
+			"about": "A fight has the screen - whichever resolver draws it, the turn fight or the arena - and the world is still there underneath.",
+			"invariants": [
+				"battle_screen_up",
+				"game_running",
+				"player_cannot_move"
+			]
+		},
+		"shop": {
+			"about": "A counter is open over the live world.",
+			"invariants": [
+				"shop_screen_up",
+				"game_running",
+				"player_cannot_move"
+			]
+		},
+		"resting": {
+			"about": "A night is passing. Nothing to press; it ends on its own.",
+			"invariants": [
+				"rest_screen_up",
+				"game_running",
+				"player_cannot_move"
+			]
+		},
+		"saving": {
+			"about": "A save point is open: the slot list, and nothing else on it. Reached from a conversation under either save policy, which is why it is its own state rather than the pause menu jumped to a page - a priest does not hand you your equipment.",
+			"invariants": [
+				"save_screen_up",
+				"game_running",
+				"player_cannot_move"
+			]
+		},
+		"credits": {
+			"about": "Who drew the art, over the title. An overlay on the one state with no game behind it, which is why it names no_game_running rather than game_running: it is reached from the title and returns there. It exists because the demo's art is CC-BY-SA and the licence requires the credits to be reachable from inside the game - see GENRE_CONVENTIONS 12a.",
+			"invariants": [
+				"credits_screen_up",
+				"no_game_running",
+				"player_cannot_move"
+			]
+		},
+		"game_over": {
+			"about": "The run ended. The ways on are a save, a fresh start, or the title.",
+			"invariants": [
+				"game_over_screen_up",
+				"player_cannot_move"
+			]
+		},
+		"options": {
+			"about": "Sound and the window's colours, over the world. Reached from the pause menu by CLOSING it first, because no overlay opens over another - so leaving goes back to the world rather than to a menu that is already gone.",
+			"invariants": [
+				"options_screen_up",
+				"game_running",
+				"player_cannot_move"
+			]
+		},
+		"options_at_title": {
+			"about": "The same page over the title. A SECOND state rather than a flag on the first, because the two differ in every way a state can: a game is running behind one and not the other, and leaving them goes to different places. Modelled as one state it had two exits and no way to say which was legal, and the seeded walks found that on the first journey that reached it - which is the whole job of this file.",
+			"invariants": [
+				"options_screen_up",
+				"no_game_running",
+				"player_cannot_move"
+			]
+		}
+	},
+	"edges": [
+		{
+			"action": "boot",
+			"from": "title",
+			"to": "title",
+			"trace": [],
+			"adapter": "boot",
+			"note": "The process opens on the title, so nothing has changed yet."
+		},
+		{
+			"action": "switch_game",
+			"from": "title",
+			"to": "title",
+			"trace": [],
+			"adapter": "switch_game",
+			"note": "Only when the build carries more than one game and nothing chose between them. The title is closed and reopened wearing the next game's name, look, voice, music and save slots; TITLE to TITLE is no change, so it announces nothing - the warp's shape."
+		},
+		{
+			"action": "new_game",
+			"from": "title",
+			"to": "world",
+			"trace": [
+				[
+					"title",
+					"world"
+				]
+			],
+			"adapter": "new_game",
+			"note": "Announced only since M23: enter_map's reset used to assign the state field."
+		},
+		{
+			"action": "continue",
+			"from": "title",
+			"to": "world",
+			"trace": [
+				[
+					"title",
+					"world"
+				]
+			],
+			"adapter": "continue_from_title",
+			"note": "Goes through boot_from_save, NEVER through the start map. The bug this whole model exists because of was an extra world -> dialog hop right here, from the start map's entry hooks firing on the way past."
+		},
+		{
+			"action": "open_dialog",
+			"from": "world",
+			"to": "dialog",
+			"trace": [
+				[
+					"world",
+					"dialog"
+				]
+			],
+			"adapter": "open_dialog"
+		},
+		{
+			"action": "close_dialog",
+			"from": "dialog",
+			"to": "world",
+			"trace": [
+				[
+					"dialog",
+					"world"
+				]
+			],
+			"adapter": "close_dialog"
+		},
+		{
+			"action": "open_pause",
+			"from": "world",
+			"to": "paused",
+			"trace": [
+				[
+					"world",
+					"paused"
+				]
+			],
+			"adapter": "open_pause_by_key",
+			"note": "Driven by the real cancel key, because the guard that makes PAUSED reachable only from WORLD lives in _unhandled_input and nowhere else."
+		},
+		{
+			"action": "close_pause",
+			"from": "paused",
+			"to": "world",
+			"trace": [
+				[
+					"paused",
+					"world"
+				]
+			],
+			"adapter": "close_pause"
+		},
+		{
+			"action": "open_pause_by_menu",
+			"from": "world",
+			"to": "paused",
+			"trace": [
+				[
+					"world",
+					"paused"
+				]
+			],
+			"adapter": "open_pause_by_menu",
+			"note": "Driven by the real menu key (Tab; Start, the Menu button, on a pad), which is a second guard beside cancel's in _unhandled_input and proven by nothing else. Since M52."
+		},
+		{
+			"action": "close_pause_by_menu",
+			"from": "paused",
+			"to": "world",
+			"trace": [
+				[
+					"paused",
+					"world"
+				]
+			],
+			"adapter": "close_pause_by_menu",
+			"note": "The pad's Menu button toggles: pressed on the pause menu's top page it closes what it opened. Driven by the real key, because PauseScreen reads it on that page and no other. Since M52."
+		},
+		{
+			"action": "open_shop",
+			"from": "world",
+			"to": "shop",
+			"trace": [
+				[
+					"world",
+					"shop"
+				]
+			],
+			"adapter": "open_shop",
+			"note": "Opened DEFERRED from a dialog effect, so the adapter waits a frame."
+		},
+		{
+			"action": "close_shop",
+			"from": "shop",
+			"to": "world",
+			"trace": [
+				[
+					"shop",
+					"world"
+				]
+			],
+			"adapter": "close_shop"
+		},
+		{
+			"action": "open_rest",
+			"from": "world",
+			"to": "resting",
+			"trace": [
+				[
+					"world",
+					"resting"
+				]
+			],
+			"adapter": "open_rest"
+		},
+		{
+			"action": "close_rest",
+			"from": "resting",
+			"to": "world",
+			"trace": [
+				[
+					"resting",
+					"world"
+				]
+			],
+			"adapter": "close_rest",
+			"note": "The screen ends itself; nothing presses anything."
+		},
+		{
+			"action": "open_save",
+			"from": "world",
+			"to": "saving",
+			"trace": [
+				[
+					"world",
+					"saving"
+				]
+			],
+			"adapter": "open_save",
+			"note": "Opened DEFERRED from a dialog effect, the open_shop rule, so the adapter waits a frame."
+		},
+		{
+			"action": "close_save",
+			"from": "saving",
+			"to": "world",
+			"trace": [
+				[
+					"saving",
+					"world"
+				]
+			],
+			"adapter": "close_save"
+		},
+		{
+			"action": "open_credits",
+			"from": "title",
+			"to": "credits",
+			"trace": [
+				[
+					"title",
+					"credits"
+				]
+			],
+			"adapter": "open_credits",
+			"note": "Opened INLINE, unlike the save point: nothing pops an overlay behind this one, because the title is a base state rather than a dialog."
+		},
+		{
+			"action": "close_credits",
+			"from": "credits",
+			"to": "title",
+			"trace": [
+				[
+					"credits",
+					"title"
+				]
+			],
+			"adapter": "close_credits"
+		},
+		{
+			"action": "open_options_from_title",
+			"from": "title",
+			"to": "options_at_title",
+			"trace": [
+				[
+					"title",
+					"options_at_title"
+				]
+			],
+			"adapter": "open_options_from_title",
+			"note": "Opened INLINE, the credits' rule: the title is a base state rather than an overlay, so nothing pops anything behind this."
+		},
+		{
+			"action": "close_options_to_title",
+			"from": "options_at_title",
+			"to": "title",
+			"trace": [
+				[
+					"options_at_title",
+					"title"
+				]
+			],
+			"adapter": "close_options_to_title"
+		},
+		{
+			"action": "open_options",
+			"from": "paused",
+			"to": "options",
+			"trace": [
+				[
+					"paused",
+					"world"
+				],
+				[
+					"world",
+					"options"
+				]
+			],
+			"adapter": "open_options",
+			"note": "TWO hops, and the middle one is real. No overlay opens over another here, so the pause menu is CLOSED on the way through - the lose_battle shape one state earlier. The open is deferred so the close finishes first, the OP_SHOP rule."
+		},
+		{
+			"action": "close_options",
+			"from": "options",
+			"to": "world",
+			"trace": [
+				[
+					"options",
+					"world"
+				]
+			],
+			"adapter": "close_options",
+			"note": "Back to the world, not to the pause menu that was closed on the way in. Returning there would need the state to remember where it came from - one more edge and a hidden input; see DECISIONS.md."
+		},
+		{
+			"action": "open_battle",
+			"from": "world",
+			"to": "battle",
+			"trace": [
+				[
+					"world",
+					"battle"
+				]
+			],
+			"adapter": "open_battle"
+		},
+		{
+			"action": "win_battle",
+			"from": "battle",
+			"to": "world",
+			"trace": [
+				[
+					"battle",
+					"world"
+				]
+			],
+			"adapter": "win_battle"
+		},
+		{
+			"action": "lose_battle",
+			"from": "battle",
+			"to": "game_over",
+			"trace": [
+				[
+					"battle",
+					"world"
+				],
+				[
+					"world",
+					"game_over"
+				]
+			],
+			"adapter": "lose_battle",
+			"note": "TWO hops, and the middle one is real: _close_battle runs before open_game_over so two full-screen views are never stacked."
+		},
+		{
+			"action": "flee_battle",
+			"from": "battle",
+			"to": "world",
+			"trace": [
+				[
+					"battle",
+					"world"
+				]
+			],
+			"adapter": "flee_battle",
+			"note": "A WIN's trace exactly, which is the whole reason the adapter asserts something else: the world announces 'fled' where a victory announces 'victory', and nothing else in the game emits that word. No randomness - a boss refuses every escape and everyone else allows it (M13) - so this edge replays like the rest. The foe it is driven against is unkillable and harmless, so a stray confirm on Attack can neither win nor lose the fight and hand a win's trace to a flight's name. Fleeing an ARENA is still deferred and has no edge here."
+		},
+		{
+			"action": "game_over_to_title",
+			"from": "game_over",
+			"to": "title",
+			"trace": [
+				[
+					"game_over",
+					"world"
+				],
+				[
+					"world",
+					"title"
+				]
+			],
+			"adapter": "game_over_to_title",
+			"note": "Two hops for the same reason. The from used to read world because to_title reset first; M23 made it say where it came from."
+		},
+		{
+			"action": "game_over_new_game",
+			"from": "game_over",
+			"to": "world",
+			"trace": [
+				[
+					"game_over",
+					"world"
+				]
+			],
+			"adapter": "game_over_new_game",
+			"note": "One hop: the close pops to world and start_game's reset finds it already there."
+		},
+		{
+			"action": "warp",
+			"from": "world",
+			"to": "world",
+			"trace": [],
+			"adapter": "warp",
+			"note": "Changes the map, not the state. The empty trace is the point: a listener woken by every doorway is a listener nobody can use."
+		}
+	]
+}

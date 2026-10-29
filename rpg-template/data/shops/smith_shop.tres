@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ShopDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/shop_def.gd" id="1_shop"]
+
+[resource]
+script = ExtResource("1_shop")
+id = &"smith_shop"
+stock = Array[StringName]([&"bronze_sword", &"saber", &"leather_vest", &"tonic", &"waybread"])
+greeting = "Shelf's behind me. Coin's in front of you."
+thanks = "Anything else, or is that you done?"
+poor_line = "Not for that, it isn't. Come back heavier."

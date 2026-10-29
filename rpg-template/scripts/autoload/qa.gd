@@ -1,0 +1,879 @@
+extends Node
+## Drives the running game from a script file, so behaviour can be checked without hands.
+##
+##     Godot --path . -- --qa-script=res://tests/fixtures/qa/demo/walk_into_wall.json
+##
+## This exists because `-s tools/some_tool.gd` CANNOT load a scene whose script names an
+## autoload: in that mode the singletons are not registered as identifiers and the script
+## fails to compile. Anything that needs the real game - the world, the player, the router -
+## has to be driven from inside it, which is what this is.
+##
+## It is also the headless smoke gate in tools/check.sh, and the way screenshots of the
+## world get taken. Scripts live in tests/fixtures/qa/<game>/ and check.sh runs each with
+## `--game=<that directory>`, so a game's scripts drive that game and adding one needs no
+## edit to the gate.
+##
+## Ops: wait · hold · release · release_all · press · press_until_state · assert_state ·
+## assert_map · assert_flag · assert_item · assert_position · assert_hp · assert_xp ·
+## assert_level · assert_gold · assert_mp · assert_equipped · sound_mark · assert_sound ·
+## assert_audio_ready · assert_music · mark · assert_moved · assert_status · assert_foe_hp ·
+## assert_game · fight_well · screenshot · note · pad_press · pad_release · stick · key_press ·
+## key_release · assert_prompt.
+## An unrecognised op FAILS rather than being skipped - a typo in a script must not read as
+## a passing check that never ran.
+##
+## Everything is measured in PHYSICS frames, never seconds and never idle frames. A
+## wall-clock wait is slow when it passes and flaky when it fails; and headless, with no
+## display pacing anything, _process runs as fast as the machine allows while physics stays
+## at 60Hz - so counting idle frames would make "hold right for 30 frames" mean a different
+## distance on every machine. Movement happens in _physics_process, so this counts the same
+## clock the thing under test does.
+
+const ARG_PREFIX := GameSelect.QA_ARG
+
+var _steps: Array = []
+var _index := 0
+var _held: Array[StringName] = []
+## Pad buttons and the stick a session is holding, by Prompts' own words - released with the rest.
+var _pad_held: Array[String] = []
+var _stick_held := false
+var _failures: Array[String] = []
+var _log: Array[String] = []
+var _marks: Dictionary = {}
+var _frames_left := 0
+var _active := false
+
+## A running press_until_state. It owns the step machine until it resolves, so that an
+## assertion written after it observes the state it was waiting for rather than racing it.
+var _until_active := false
+var _until_holding := false
+var _fight_active := false
+var _fight_holding := false
+var _fight_limit := 0
+var _fight_frames := 0
+var _until_action: StringName = &""
+var _until_state := ""
+var _until_limit := 0
+var _until_presses := 0
+var _finished := false
+
+
+func _ready() -> void:
+	var path := _script_path()
+	if path.is_empty():
+		# Inert without the flag. A QA harness that does anything at all in a normal run is a
+		# harness that will eventually do something in front of a player.
+		set_physics_process(false)
+		return
+	var file := JsonFile.read(path)
+	if not file.ok:
+		printerr("qa: %s" % file.error)
+		get_tree().quit(1)
+		return
+	_steps = file.get_array("steps")
+	if _steps.is_empty():
+		printerr("qa: %s has no steps - an empty script would report success having tested nothing" % path)
+		get_tree().quit(1)
+		return
+	_active = true
+	_log.append("script %s (%d steps)" % [path, _steps.size()])
+
+
+func is_active() -> bool:
+	return _active
+
+
+func _script_path() -> String:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with(ARG_PREFIX):
+			return arg.substr(ARG_PREFIX.length())
+	return ""
+
+
+func _physics_process(_delta: float) -> void:
+	if not _active or _finished:
+		return
+	if _frames_left > 0:
+		_frames_left -= 1
+		return
+	# A press_until_state in flight holds the machine here. Without this the step after it
+	# runs immediately and asserts against a state its own presses have not produced yet.
+	if _until_active:
+		_tick_press_until()
+		return
+	if _fight_active:
+		_tick_fight_well()
+		return
+	if _index >= _steps.size():
+		_finish()
+		return
+	var step: Dictionary = _steps[_index]
+	_index += 1
+	_run(step)
+
+
+func _run(step: Dictionary) -> void:
+	var op := str(step.get("op", ""))
+	match op:
+		"wait":
+			_frames_left = int(step.get("frames", 1))
+		"hold":
+			# Held through the engine's own input state, so the code under test reads it
+			# exactly as it would a real key - not through a back door that bypasses the
+			# input map and would keep passing after a rebind broke the game.
+			var action := StringName(str(step.get("action", "")))
+			_press(action)
+			_frames_left = int(step.get("frames", 1))
+		"release":
+			_release(StringName(str(step.get("action", ""))))
+		"release_all":
+			_release_all()
+		"press":
+			var action := StringName(str(step.get("action", "")))
+			_press(action)
+			_frames_left = 1
+			_steps.insert(_index, {"op": "release", "action": String(action)})
+		"press_until_state":
+			_press_until_state(step)
+		"pad_press":
+			# A REAL pad button through the input map, where press sends an action that skips it:
+			# the one way a session proves the pad is bound, and the pack's map is the deployed one.
+			var button := str(step.get("button", ""))
+			if _pad_press(button):
+				_frames_left = 1
+				_steps.insert(_index, {"op": "pad_release", "button": button})
+		"pad_release":
+			_pad_release(str(step.get("button", "")))
+		"stick":
+			_stick(float(step.get("x", 0.0)), float(step.get("y", 0.0)))
+			_frames_left = int(step.get("frames", 1))
+		"key_press":
+			# A real key, so a session can show the words flip BACK to the keyboard's; press is
+			# action-level and says nothing about a device.
+			var key := str(step.get("key", ""))
+			if _key(key, true):
+				_frames_left = 1
+				_steps.insert(_index, {"op": "key_release", "key": key})
+		"key_release":
+			_key(str(step.get("key", "")), false)
+		"assert_prompt":
+			_assert_prompt(step)
+		"fight_well":
+			_fight_well(step)
+		"assert_status":
+			_assert_status(step)
+		"assert_foe_hp":
+			_assert_foe_hp(step)
+		"assert_game":
+			_assert_game(step)
+		"assert_state":
+			var wanted := str(step.get("state", ""))
+			if Router.state_name() != wanted:
+				_fail("expected flow state '%s', found '%s'" % [wanted, Router.state_name()])
+		"assert_map":
+			var wanted_map := str(step.get("map", ""))
+			if String(GameState.current_map) != wanted_map:
+				_fail("expected to be in map '%s', found '%s'" % [wanted_map, GameState.current_map])
+			else:
+				_log.append("in map '%s'" % wanted_map)
+		"sound_mark":
+			# Clears the window an assert_sound looks at, so a script asks "since I pressed
+			# this" rather than "at some point in the whole run".
+			AudioBus.clear_requests()
+			_log.append("listening from here")
+		"assert_sound":
+			# The id that was REQUESTED, never that audio was audible: this runs headless on a
+			# dummy driver, and a gate that claims to hear something is a gate proving nothing.
+			var cue := StringName(str(step.get("id", "")))
+			var want := bool(step.get("expect", true))
+			var heard := AudioBus.requested().has(cue)
+			if heard != want:
+				_fail("expected sound '%s' to be %s since the last mark, heard: %s"
+					% [cue, "asked for" if want else "silent", AudioBus.requested()])
+			else:
+				_log.append("sound '%s' %s" % [cue, "played" if heard else "stayed quiet"])
+		"assert_music":
+			# The track that was REQUESTED, the way assert_sound reads a cue - and from its own
+			# log, because a track is not a cue and the strict unknown-cue gate must stay strict.
+			var tune := StringName(str(step.get("id", "")))
+			var expect := bool(step.get("expect", true))
+			# "now" asks what is playing THIS FRAME rather than what was asked for since the
+			# mark, and it is the only way to say SILENCE: the log cannot, because a track that
+			# played and ended is in it either way. An empty id with now is "nothing at all",
+			# which is what a fanfare handing back to a quiet map has to leave behind.
+			if bool(step.get("now", false)):
+				var live := AudioBus.music_id()
+				if (live == tune) != expect:
+					_fail("expected '%s' to be %s playing right now, and '%s' is"
+						% [tune, "" if expect else "the one thing NOT", live])
+				else:
+					_log.append("music right now is '%s'" % live)
+			elif AudioBus.music_requested().has(tune) != expect:
+				_fail("expected music '%s' to be %s since the last mark, heard: %s"
+					% [tune, "asked for" if expect else "silent", AudioBus.music_requested()])
+			else:
+				_log.append("music '%s' %s" % [tune,
+					"played" if AudioBus.music_requested().has(tune) else "stayed quiet"])
+		"assert_audio_ready":
+			# Not "was a sound asked for" - assert_sound answers that, and it answers it the
+			# same way whether the file exists or not, on purpose. This asks whether the voice
+			# can actually PLAY what the template names.
+			#
+			# In the source tree it is nearly free and always passes. Against an exported pack
+			# it is the whole point: an artifact built without its audio boots, walks, talks and
+			# requests every cue exactly as it should, and is silent. That was measured, not
+			# imagined - excluding the cues from the pack left every other assertion green.
+			# FIRST, because both lists below are filled by reload() only when a voice is
+			# bound - so with none bound they are empty, and the one check built to catch a
+			# silent artifact reported green precisely because nothing could make a sound.
+			# That is how a title that played into an unbound bus shipped. A game that is
+			# deliberately silent simply does not write this step.
+			if String(AudioBus.style_id()).is_empty():
+				_fail("no voice is bound, so 'every cue is playable' is a question nobody asked")
+			var absent := AudioBus.missing_cues()
+			if not absent.is_empty():
+				_fail("the voice cannot play %d cue(s) it names: %s" % [absent.size(), absent])
+			# Music is asked the same question and for the same reason: a track committed
+			# without its .import sidecar is present here and absent from the pack, which is
+			# the one place nobody is watching.
+			var quiet := AudioBus.missing_tracks()
+			if not quiet.is_empty():
+				_fail("the voice cannot play %d track(s) this game names: %s"
+					% [quiet.size(), quiet])
+			if absent.is_empty() and quiet.is_empty():
+				_log.append("every cue and track the game names is playable")
+		"assert_flag":
+			# The one assertion that can tell "the quest advanced" from "something moved the
+			# player". A gate opening is evidence a warp fired; the flag is evidence the
+			# chest is what opened it.
+			var key := StringName(str(step.get("key", "")))
+			var wanted := bool(step.get("expect", true))
+			var actual := GameState.has_flag(key)
+			if actual != wanted:
+				_fail("expected flag '%s' to be %s, it is %s" % [key, wanted, actual])
+			else:
+				_log.append("flag '%s' is %s" % [key, actual])
+		"assert_equipped":
+			_assert_equipped(step)
+		"assert_item":
+			# An EXACT count, not "at least": a lantern that drank the oil and a lantern that
+			# did not are one and zero, and "at least zero" cannot tell them apart.
+			var item := StringName(str(step.get("id", "")))
+			var expected := int(step.get("count", 1))
+			var carried := GameState.item_count(item)
+			if carried != expected:
+				_fail("expected %d of item '%s', found %d" % [expected, item, carried])
+			else:
+				_log.append("carrying %d of '%s'" % [carried, item])
+		"assert_hp", "assert_xp", "assert_level", "assert_gold", "assert_mp":
+			_assert_party(op, step)
+		"assert_position":
+			_assert_position(step)
+		"mark":
+			_marks[str(step.get("name", "here"))] = _player_position()
+			_log.append("mark '%s' at %s" % [step.get("name", "here"), _player_position()])
+		"assert_moved":
+			_assert_moved(step)
+		"screenshot":
+			_screenshot(str(step.get("path", "user://qa.png")))
+		"note":
+			_log.append(str(step.get("text", "")))
+		_:
+			_fail("unknown step '%s'" % op)
+
+
+## Presses an action until the flow state changes, up to a limit.
+##
+## The alternative - counting presses - ties the gate to how many LINES a writer happened to
+## put in the conversation, so adding a sentence breaks a test about control handover. Worse,
+## over-pressing re-opens the dialog the moment it closes and the gate reports the state it
+## was trying to leave. Bounded, never unbounded: an unreachable state must fail loudly
+## rather than spin.
+## Starts a press_until_state. It runs as FRAMES, not as a coroutine, and that is the whole
+## point of the rewrite.
+##
+## It used to `await` inside the step - but the step machine that called it does not await, so
+## the next step ran on the very next frame while the presses were still going. Every
+## assertion written directly after a press_until_state was therefore racing it, and a race
+## reports a PASS as readily as a failure: `assert_state world` immediately afterwards passed
+## because the conversation had not opened yet. The demo's scripts happened to have a `wait`
+## in that spot, which is why nothing noticed until a second game did not.
+##
+## It also awaited idle frames while everything else here counts physics frames.
+## Plays a fight WELL, to its end: confirm through every menu, and press inside every timing
+## window. The scripted twin of `BattleDriver.Policy.PERFECT`, and the reason it exists is that
+## the alternative does not survive content changes - a session that lands timed hits by waiting
+## a computed number of frames between presses is chained arithmetic over the cue and message
+## lengths, and it goes stale the moment a formation gains a body. It then fails as a fight that
+## mysteriously never ends, half a script away from the thing that changed.
+##
+## Note this is the OPPOSITE of `press_until_state`, which mashes: only the first press of a cue
+## counts, so pressing every frame lands it at the top of the wind-up and never in the window.
+## Mashing is how a session plays badly ON PURPOSE, and both are worth being able to write.
+func _fight_well(step: Dictionary) -> void:
+	_fight_limit = int(step.get("limit", 6000))
+	_fight_frames = 0
+	_fight_holding = false
+	_fight_active = true
+
+
+func _tick_fight_well() -> void:
+	if _fight_holding:
+		_release(&"interact")
+		_fight_holding = false
+		return
+	if Router.state_name() != "battle":
+		_release_arena_moves()
+		_log.append("fought it out in %d frames" % _fight_frames)
+		_fight_active = false
+		return
+	_fight_frames += 1
+	if _fight_frames >= _fight_limit:
+		_fail("fought for %d frames and the battle never ended" % _fight_limit)
+		_release_arena_moves()
+		_fight_active = false
+		return
+	var arena := _arena_screen()
+	if arena != null:
+		_tick_arena_well(arena)
+		return
+	var screen := _battle_screen()
+	if screen == null:
+		return
+	if screen.cue_on() or screen.choosing():
+		_press(&"interact")
+		_fight_holding = true
+
+
+## An arena, played well through the keys: the four move actions held or let go to match this
+## frame's choice, and the sword pressed when it should swing. The choice is _arena_choice's, which
+## is ArenaDriver's PERFECT stated again - see there for why it has to be stated twice.
+func _tick_arena_well(screen: ArenaScreen) -> void:
+	var choice := _arena_choice(screen.sim())
+	var move: Vector2 = choice["move"]
+	_hold_arena_move(Dir.D.LEFT, move.x < 0.0)
+	_hold_arena_move(Dir.D.RIGHT, move.x > 0.0)
+	_hold_arena_move(Dir.D.UP, move.y < 0.0)
+	_hold_arena_move(Dir.D.DOWN, move.y > 0.0)
+	if bool(choice["swing"]):
+		_press(&"interact")
+		_fight_holding = true
+
+
+func _hold_arena_move(d: Dir.D, down: bool) -> void:
+	var action := Locomotion.action_for(d)
+	if down and not _held.has(action):
+		_press(action)
+	elif not down and _held.has(action):
+		_release(action)
+
+
+func _release_arena_moves() -> void:
+	for d: Dir.D in Dir.ALL:
+		var action := Locomotion.action_for(d)
+		if _held.has(action):
+			_release(action)
+
+
+## How close the cross axis has to be before PERFECT closes on the main one, in the rules' units.
+## ArenaDriver.ALIGN, stated again with the rest of the choice.
+const ARENA_ALIGN := 24
+
+
+## This frame's choice for a player who plays the arena well: ArenaDriver.choose(sim, PERFECT),
+## stated a second time because this autoload SHIPS and tests/helpers does not - an autoload naming a
+## class that is not in the exported pack would fail to load, and every packed session with it.
+## test_qa_ops holds the two to one answer over every branch the choice takes.
+func _arena_choice(sim: ArenaSim) -> Dictionary:
+	var out := {"move": Vector2.ZERO, "swing": false}
+	var target := sim.nearest_standing()
+	if target < 0 or sim.shoved():
+		return out
+	if sim.sword_reaches(target):
+		out["swing"] = not sim.swinging() and sim.foe_hurt(target) == 0
+		return out
+	if sim.swinging():
+		return out
+	var danger := sim.threat()
+	if danger >= 0 and sim.player_hurt() == 0:
+		out["move"] = Vector2(_arena_dominant(sim.player_pos() - sim.foe_pos(danger)))
+		return out
+	out["move"] = Vector2(_arena_approach(sim.foe_pos(target) - sim.player_pos()))
+	return out
+
+
+static func _arena_dominant(delta: Vector2i) -> Vector2i:
+	if absi(delta.x) >= absi(delta.y):
+		return Vector2i(signi(delta.x), 0)
+	return Vector2i(0, signi(delta.y))
+
+
+static func _arena_approach(gap: Vector2i) -> Vector2i:
+	if absi(gap.x) >= absi(gap.y):
+		if absi(gap.y) > ARENA_ALIGN:
+			return Vector2i(0, signi(gap.y))
+		return Vector2i(signi(gap.x), 0)
+	if absi(gap.x) > ARENA_ALIGN:
+		return Vector2i(signi(gap.x), 0)
+	return Vector2i(0, signi(gap.y))
+
+
+## Which game is running. The one thing a session that PICKED its game on the title, rather than
+## being handed one with --game=, has to prove it got - every other assertion would pass in either
+## of two games that share every map.
+func _assert_game(step: Dictionary) -> void:
+	var wanted := str(step.get("id", ""))
+	if String(GameState.game) != wanted:
+		_fail("expected the running game to be '%s', found '%s'" % [wanted, GameState.game])
+	else:
+		_log.append("the running game is '%s'" % wanted)
+
+
+## What the battle screen is currently saying about a fighter beyond their numbers - the short
+## tag it writes beside the health. Only a TURN fight can be asked, which is the whole reason this
+## exists: a status expires with the battle, so nothing outside one can be asked whether it
+## happened - and an arena has no statuses at all, the word appearing nowhere in ArenaSim. The
+## refusal says both, rather than reporting an arena as "no battle", which is a sentence a session
+## author standing in one would reasonably disbelieve.
+##
+## It is also the only assertion that can tell WHICH spell was cast. MP alone cannot: three of
+## this game's spells cost 3, so "the pool went down by three" is satisfied by any of them - a
+## mutant that moved the one being tested out of reach passed a session asserting only that.
+func _assert_status(step: Dictionary) -> void:
+	var screen := _battle_screen()
+	if screen == null:
+		_fail("assert_status needs a turn fight - a status cannot outlive the fight it was got in, and an arena has no statuses at all")
+		return
+	var at := int(step.get("member", 0))
+	var wanted := str(step.get("expect", ""))
+	var actual := screen.logic().member_tag(at)
+	if actual != wanted:
+		_fail("expected member %d to be showing '%s', found '%s'" % [at, wanted, actual])
+	else:
+		_log.append("member %d is showing '%s'" % [at, actual])
+
+
+## What a foe has left, mid-fight, in WHICHEVER resolver is fighting - it is the only assertion
+## that can prove HOW MUCH a blow was worth.
+##
+## An element's whole effect is the size of a number, and every other reading a session can take
+## is blind to it - the magic spent is the same whatever it hit, the fight is won either way, and
+## a caption is not read by anything. So a shipped weakness with no `assert_foe_hp` behind it is
+## a feature nothing would notice the loss of, and the same is true of a sword blow.
+##
+## It read the turn fight only until 2026-09-19, so in an arena it refused with "outside a battle"
+## while the state WAS battle - a sword fight had no way to say what a swing was worth.
+func _assert_foe_hp(step: Dictionary) -> void:
+	# Refused BEFORE any screen is looked for, and that order is the whole reason this is provable:
+	# a suite has no screen in the tree, so every OTHER refusal this op can make is "there is no
+	# fight". Ordered the other way round, a step that forgot its expect is reported as the wrong
+	# thing while complaining for the right reason, and a test of it passes without the guard.
+	#
+	# A missing one used to read as nought, which is "assert this foe is down" - so the op whose
+	# whole job is the size of a number had a silent default that passes on any foe already down.
+	if not step.has("expect"):
+		_fail("assert_foe_hp needs an expect - a missing one reads as nought, which is 'this foe is down'")
+		return
+	var at := int(step.get("foe", 0))
+	var wanted := int(step.get("expect", 0))
+	# The arena first. Only one screen is ever up, but the two resolvers share no type beyond
+	# FightScreen and are read differently, so each arm asks its own for the number.
+	var complaint := ""
+	var sword_fight := _arena_screen()
+	if sword_fight != null:
+		complaint = _arena_foe_fault(sword_fight.sim(), at, wanted)
+	else:
+		var screen := _battle_screen()
+		if screen == null:
+			_fail("assert_foe_hp outside a battle - there is nothing standing to have any health")
+			return
+		complaint = _turn_foe_fault(screen.logic(), at, wanted)
+	if not complaint.is_empty():
+		_fail(complaint)
+		return
+	_log.append("foe %d is on %d health" % [at, wanted])
+
+
+## What the arena has to say about foe `at`, or "" when it agrees with the script.
+##
+## Takes the RULES rather than the screen, the `_running_game_faults` shape. The WIRING above needs
+## a screen in the tree and only a play session can stage one; this is arithmetic, which a suite can
+## drive with a staged ArenaSim and nothing else at all.
+##
+## The bounds question is the HARNESS's rather than ArenaSim's: foe_hp() is written for a screen
+## that only ever asks about foes it drew, so a session naming a foe nobody is standing in would be
+## an engine error in the middle of a play run rather than a refusal with the op's name on it.
+func _arena_foe_fault(sim: ArenaSim, at: int, wanted: int) -> String:
+	if at < 0 or at >= sim.foe_count():
+		return "assert_foe_hp names foe %d and this fight has %d on the floor" % [at, sim.foe_count()]
+	var standing := sim.foe_hp(at)
+	if standing != wanted:
+		return "expected foe %d to be on %d health on the floor, found %d" % [at, wanted, standing]
+	return ""
+
+
+## The same for the turn fight, and a TWIN rather than one function over both: the two resolvers
+## share no type, and that they both happen to answer foe_count() is a coincidence of naming rather
+## than an interface either of them promises. The bounds hole was the same on this side and older.
+func _turn_foe_fault(logic: BattleLogic, at: int, wanted: int) -> String:
+	if at < 0 or at >= logic.foe_count():
+		return "assert_foe_hp names foe %d and this fight has %d" % [at, logic.foe_count()]
+	var standing := logic.enemy_hp(at)
+	if standing != wanted:
+		return "expected foe %d to be on %d health, found %d" % [at, wanted, standing]
+	return ""
+
+
+## The arena's view, found by type for _battle_screen's reason - and by its OWN type, since both fight
+## screens are FightScreens and the harness plays the two differently.
+func _arena_screen() -> ArenaScreen:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+	for node in scene.find_children("", "ArenaScreen", true, false):
+		return node as ArenaScreen
+	return null
+
+
+## The battle view, found by TYPE rather than by a path or a group, so nothing in the shipped
+## scene has to carry a hook that exists only for the harness.
+func _battle_screen() -> BattleScreen:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+	for node in scene.find_children("", "BattleScreen", true, false):
+		return node as BattleScreen
+	return null
+
+
+func _press_until_state(step: Dictionary) -> void:
+	_until_action = StringName(str(step.get("action", "interact")))
+	_until_state = str(step.get("state", "world"))
+	_until_limit = int(step.get("limit", 40))
+	_until_presses = 0
+	_until_holding = false
+	_until_active = true
+
+
+## One frame of a running press_until_state: release what was pressed last frame, otherwise
+## check the state and press again. Returns while it still owns the step machine.
+func _tick_press_until() -> void:
+	if _until_holding:
+		_release(_until_action)
+		_until_holding = false
+		return
+	if Router.state_name() == _until_state:
+		_log.append("reached '%s' after %d press(es)" % [_until_state, _until_presses])
+		_until_active = false
+		return
+	if _until_presses >= _until_limit:
+		_fail("pressed '%s' %d times and never reached state '%s' (still '%s')"
+			% [_until_action, _until_limit, _until_state, Router.state_name()])
+		_until_active = false
+		return
+	_press(_until_action)
+	_until_presses += 1
+	_until_holding = true
+
+
+## Asserts one of the player's fight numbers, EXACTLY, for the same reason assert_item is
+## exact: "at least 12 hp" cannot tell a fight that was survived from one that was not fought.
+##
+## All three verbs share a function because they differ only in which field they read - three
+## copies of the same eight lines is where the fourth one goes wrong.
+##
+## An optional `member` names a COMPANION; without one every verb reads the leader's numbers,
+## which is what leaves every session written before there was anyone else asking exactly what
+## it asked. A companion who has not joined is a FAILURE rather than a zero - "the number I
+## expected is missing" and "the person I expected is missing" are different findings, and a
+## default of nought would report the second as the first.
+func _assert_party(op: String, step: Dictionary) -> void:
+	var expected := int(step.get("value", 0))
+	var member := StringName(str(step.get("member", "")))
+	var actual := 0
+	if not String(member).is_empty():
+		if op == "assert_gold":
+			# One purse for the whole party, in every reference game and here - so a member on
+			# a gold assertion is a question with no answer rather than a different answer.
+			_fail("assert_gold names member '%s', and there is one purse" % member)
+			return
+		if not GameState.has_companion(member):
+			_fail("expected %s of member '%s', who has not joined"
+				% [op.trim_prefix("assert_"), member])
+			return
+		var record := GameState.companion(member)
+		actual = int(record.get(op.trim_prefix("assert_"), record.get("level", 1)))
+		if actual != expected:
+			_fail("expected %s %d of member '%s', found %d"
+				% [op.trim_prefix("assert_"), expected, member, actual])
+		else:
+			_log.append("%s of '%s' is %d" % [op.trim_prefix("assert_"), member, actual])
+		return
+	match op:
+		"assert_hp":
+			actual = GameState.player_hp
+		"assert_xp":
+			actual = GameState.player_xp
+		"assert_gold":
+			actual = GameState.gold
+		"assert_mp":
+			actual = GameState.player_mp
+		_:
+			actual = GameState.player_level
+	if actual != expected:
+		_fail("expected %s %d, found %d" % [op.trim_prefix("assert_"), expected, actual])
+	else:
+		_log.append("%s is %d" % [op.trim_prefix("assert_"), actual])
+
+
+## What is worn in one slot, by the leader or by a named `member`. An EMPTY id asserts the slot
+## is bare, which is the assertion a take-off needs - the assert_item shape, where zero is a
+## real answer rather than "no check".
+func _assert_equipped(step: Dictionary) -> void:
+	var slot := StringName(str(step.get("slot", "")))
+	var member := StringName(str(step.get("member", "")))
+	var expected := str(step.get("id", ""))
+	var actual := str(GameState.equipped(slot, member))
+	var whose := "" if String(member).is_empty() else " of '%s'" % member
+	if actual != expected:
+		_fail("expected '%s' equipped in slot '%s'%s, found '%s'"
+			% [expected, slot, whose, actual])
+	else:
+		_log.append("slot '%s'%s holds '%s'" % [slot, whose, actual])
+
+
+func _assert_position(step: Dictionary) -> void:
+	var pos := _player_position()
+	var raw := JsonFile.to_int_array(step.get("tile", []))
+	if raw.size() != 2:
+		_fail("assert_position needs a tile")
+		return
+	# The running world's own tile size, never a number written in the script: a session that
+	# stated its own would keep passing after a map changed style, reporting on a tile that is
+	# no longer where it says.
+	var tile_size := GameState.tile_size
+	var actual := MapData.world_to_tile(pos, tile_size)
+	var wanted := Vector2i(raw[0], raw[1])
+	if actual != wanted:
+		_fail("expected the player on tile %s, found %s (world %s)" % [wanted, actual, pos])
+	else:
+		_log.append("player is on tile %s" % actual)
+
+
+## Asserts movement along an axis since a named mark. This is the shape most QA assertions
+## want: not an exact coordinate - which would pin the test to a speed value someone will
+## tune next week - but "it went that way", and later "and then it stopped".
+func _assert_moved(step: Dictionary) -> void:
+	var axis := str(step.get("axis", "x"))
+	var expect := str(step.get("expect", "increase"))
+	var mark_name := str(step.get("since", "here"))
+	if not _marks.has(mark_name):
+		_fail("assert_moved refers to mark '%s', which was never set" % mark_name)
+		return
+	var origin: Vector2 = _marks[mark_name]
+	var before: float = origin.x if axis == "x" else origin.y
+	var pos := _player_position()
+	var now: float = pos.x if axis == "x" else pos.y
+	var delta := now - before
+	var moved := absf(delta) > 0.5
+	match expect:
+		"increase":
+			if delta <= 0.5:
+				_fail("expected %s to increase, it moved %+.1f" % [axis, delta])
+		"decrease":
+			if delta >= -0.5:
+				_fail("expected %s to decrease, it moved %+.1f" % [axis, delta])
+		"unchanged":
+			if moved:
+				_fail("expected %s to hold still, it moved %+.1f" % [axis, delta])
+		_:
+			_fail("unknown expect '%s'" % expect)
+	_log.append("%s moved %+.1f (%s)" % [axis, delta, expect])
+
+
+func _screenshot(path: String) -> void:
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	if img.save_png(path) != OK:
+		_fail("could not write screenshot to " + path)
+		return
+	_log.append("screenshot " + path)
+
+
+func _player_position() -> Vector2:
+	return GameState.player_position
+
+
+## Presses through parse_input_event, not action_press.
+##
+## They are not interchangeable: action_press only sets the Input singleton's STATE, which is
+## enough for code that polls (Input.get_axis, which is how movement reads) and invisible to
+## code that handles EVENTS (_unhandled_input, which is how interacting and menus read). A
+## harness that only did the first would move the player around perfectly and never be able
+## to press a button - and the failure looks like the button being broken, not like the
+## harness being half-connected.
+func _press(action: StringName) -> void:
+	if String(action).is_empty() or not InputMap.has_action(action):
+		_fail("no such input action '%s'" % action)
+		return
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = true
+	Input.parse_input_event(event)
+	if not _held.has(action):
+		_held.append(action)
+
+
+func _release(action: StringName) -> void:
+	if InputMap.has_action(action):
+		var event := InputEventAction.new()
+		event.action = action
+		event.pressed = false
+		Input.parse_input_event(event)
+	_held.erase(action)
+
+
+func _release_all() -> void:
+	for action in _held.duplicate():
+		_release(action)
+	for button in _pad_held.duplicate():
+		_pad_release(button)
+	if _stick_held:
+		_stick(0.0, 0.0)
+
+
+## The word is Prompts' own, so a session and a help line cannot call one button two things.
+func _pad_press(button: String) -> bool:
+	if not Prompts.BUTTONS.has(button):
+		_fail("no such pad button '%s' (known: %s)" % [
+			button, ", ".join(PackedStringArray(Prompts.BUTTONS.keys()))])
+		return false
+	Input.parse_input_event(_pad_event(button, true))
+	if not _pad_held.has(button):
+		_pad_held.append(button)
+	return true
+
+
+func _pad_release(button: String) -> void:
+	if Prompts.BUTTONS.has(button):
+		Input.parse_input_event(_pad_event(button, false))
+	_pad_held.erase(button)
+
+
+func _pad_event(button: String, down: bool) -> InputEventJoypadButton:
+	var event := InputEventJoypadButton.new()
+	event.button_index = Prompts.BUTTONS[button]
+	event.pressed = down
+	return event
+
+
+## The left stick, held where it is put: one motion event per axis through the map. A zero on
+## both is letting go, which release_all also does.
+func _stick(x: float, y: float) -> void:
+	for pair: Array in [[JOY_AXIS_LEFT_X, x], [JOY_AXIS_LEFT_Y, y]]:
+		var event := InputEventJoypadMotion.new()
+		event.axis = pair[0]
+		event.axis_value = clampf(float(pair[1]), -1.0, 1.0)
+		Input.parse_input_event(event)
+	_stick_held = x != 0.0 or y != 0.0
+
+
+## A key by its name ("Escape", "W"), bound by POSITION the way the map binds every key.
+func _key(name: String, down: bool) -> bool:
+	var code := OS.find_keycode_from_string(name)
+	if code == KEY_NONE:
+		_fail("no such key '%s'" % name)
+		return false
+	var event := InputEventKey.new()
+	event.physical_keycode = code
+	event.pressed = down
+	Input.parse_input_event(event)
+	return true
+
+
+## Whether any line a player could be reading right now says the words: every visible Label on
+## every CanvasLayer of the running scene, the help lines and the hint alike. `expect` false is
+## "no line says this", which is how a session shows the other device's words are GONE.
+func _assert_prompt(step: Dictionary) -> void:
+	var wanted := str(step.get("contains", ""))
+	var expect := bool(step.get("expect", true))
+	if wanted.is_empty():
+		_fail("assert_prompt needs 'contains'")
+		return
+	var found := ""
+	var scene := get_tree().current_scene
+	if scene != null:
+		for child in scene.get_children():
+			var layer := child as CanvasLayer
+			if layer == null:
+				continue
+			for node in layer.find_children("", "Label", true, false):
+				var label := node as Label
+				if label.is_visible_in_tree() and label.text.contains(wanted):
+					found = label.text
+	if found.is_empty() == expect:
+		if expect:
+			_fail("no line on screen says '%s'" % wanted)
+		else:
+			_fail("a line on screen still says '%s': '%s'" % [wanted, found])
+		return
+	_log.append("prompt '%s' %s" % [wanted, ("found in '%s'" % found) if expect else "absent"])
+
+
+func _fail(message: String) -> void:
+	_failures.append(message)
+
+
+## What every session is judged by, whatever its steps asserted. Split out of _finish, which quits the
+## tree, so a suite can run it.
+func _end_of_session_checks() -> void:
+	# Every session, not just the ones that assert a sound. AudioBus warns once about an id it
+	# does not have, into a log nobody is reading, in a build that has already shipped - so a
+	# misspelled cue is exactly the kind of defect that survives to release. Checking it here
+	# turns that warning into a red gate across every scripted play session for free.
+	for unknown in AudioBus.unknown_requests():
+		_fail("something asked for the sound '%s', which no cue is called" % unknown)
+	# And the running game's own problems(), which the world prints at boot into that same unread
+	# log. Against res:// smoke_boot already holds every manifest to them; what only a session can
+	# see is the PACK, where a check asking the filesystem about an imported asset reported six
+	# files missing on every web boot while the sessions using them played.
+	var faults := _running_game_faults(GameState.game, GameSelect.manifests())
+	if String(GameState.game).is_empty():
+		_log.append("no game was running at the end, so no manifest was checked")
+	else:
+		_log.append("the running game's manifest was checked: %d problem(s)" % faults.size())
+	for fault in faults:
+		_fail(fault)
+
+
+## The game that ran, judged by its own manifest: each problem it reports, or the plain fact that this
+## build carries no manifest for it. Over a list rather than the disk, so a suite can hand it a
+## manifest with a problem in it - the shipped one has none.
+func _running_game_faults(game_id: StringName, carried: Array[GameManifest]) -> Array[String]:
+	var faults: Array[String] = []
+	if String(game_id).is_empty():
+		return faults
+	for manifest in carried:
+		if manifest.id != game_id:
+			continue
+		for problem in manifest.problems():
+			faults.append("the game '%s' reports a problem: %s" % [game_id, problem])
+		return faults
+	faults.append("the game '%s' ran, and this build carries no manifest for it" % game_id)
+	return faults
+
+
+func _finish() -> void:
+	_finished = true
+	_release_all()
+	_end_of_session_checks()
+	for line in _log:
+		print("qa: " + line)
+	if _failures.is_empty():
+		print("qa: OK (%d steps)" % _steps.size())
+		get_tree().quit(0)
+		return
+	for f in _failures:
+		printerr("qa: FAIL " + f)
+	printerr("qa: %d failure(s)" % _failures.size())
+	get_tree().quit(1)

@@ -1,0 +1,51 @@
+{
+	"_readme": [
+		"The warden's opening, and the game's premise. Named by the map AND opened by the hooks:",
+		"on_map_entered forces it the first time the player stands in the village, because a",
+		"play-test found the oil, never found the key, and was never told either existed.",
+		"",
+		"Its `greet` node sets met_the_warden, which is what stops the hook replaying it. A node",
+		"flag lands when the line is SHOWN, so a conversation nobody saw is one they are still owed.",
+		"",
+		"Every fact a player needs to take the first step is in `why`: that there is a key, that it",
+		"is west in the hollow, and that it is under the one bush down there. That last one used to",
+		"be stated NOWHERE - the stash is an unmarked object standing on scenery."
+	],
+	"id": "warden_asks",
+	"start": "greet",
+	"nodes": {
+		"greet": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "You want to know why the gate is barred. I barred it. Something took the keep eleven years ago, and I could not take it back.",
+			"set_flag": "met_the_warden",
+			"next": "why"
+		},
+		"why": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "The key went west into the hollow, under the roots of the one bush down there. What nests beside it now is why nobody has fetched it.",
+			"choices": [
+				{
+					"text": "I'll go and look.",
+					"next": "good",
+					"set_flag": "told_warden_yes"
+				},
+				{
+					"text": "Sounds like your problem.",
+					"next": "fair"
+				}
+			]
+		},
+		"good": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "Then you are already doing more than I have in a decade. Mind the smith in the town south of here - she keeps something for cuts."
+		},
+		"fair": {
+			"speaker": "Warden",
+			"portrait": "quest_warden",
+			"text": "It is. And it will still be my problem tomorrow, when you have run out of other things to do."
+		}
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"_readme": [
+		"What the locked gate says. A refusal that only refuses is a dead end; this one names what",
+		"it wants and who would know where it is, so a player who walks east first - which is the",
+		"most natural opening move, the gate being four tiles from the spawn - leaves with a lead."
+	],
+	"id": "gate_barred",
+	"start": "locked",
+	"nodes": {
+		"locked": {
+			"speaker": "",
+			"text": "Barred, and heavier than it looks. The keyhole wants a key you are not carrying - and the warden is the one who barred it."
+		}
+	}
+}
