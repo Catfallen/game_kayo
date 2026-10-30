@@ -1,0 +1,26 @@
+{
+	"_readme": [
+		"Dona Neide, na praça."
+	],
+	"id": "senhora_praca",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Dona Neide",
+			"text": "Três Lagoas, meu filho! A capital mundial da celulose.",
+			"portrait": "town_elder",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Dona Neide",
+			"text": "Esse cheirinho de fábrica que você sente? É cheiro de emprego.",
+			"portrait": "town_elder",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "No Maranhão o cheiro é de babaçu. Cada lugar com o seu.",
+			"portrait": "kayo"
+		}
+	}
+}

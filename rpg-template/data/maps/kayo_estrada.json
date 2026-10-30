@@ -1,0 +1,119 @@
+{
+	"_readme": [
+		"Fase 1, cena 3: a estrada de terra saindo da cidade.",
+		"",
+		"Duas cristas de pedra cortam o caminho, cada uma com UMA passagem, e um bicho",
+		"parado nela: primeiro o Tatu, depois o Animal Louco. A luta é obrigatória pela",
+		"geometria, como no jogo demo do template, e não por um raio invisível.",
+		"",
+		"Contas (data/combat/kayo_combat.tres): Tatu 12 xp + Animal Louco 10 xp = 22, que",
+		"passa da primeira faixa da curva (20). O Kayo chega no Marcos no nível 2.",
+		"",
+		"Na primeira entrada os hooks abrem estrada_conclusao: o Kayo fecha a rodada de",
+		"GeoGuessr e lembra que no CS aprendeu reflexo (o golpe na hora certa)."
+	],
+	"id": "kayo_estrada",
+	"style": "lpc32",
+	"legend": {
+		".": "terra",
+		",": "terra_alt",
+		"=": "estrada",
+		"#": "pedra",
+		"M": "mandacaru",
+		"a": "arbusto_seco",
+		"T": "arvore_seca",
+		"c": "calango",
+		"k": "caveira",
+		"p": "poste",
+		"x": "xique_xique",
+		"l": "palma",
+		"J": "juazeiro",
+		"w": "roda_carroca",
+		"s": "pedras",
+		"i": "capim"
+	},
+	"ground": [
+		"######################",
+		"#.....,#......#......#",
+		"#......#..,...#....,.#",
+		"#......#......#......#",
+		"======================",
+		"#..,...#......#......#",
+		"#......#...,..#......#",
+		"#......#......#......#",
+		"######################"
+	],
+	"decor": [
+		"                      ",
+		"  a   J   M  i     T  ",
+		"   M s   c  l    a    ",
+		"   p     p  p    p  p ",
+		"                      ",
+		"                      ",
+		"  i  a   i T    x M w ",
+		"    k       a      i  ",
+		"                      "
+	],
+	"spawns": {
+		"da_vila": [
+			1,
+			4
+		],
+		"do_terreiro": [
+			20,
+			4
+		]
+	},
+	"npcs": [
+		{
+			"id": "bode",
+			"character": "sertao_bode",
+			"tile": [
+				10,
+				6
+			],
+			"facing": "left",
+			"dialog": "bode_estrada",
+			"behavior": "wander",
+			"range": 1
+		}
+	],
+	"enemies": [
+		{
+			"id": "tatu",
+			"enemy": "tatu",
+			"tile": [
+				7,
+				4
+			],
+			"facing": "left"
+		},
+		{
+			"id": "animal_louco",
+			"enemy": "animal_louco",
+			"tile": [
+				14,
+				4
+			],
+			"facing": "left"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				0,
+				4
+			],
+			"map": "kayo_vila",
+			"spawn": "da_estrada"
+		},
+		{
+			"tile": [
+				21,
+				4
+			],
+			"map": "kayo_terreiro",
+			"spawn": "entrada"
+		}
+	]
+}

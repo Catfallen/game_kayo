@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O lago do pátio (jp_patio)."
+	],
+	"id": "lago_carpas",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Carpas nadando em círculo. Até elas parecem nervosas.",
+			"portrait": "kayo"
+		}
+	}
+}

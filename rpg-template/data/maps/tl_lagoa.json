@@ -1,0 +1,157 @@
+{
+	"_readme": [
+		"Fase 2, cena 3: a Lagoa Maior, com o calçadão, os ipês e as capivaras.",
+		"",
+		"A barraca de tereré (5,8) e o Seu Zé ao lado abrem terere: a primeira rodada marca",
+		"tomou_terere e mostra os dois dividindo a guampa (cena terere). Depois do tereré o banco",
+		"na beira da Lagoa (14,6) abre por_do_sol (os hooks decidem): a Isa conta que vai voltar",
+		"para o Japão, e isso marca sabe_da_viagem, que abre o caminho do aeroporto a leste.",
+		"",
+		"O warp em [21,7] ficava na última coluna do mapa: um warp recusado não move o jogador",
+		"(ver o aviso em quest_village.json), então sem a coluna 22 de parede quem chega lá sem",
+		"sabe_da_viagem atravessa o limite do mapa e some no vazio. A coluna 22 é só essa trava."
+	],
+	"id": "tl_lagoa",
+	"style": "lpc32",
+	"legend": {
+		".": "grass",
+		",": "grass_alt",
+		"~": "water",
+		";": "calcadao",
+		"R": "parede_reboco",
+		"Y": "ipe_amarelo",
+		"K": "ipe_rosa",
+		"Q": "coqueiro",
+		"L": "poste_luz",
+		"n": "banco_praca",
+		"x": "lixeira",
+		"*": "flores",
+		"S": "placa_tl",
+		"b": "barraca_esq",
+		"B": "barraca_dir"
+	},
+	"ground": [
+		"RRRRRRRRRRRRRRRRRRRRRRR",
+		"R....................RR",
+		"R..~~~~~~~~~~~~~~~...RR",
+		"R.~~~~~~~~~~~~~~~~~..RR",
+		"R.~~~~~~~~~~~~~~~~~~.RR",
+		"R..~~~~~~~~~~~~~~~~..RR",
+		"R....................RR",
+		";;;;;;;;;;;;;;;;;;;;;;R",
+		"R....................RR",
+		"R....................RR",
+		"R....................RR",
+		"R,.......,.......,...RR",
+		"R....................RR",
+		"RRRRRRRRRRRRRRRRRRRRRRR"
+	],
+	"decor": [
+		"                       ",
+		"  Q                Q   ",
+		"                       ",
+		"                       ",
+		"                       ",
+		"                       ",
+		"   L  n    L  n   L    ",
+		"                       ",
+		"    bB   x S     *     ",
+		"                   K   ",
+		"  Y          *         ",
+		"       *       *       ",
+		"          Y   K        ",
+		"                       "
+	],
+	"spawns": {
+		"da_centro": [
+			1,
+			7
+		],
+		"do_aeroporto": [
+			20,
+			7
+		]
+	},
+	"npcs": [
+		{
+			"id": "seu_ze",
+			"character": "town_carter",
+			"tile": [
+				6,
+				8
+			],
+			"facing": "left",
+			"dialog": "terere"
+		},
+		{
+			"id": "capivara",
+			"character": "tl_capivara",
+			"tile": [
+				12,
+				10
+			],
+			"facing": "left",
+			"dialog": "capivara",
+			"behavior": "wander",
+			"range": 1
+		},
+		{
+			"id": "capivara_filhote",
+			"character": "tl_capivara",
+			"tile": [
+				18,
+				11
+			],
+			"facing": "right",
+			"dialog": "capivara",
+			"behavior": "wander",
+			"range": 1
+		}
+	],
+	"objects": [
+		{
+			"id": "barraca_terere",
+			"tile": [
+				5,
+				8
+			],
+			"dialog": "terere"
+		},
+		{
+			"id": "banco_lagoa",
+			"tile": [
+				14,
+				6
+			],
+			"dialog": "banco_sem_terere"
+		},
+		{
+			"id": "placa_lagoa",
+			"tile": [
+				11,
+				8
+			],
+			"dialog": "placa_lagoa"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				0,
+				7
+			],
+			"map": "tl_centro",
+			"spawn": "da_lagoa"
+		},
+		{
+			"tile": [
+				21,
+				7
+			],
+			"map": "tl_aeroporto",
+			"spawn": "entrada",
+			"requires_flag": "sabe_da_viagem",
+			"locked_dialog": "lagoa_ainda_nao"
+		}
+	]
+}

@@ -1,0 +1,150 @@
+{
+	"_readme": [
+		"Fase 1, cena 4: o terreiro do Marcos, o chefe da fase.",
+		"",
+		"Um arraiá: bandeirinhas, fogueira, banco e galinhas soltas.",
+		"",
+		"Funciona como treinador de Pokémon: ao entrar, os hooks abrem marcos_desafio, e",
+		"os bichos dele (Tatu Treinado e Animal Louco Treinado, uma formação só) guardam a",
+		"única passagem da cerca de pedra. O Marcos não luta, quem luta são os bichos.",
+		"A formação tem um chefe nela, então não dá para fugir.",
+		"",
+		"Vencidos os bichos, o Marcos libera a passagem (marcos_derrotado) e a placa do",
+		"ponto de ônibus fecha a fase: fim_fase1 marca fase1_completa.",
+		"",
+		"A estrada a leste (13,4) é o ônibus para Três Lagoas, a fase 2: só abre depois da placa.",
+		"",
+		"Essa borda (13,4) ficava na última coluna do mapa: um warp recusado não move o jogador",
+		"(ver o aviso em quest_village.json), então sem a coluna 14 de pedra quem chega lá sem",
+		"fase1_completa atravessa o limite do mapa e some no vazio. A coluna 14 é só essa trava."
+	],
+	"id": "kayo_terreiro",
+	"style": "lpc32",
+	"legend": {
+		".": "terra",
+		",": "terra_alt",
+		"=": "estrada",
+		"#": "pedra",
+		"M": "mandacaru",
+		"a": "arbusto_seco",
+		"k": "caveira",
+		"P": "placa",
+		"f": "cerca",
+		"g": "fogueira",
+		"~": "bandeirinhas",
+		"q": "potes_barro",
+		"n": "banco",
+		"u": "tambor",
+		"i": "capim"
+	},
+	"ground": [
+		"###############",
+		"#.......#....##",
+		"#..,....#..,.##",
+		"#.......#....##",
+		"#.......#....=#",
+		"=========....##",
+		"#.......#....##",
+		"#..,....#....##",
+		"#.......#....##",
+		"###############"
+	],
+	"decor": [
+		"               ",
+		" ~~~~~~~   a   ",
+		" fff        u  ",
+		"  n g       i  ",
+		"               ",
+		"           P   ",
+		"               ",
+		"  M   k        ",
+		" i   q   i  M  ",
+		"               "
+	],
+	"spawns": {
+		"entrada": [
+			1,
+			5
+		]
+	},
+	"npcs": [
+		{
+			"id": "marcos",
+			"character": "town_smith",
+			"tile": [
+				7,
+				3
+			],
+			"facing": "down",
+			"dialog": "marcos_antes"
+		},
+		{
+			"id": "galinha_fogueira",
+			"character": "sertao_galinha",
+			"tile": [
+				3,
+				7
+			],
+			"facing": "right",
+			"dialog": "galinha",
+			"behavior": "wander",
+			"range": 1
+		},
+		{
+			"id": "galinha_ponto",
+			"character": "sertao_galinha",
+			"tile": [
+				11,
+				8
+			],
+			"facing": "left",
+			"dialog": "galinha",
+			"behavior": "wander",
+			"range": 1
+		}
+	],
+	"enemies": [
+		{
+			"id": "bichos_marcos",
+			"enemy": "tatu_marcos",
+			"group": [
+				"animal_louco_marcos"
+			],
+			"tile": [
+				8,
+				5
+			],
+			"facing": "left"
+		}
+	],
+	"objects": [
+		{
+			"id": "ponto_onibus",
+			"tile": [
+				11,
+				5
+			],
+			"dialog": "fim_fase1"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				0,
+				5
+			],
+			"map": "kayo_estrada",
+			"spawn": "do_terreiro"
+		},
+		{
+			"tile": [
+				13,
+				4
+			],
+			"map": "tl_rodoviaria",
+			"spawn": "chegada",
+			"requires_flag": "fase1_completa",
+			"locked_dialog": "onibus_espera"
+		}
+	]
+}

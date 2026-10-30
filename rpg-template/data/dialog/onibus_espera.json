@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"A estrada do ônibus no terreiro, antes de ler a placa do ponto (warp trancado)."
+	],
+	"id": "onibus_espera",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "O ônibus para Três Lagoas sai daqui. Melhor ler a placa do ponto antes.",
+			"portrait": "kayo"
+		}
+	}
+}

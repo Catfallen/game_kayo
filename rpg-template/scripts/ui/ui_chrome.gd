@@ -143,7 +143,7 @@ static func frame(style: SpriteStyle, rect: Rect2, title := "") -> Frame:
 	# Upper case rather than a larger size: the font is drawn for ONE size, and a heading that
 	# scales it is the blur the font was brought in to remove.
 	out.title = label(style, "text")
-	out.title.text = title.to_upper()
+	out.title.text = String(TranslationServer.translate(title)).to_upper()
 	out.title.position = Vector2(float(PAD), 0.0)
 	out.header.add_child(out.title)
 	out.panel.set_meta(INNER, out.inner())

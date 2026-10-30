@@ -1,0 +1,54 @@
+{
+	"_readme": [
+		"Abre sozinho na primeira entrada em jp_salao (hooks). O Tatu Cristal acorda (cena tatu_desperta)."
+	],
+	"id": "tatu_desafio",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Kayo! Você veio!",
+			"portrait": "isa_japonesa",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Falei que vinha. Do Maranhão até o Japão, lembra?",
+			"portrait": "kayo",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Tatu Cristal",
+			"text": "Grrr... mais um humano atrás da moça do cristal.",
+			"portrait": "tatu_cristal",
+			"scene": "res://assets/kayo/cenas/tatu_desperta.png",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Tatu Cristal",
+			"text": "Ela fica. Brilha tão bonito presa aqui. É a joia da minha coleção.",
+			"portrait": "tatu_cristal",
+			"scene": "res://assets/kayo/cenas/tatu_desperta.png",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Kayo",
+			"text": "Eu atravessei um oceano por ela. Não vai ser um tatu de vidro que vai me parar.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/tatu_desperta.png",
+			"next": "n6"
+		},
+		"n6": {
+			"speaker": "Tatu Cristal",
+			"text": "VIDRO?! Eu sou CRISTAL! Vem, então!",
+			"portrait": "tatu_cristal",
+			"scene": "res://assets/kayo/cenas/tatu_desperta.png",
+			"set_flag": "tatu_desafiou",
+			"next": "n7"
+		},
+		"n7": {
+			"speaker": "Dica",
+			"text": "Cada golpe dele tem uma animação. Aperte o botão no impacto para defender."
+		}
+	}
+}

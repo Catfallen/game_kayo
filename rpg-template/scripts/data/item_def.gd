@@ -38,6 +38,14 @@ extends Resource
 ## second one would be designing somebody's game.
 @export var battle_heal: int = 0
 
+## THROWN at a foe in a fight, to catch it - the genre's monster ball. It catches only a foe whose
+## EnemyDef names a `caught_flag`, and the catch is that flag being set: who joins because of it is
+## a PartyMemberDef's `joins_on_flag`, so catching needs no roster of its own. False is the default.
+@export var capture: bool = false
+
+## Optional picture the battle screen throws when this is used. Decoration only.
+@export var icon: Texture2D
+
 
 ## Every slot the template knows about, in the order the equipment page draws them. The one
 ## list: problems() refuses anything outside it, and the world builds a page row per entry -
@@ -94,6 +102,8 @@ func problems() -> Array[String]:
 		out.append("item '%s' has no name" % id)
 	# Negative healing is a weapon wearing a potion's clothes. If a game wants one, it wants a
 	# different verb, not a sign flip on this one.
+	if capture and battle_heal > 0:
+		out.append("item '%s' both heals and catches - a throw and a drink are two items" % id)
 	if battle_heal < 0:
 		out.append("item '%s' heals %d" % [id, battle_heal])
 	if price < 0:

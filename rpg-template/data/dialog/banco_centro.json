@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"Um banco da praça, no sol do meio-dia."
+	],
+	"id": "banco_centro",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Senta não, Kayo! Esse banco tá pegando fogo de tanto sol.",
+			"portrait": "isa_casual"
+		}
+	}
+}

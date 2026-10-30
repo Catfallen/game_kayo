@@ -1,0 +1,50 @@
+{
+	"_readme": [
+		"O monge do pátio (jp_patio): descanso completo (rest) antes do chefe, e a dica de defesa."
+	],
+	"id": "monge",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Monge",
+			"text": "Antes de enfrentar a fera, descanse. Um guerreiro cansado é só um alvo.",
+			"portrait": "town_carter",
+			"choices": [
+				{
+					"text": "Meditar e descansar",
+					"next": "r1",
+					"rest": true
+				},
+				{
+					"text": "Alguma dica?",
+					"next": "t1"
+				},
+				{
+					"text": "Agora não",
+					"next": "z1"
+				}
+			]
+		},
+		"r1": {
+			"speaker": "Monge",
+			"text": "Respire. As pétalas caem, e você continua de pé.",
+			"portrait": "town_carter"
+		},
+		"t1": {
+			"speaker": "Monge",
+			"text": "Cada golpe dele se anuncia: estilhaço, raio, rolada. Olhe o brilho chegando...",
+			"portrait": "town_carter",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Monge",
+			"text": "...e defenda no instante do impacto. Quem defende na hora certa leva metade.",
+			"portrait": "town_carter"
+		},
+		"z1": {
+			"speaker": "Monge",
+			"text": "O castelo espera. Ele também.",
+			"portrait": "town_carter"
+		}
+	}
+}

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CombatDef" load_steps=2 format=3]
+
+; O Animal Louco capturado: frágil, mas bate forte e morde todo mundo. A curva e os tempos que contam sao os do Kayo; daqui so saem os numeros dele.
+
+[ext_resource type="Script" path="res://scripts/data/combat_def.gd" id="1_combat"]
+
+[resource]
+script = ExtResource("1_combat")
+id = &"parceiro_louco_combat"
+base_hp = 14
+hp_per_level = 3
+base_attack = 6
+attack_per_level = 2
+base_defense = 1
+defense_per_level = 1
+base_mp = 6
+mp_per_level = 1
+xp_curve = Array[int]([20, 40])

@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"O letreiro da cidade, na praça."
+	],
+	"id": "placa_tl",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Placa",
+			"text": "TRÊS LAGOAS - MS",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Placa azul, ipê amarelo e calor de rachar. Cravei sem nem olhar o mapa.",
+			"portrait": "kayo"
+		}
+	}
+}

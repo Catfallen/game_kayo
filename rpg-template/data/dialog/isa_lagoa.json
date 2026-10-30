@@ -1,0 +1,63 @@
+{
+	"_readme": [
+		"Falar com a Isa na Lagoa, antes do pôr do sol (hooks: alvo companion)."
+	],
+	"id": "isa_lagoa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Essa é a Lagoa Maior. Meu lugar favorito da cidade.",
+			"portrait": "isa_casual",
+			"choices": [
+				{
+					"text": "Conversar",
+					"next": "c1"
+				},
+				{
+					"text": "Abraçar a Isa",
+					"next": "a1"
+				},
+				{
+					"text": "Nada não",
+					"next": "z1"
+				}
+			]
+		},
+		"c1": {
+			"speaker": "Isa",
+			"text": "Cuidado com as capivaras. Quem manda aqui são elas.",
+			"portrait": "isa_casual",
+			"next": "c2"
+		},
+		"c2": {
+			"speaker": "Kayo",
+			"text": "Respeito. No Maranhão quem manda é o calango.",
+			"portrait": "kayo",
+			"next": "c3"
+		},
+		"c3": {
+			"speaker": "Isa",
+			"text": "Bora pegar um tereré na barraca? Depois a gente senta no banco pra ver o pôr do sol.",
+			"portrait": "isa_casual"
+		},
+		"a1": {
+			"speaker": "Isa",
+			"text": "Hmm... esse abraço tá com cheiro de tereré.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco.png",
+			"next": "a2"
+		},
+		"a2": {
+			"speaker": "Kayo",
+			"text": "É cheiro de amor. E de hortelã.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco.png"
+		},
+		"z1": {
+			"speaker": "Isa",
+			"text": "Não some de perto de mim, tá?",
+			"portrait": "isa_casual"
+		}
+	}
+}

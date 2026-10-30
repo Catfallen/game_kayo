@@ -1,0 +1,13 @@
+{
+	"_readme": [
+		"As galinhas que andam pelo sertão."
+	],
+	"id": "galinha",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Galinha",
+			"text": "Có-có-có... CÓ!"
+		}
+	}
+}

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=3 format=3]
+
+; Golpe do Kayo, nivel 1. O ataque de um alvo: dano fixo que ignora a defesa - a resposta ao casco do Tatu.
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+[ext_resource type="Texture2D" path="res://assets/kayo/icons/lapada_da_misera.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"lapada_da_misera"
+name = "Lapada da Mísera"
+description = "Uma lapada daquelas, com a raiva do sertão inteiro."
+mp_cost = 3
+learn_level = 1
+kind = 0
+power = 8
+icon = ExtResource("2_icon")

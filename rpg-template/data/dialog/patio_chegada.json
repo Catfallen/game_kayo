@@ -1,0 +1,31 @@
+{
+	"_readme": [
+		"Abre sozinho na primeira entrada em jp_patio (hooks). A voz da Isa vem do castelo."
+	],
+	"id": "patio_chegada",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Voz da Isa",
+			"text": "Kayo...? É você? Eu ouvi seus passos lá de dentro.",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Isa! Onde você tá?",
+			"portrait": "kayo",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Voz da Isa",
+			"text": "No salão do castelo. Ele me prendeu num cristal. Cuidado, ele é muito forte.",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Kayo",
+			"text": "Forte é a minha vontade de te levar pra casa. Aguenta aí.",
+			"portrait": "kayo",
+			"set_flag": "chegou_patio"
+		}
+	}
+}

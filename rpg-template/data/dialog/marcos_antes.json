@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O Marcos se você falar com ele antes da luta."
+	],
+	"id": "marcos_antes",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Marcos",
+			"text": "Meus bichos tão ali na passagem. Passa por eles se for capaz.",
+			"portrait": "town_smith"
+		}
+	}
+}

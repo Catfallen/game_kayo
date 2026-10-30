@@ -50,6 +50,15 @@ const STYLES: Array[StringName] = [STYLE_TURNS, STYLE_ARENA]
 @export var base_mp: int = 0
 @export var mp_per_level: int = 0
 
+## Which spells THIS game's leader can learn, by id. Empty is the default and means every spell
+## under data/spells/, which is what a build carrying one game always meant. A build carrying
+## two needs it, or each game's leader learns the other game's magic.
+@export var spells: Array[StringName] = []
+
+## The card a fight with nobody presenting it opens on, with `%s` standing for the first foe's name:
+## "A wild %s appeared!". Empty is the default and opens straight on the menu.
+@export var wild_intro: String = ""
+
 ## What each level-up costs, as TOTAL xp thresholds accumulated in order: element 0 is the
 ## cost of level 1 -> 2, element 1 of 2 -> 3. The maximum level is therefore size() + 1, and
 ## a curve is the one place "how long is this game" is written down.

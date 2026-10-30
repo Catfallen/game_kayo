@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"A saída para a estrada antes das três pistas."
+	],
+	"id": "estrada_sem_pistas",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Champion não sai andando sem saber onde tá. Deixa eu olhar em volta primeiro.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Um poste, uma placa, a vegetação... no GeoGuessr é isso que entrega o lugar.",
+			"portrait": "kayo"
+		}
+	}
+}

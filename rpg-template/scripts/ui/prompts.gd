@@ -87,7 +87,9 @@ static func word(verb: Verb, device: Device) -> String:
 ## Every `{token}` in the template replaced by the device's word. An unknown token is left as it
 ## was typed - GameManifest.problems() refuses it upstream, where the writer can be named.
 static func fill(template: String, device: Device) -> String:
-	var out := template
+	# The running game's language first, on the template as written: its tokens survive the
+	# translation, so the device's words still go in afterwards.
+	var out := String(TranslationServer.translate(template))
 	for token: String in TOKENS:
 		out = out.replace("{%s}" % token, word(TOKENS[token], device))
 	return out

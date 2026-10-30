@@ -1,0 +1,57 @@
+{
+	"_readme": [
+		"Falar com a Isa no aeroporto, antes do portão (hooks: alvo companion)."
+	],
+	"id": "isa_aeroporto",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "...",
+			"portrait": "isa_casual",
+			"choices": [
+				{
+					"text": "Conversar",
+					"next": "c1"
+				},
+				{
+					"text": "Abraçar a Isa",
+					"next": "a1"
+				},
+				{
+					"text": "Nada não",
+					"next": "z1"
+				}
+			]
+		},
+		"c1": {
+			"speaker": "Isa",
+			"text": "Eu não queria ir. Você sabe disso, né?",
+			"portrait": "isa_casual",
+			"next": "c2"
+		},
+		"c2": {
+			"speaker": "Kayo",
+			"text": "Eu sei. Família é família.",
+			"portrait": "kayo"
+		},
+		"a1": {
+			"speaker": "Isa",
+			"text": "Se eu soltar, eu não embarco.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco.png",
+			"next": "a2"
+		},
+		"a2": {
+			"speaker": "Kayo",
+			"text": "Então não solta ainda.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco.png"
+		},
+		"z1": {
+			"speaker": "Isa",
+			"text": "O portão é ali em cima. Vamos juntos?",
+			"portrait": "isa_casual"
+		}
+	}
+}

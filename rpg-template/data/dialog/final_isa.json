@@ -1,0 +1,167 @@
+{
+	"_readme": [
+		"A conversa final, com a Isa livre (jp_salao). Melancólica, depois o abraço e o beijo (cena",
+		"beijo), depois a pergunta de como voltar (cena volta_casa). A última fala marca fim_de_jogo, e",
+		"o manifesto rola os créditos (GameManifest.ending_flag)."
+	],
+	"id": "final_isa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Você veio mesmo. Atravessou o mundo inteiro.",
+			"portrait": "isa_japonesa",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "No aeroporto eu fiquei olhando o avião até ele virar um pontinho no céu.",
+			"portrait": "kayo",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "Achei que ia ser assim pra sempre. Você de um lado do mapa, eu do outro.",
+			"portrait": "kayo",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Isa",
+			"text": "Dentro do cristal o tempo não passava. Era frio. E muito silencioso.",
+			"portrait": "isa_japonesa",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Isa",
+			"text": "Eu ficava lembrando do tereré na Lagoa. Do pôr do sol. Do seu abraço no portão.",
+			"portrait": "isa_japonesa",
+			"next": "n6"
+		},
+		"n6": {
+			"speaker": "Isa",
+			"text": "Tive medo de esquecer o calor das coisas. De esquecer de você.",
+			"portrait": "isa_japonesa",
+			"next": "n7"
+		},
+		"n7": {
+			"speaker": "Kayo",
+			"text": "Eu nunca ia deixar você esquecer. Foi por isso que eu vim.",
+			"portrait": "kayo",
+			"next": "n8"
+		},
+		"n8": {
+			"speaker": "Isa",
+			"text": "A gente perdeu tanto tempo longe, Kayo...",
+			"portrait": "isa_japonesa",
+			"next": "n9"
+		},
+		"n9": {
+			"speaker": "Kayo",
+			"text": "Então não vamos perder mais nenhum.",
+			"portrait": "kayo",
+			"choices": [
+				{
+					"text": "Abraçar e beijar a Isa",
+					"next": "b1"
+				}
+			]
+		},
+		"b1": {
+			"speaker": "Narrador",
+			"text": "As pétalas de cerejeira caem em volta dos dois.",
+			"scene": "res://assets/kayo/cenas/beijo.png",
+			"next": "n11"
+		},
+		"n11": {
+			"speaker": "Isa",
+			"text": "Eu te amo. Do Maranhão até o Japão.",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/beijo.png",
+			"next": "n12"
+		},
+		"n12": {
+			"speaker": "Kayo",
+			"text": "O caminho inteiro. Ida e volta.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/beijo.png",
+			"next": "n13"
+		},
+		"n13": {
+			"speaker": "Isa",
+			"text": "...Kayo. Como é que a gente vai voltar pra casa?",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n14"
+		},
+		"n14": {
+			"speaker": "Kayo",
+			"text": "Ué. Do mesmo jeito que eu vim.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n15"
+		},
+		"n15": {
+			"speaker": "Isa",
+			"text": "E você veio como?",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n16"
+		},
+		"n16": {
+			"speaker": "Kayo",
+			"text": "...Gastei todo o dinheiro na passagem de ida.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n17"
+		},
+		"n17": {
+			"speaker": "Isa",
+			"text": "KAYO!",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n18"
+		},
+		"n18": {
+			"speaker": "Kayo",
+			"text": "Calma! Sou champion de GeoGuessr. Sei exatamente onde o Brasil fica.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n19"
+		},
+		"n19": {
+			"speaker": "Isa",
+			"text": "Saber onde fica não te leva até lá. Você mesmo disse isso.",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n20"
+		},
+		"n20": {
+			"speaker": "Kayo",
+			"text": "...E se a gente pedir carona pro Tatu Cristal? Ele rola rápido.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n21"
+		},
+		"n21": {
+			"speaker": "Isa",
+			"text": "Ele tá desmaiado ali no canto!",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n22"
+		},
+		"n22": {
+			"speaker": "Kayo",
+			"text": "Então a gente vai a pé até o mar e decide lá. Junto.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"next": "n23"
+		},
+		"n23": {
+			"speaker": "Isa",
+			"text": "...Bobo. Tá bom. Junto.",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/volta_casa.png",
+			"set_flag": "fim_de_jogo"
+		}
+	}
+}

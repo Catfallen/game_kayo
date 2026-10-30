@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O portão 1 depois que a Isa embarcou."
+	],
+	"id": "portao_vazio",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Portão 1. Agora é só um portão.",
+			"portrait": "kayo"
+		}
+	}
+}

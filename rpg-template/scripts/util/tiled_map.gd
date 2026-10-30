@@ -197,11 +197,7 @@ static func from_native(native: Dictionary, tile_ids: PackedStringArray,
 		"nextobjectid": object_id,
 		# The map's own fields ride as map properties, so a `.tmj` is a complete description and
 		# the importer needs nothing alongside it but the tile bank.
-		"properties": _properties({
-			"id": native.get("id", ""),
-			"style": style,
-			"music": native.get("music", ""),
-		}),
+		"properties": _properties(_map_fields(native, style)),
 		"tilesets": [{
 			"firstgid": 1,
 			"name": style,
@@ -248,6 +244,8 @@ static func to_native(raw: Dictionary, tile_ids: PackedStringArray, tile_size: i
 		"style": props.get("style", "gb16"),
 		"music": props.get("music", ""),
 	}
+	if props.get("ambient", null) is Dictionary:
+		out["ambient"] = props["ambient"]
 	var legend := {}
 	var used := {}
 	for entry: Variant in raw.get("layers", []):
@@ -326,6 +324,16 @@ static func _object_layer(name: String, records: Variant, tile_size: int, id: in
 
 
 ## A record's fields as Tiled properties: scalars typed, everything else JSON behind the marker.
+## The map's own fields as map properties. `ambient` rides only when the map has one (as JSON, the
+## array-property idiom), so a map without it exports the bytes it always did.
+static func _map_fields(native: Dictionary, style: String) -> Dictionary:
+	var fields := {"id": native.get("id", ""), "style": style, "music": native.get("music", "")}
+	var air: Variant = native.get("ambient", {})
+	if air is Dictionary and not (air as Dictionary).is_empty():
+		fields["ambient"] = air
+	return fields
+
+
 static func _properties(fields: Dictionary) -> Array:
 	var out: Array = []
 	var keys: Array = fields.keys()

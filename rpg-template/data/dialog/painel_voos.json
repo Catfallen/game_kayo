@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"O painel de partidas."
+	],
+	"id": "painel_voos",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Painel",
+			"text": "VOO 1:47 - SÃO PAULO / TÓQUIO. EMBARQUE: PORTÃO 1.",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Tóquio. Até a palavra parece longe.",
+			"portrait": "kayo"
+		}
+	}
+}

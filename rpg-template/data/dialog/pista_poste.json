@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"Pista GeoGuessr 1 de 3 (os hooks marcam a flag)."
+	],
+	"id": "pista_poste",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Poste de madeira, fio baixo, cruzeta simples. Isso é interior do Nordeste.",
+			"portrait": "kayo"
+		}
+	}
+}

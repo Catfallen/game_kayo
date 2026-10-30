@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=3 format=3]
+
+; Magia do Kayo, nivel 2. SLEEP: o grito deixa um inimigo abestado por 2 turnos.
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+[ext_resource type="Texture2D" path="res://assets/kayo/icons/oxente.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"oxente"
+name = "Oxente!"
+description = "Um OXENTE tão alto que o bicho fica abestado e esquece de bater."
+mp_cost = 3
+learn_level = 2
+kind = 2
+power = 0
+status_turns = 2
+icon = ExtResource("2_icon")

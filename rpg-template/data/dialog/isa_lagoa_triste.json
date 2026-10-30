@@ -1,0 +1,63 @@
+{
+	"_readme": [
+		"Falar com a Isa na Lagoa, depois que ela contou da viagem (hooks)."
+	],
+	"id": "isa_lagoa_triste",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Não quero pensar no aeroporto agora... mas a gente precisa ir.",
+			"portrait": "isa_casual",
+			"choices": [
+				{
+					"text": "Conversar",
+					"next": "c1"
+				},
+				{
+					"text": "Abraçar a Isa",
+					"next": "a1"
+				},
+				{
+					"text": "Nada não",
+					"next": "z1"
+				}
+			]
+		},
+		"c1": {
+			"speaker": "Kayo",
+			"text": "A gente dá um jeito, Isa. Sempre dá.",
+			"portrait": "kayo",
+			"next": "c2"
+		},
+		"c2": {
+			"speaker": "Isa",
+			"text": "Promete?",
+			"portrait": "isa_casual",
+			"next": "c3"
+		},
+		"c3": {
+			"speaker": "Kayo",
+			"text": "Prometo. O aeroporto fica a leste, depois do calçadão.",
+			"portrait": "kayo"
+		},
+		"a1": {
+			"speaker": "Isa",
+			"text": "Me abraça mais forte. Assim. Igualzinho assim.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco.png",
+			"next": "a2"
+		},
+		"a2": {
+			"speaker": "Kayo",
+			"text": "Assim eu consigo ficar o dia inteiro.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco.png"
+		},
+		"z1": {
+			"speaker": "Isa",
+			"text": "Fica pertinho de mim até o fim, tá?",
+			"portrait": "isa_casual"
+		}
+	}
+}

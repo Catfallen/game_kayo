@@ -104,6 +104,24 @@ extends Resource
 ## thing dies to fire" is a design decision and not a fault.
 @export var resistances: Dictionary = {}
 
+## The flag a capture item sets when it catches this foe. Empty is the default and means it cannot
+## be caught - somebody else's beast, or not a beast at all - and a throw at it is batted away.
+@export var caught_flag: StringName = &""
+
+# -- presentation -----------------------------------------------------------------------------
+
+## Somebody who stands BEHIND this formation without fighting - a Pokemon trainer, a commander -
+## named by character id. Empty is the default and draws nobody. The rules never read these three
+## fields; the turn screen draws them, and an encounter plays identically with or without them.
+@export var presenter: StringName = &""
+
+## Shown large while the fight opens ("MARCOS QUER BATALHAR!"). Empty opens straight on the menu.
+@export var intro: String = ""
+
+## What the presenter calls out, one line each time one of this formation's foes takes its turn,
+## in order and round again.
+@export var presenter_lines: Array[String] = []
+
 # -- the arena --------------------------------------------------------------------------------
 
 ## How fast it moves in an arena, in tiles a second. Zero is legal: something that holds its ground.
@@ -132,6 +150,12 @@ func item_refs() -> Array[StringName]:
 ## What a move's `status` may say. A closed vocabulary for the reason SpellDef.Kind is an enum:
 ## a typo in a data file would otherwise be a move that reaches its turn and does nothing.
 const STATUSES := ["sleep", "sap"]
+
+## What a move's optional `fx` may say: the shape the battle screen draws across the move's wind-up,
+## timed so it lands on the impact. Presentation only - the rules never read it, and a move without
+## one is drawn as every move always was. Closed for STATUSES' reason: a misspelt shape would be a
+## boss attack that silently draws nothing.
+const MOVE_FX := ["shards", "beam", "rush", "quake", "storm", "flash"]
 
 
 ## How much of an `element` spell's damage this thing takes, as a percent. The ONE reader of
@@ -188,6 +212,9 @@ func problems() -> Array[String]:
 			out.append("enemy '%s' move %d has no name" % [id, i])
 		if int(move.get("power", 0)) < 0:
 			out.append("enemy '%s' move %d has negative power" % [id, i])
+		if move.has("fx") and not MOVE_FX.has(str(move.get("fx", ""))):
+			out.append("enemy '%s' move %d draws '%s', which is not a move effect"
+				% [id, i, str(move.get("fx", ""))])
 		out.append_array(_move_status_problems(i, move))
 	return out
 

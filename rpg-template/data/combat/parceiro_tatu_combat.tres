@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CombatDef" load_steps=2 format=3]
+
+; O Tatu capturado: o tanque - muita vida e casco, bate pouco. A curva e os tempos que contam sao os do Kayo; daqui so saem os numeros dele.
+
+[ext_resource type="Script" path="res://scripts/data/combat_def.gd" id="1_combat"]
+
+[resource]
+script = ExtResource("1_combat")
+id = &"parceiro_tatu_combat"
+base_hp = 18
+hp_per_level = 4
+base_attack = 4
+attack_per_level = 2
+base_defense = 3
+defense_per_level = 1
+base_mp = 4
+mp_per_level = 1
+xp_curve = Array[int]([20, 40])

@@ -1,0 +1,28 @@
+{
+	"_readme": [
+		"Aberto pelos hooks na primeira entrada em kayo_estrada: fecha a rodada de GeoGuessr e",
+		"explica o golpe na hora certa com o reflexo do CS."
+	],
+	"id": "estrada_conclusao",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Poste, placa e mandacaru: sertão do Maranhão. 5000 pontos.",
+			"portrait": "kayo",
+			"set_flag": "leu_a_estrada",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Agora é seguir a estrada. Só que tem bicho atravessado no caminho...",
+			"portrait": "kayo",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "No CS aprendi reflexo: apertar na hora certa bate o dobro e defende melhor.",
+			"portrait": "kayo"
+		}
+	}
+}

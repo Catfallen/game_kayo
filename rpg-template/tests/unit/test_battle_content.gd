@@ -281,8 +281,20 @@ func test_every_shipped_spell_is_actually_cast_somewhere() -> void:
 	# assertion by vacuum, and this whole file would go green about a system it never entered.
 	assert_int(cast.size()).override_failure_message(
 		"the casting driver cast nothing at all, so the coverage below proves nothing").is_greater(0)
+	# The spells THIS game hands out - its leader's list and its companions' - because the party
+	# above is this game's. A content gate is about a game: with a second game on disk, "every
+	# spell under data/spells" would demand the demo's party cast the other game's magic.
+	var combat := _quest().combat
+	var handed := {}
+	for id in combat.spells:
+		handed[id] = true
+	for member: PartyMemberDef in _quest().party:
+		for id in member.spells:
+			handed[id] = true
 	for path in ContentScan.files_of(SPELL_DIR, "tres"):
 		var spell := load(path) as SpellDef
+		if not combat.spells.is_empty() and not handed.has(spell.id):
+			continue
 		assert_bool(cast.has(spell.id)).override_failure_message(
 			"'%s' is shipped and is never cast in any fight the game contains, at any level or "
 			% spell.id + "seed - so nothing here has ever played it. Cast: %s" % [cast.keys()]) \
@@ -376,6 +388,12 @@ func test_nothing_a_player_needs_can_be_drunk_in_a_fight() -> void:
 			assert_bool(offered.has(def.id)).override_failure_message(
 				"'%s' heals %d and is not on the battle menu at all" % [def.id, def.battle_heal]) \
 				.is_true()
+			continue
+		# A capture item is the other thing a fight is for spending: thrown at a foe, never at a
+		# door. It belongs on the menu exactly as a heal does.
+		if def.capture:
+			assert_bool(offered.has(def.id)).override_failure_message(
+				"'%s' catches and is not on the battle menu at all" % def.id).is_true()
 			continue
 		assert_bool(offered.has(def.id)).override_failure_message(
 			("'%s' heals nothing and is offered mid-fight anyway. Using it spends it - if it "

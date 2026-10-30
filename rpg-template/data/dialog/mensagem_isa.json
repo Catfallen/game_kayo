@@ -1,0 +1,39 @@
+{
+	"_readme": [
+		"A mensagem da Isa no celular, na fase 1. Ela chama o Kayo para Três Lagoas, onde os dois",
+		"vão se encontrar (a Isa só aparece em pessoa lá). O castelo e o chefão NÃO aparecem",
+		"aqui: isso é do Japão (japao_isa_castelo). Sem retrato, porque é só texto no celular.",
+		"O último nó marca leu_mensagem, que abre a porta da casa."
+	],
+	"id": "mensagem_isa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Celular",
+			"text": "1 mensagem nova de: Isa",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Isa (celular)",
+			"text": "Oi, Kayo! Tô em Três Lagoas. Quando você vem pra cá?",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "Três Lagoas, Mato Grosso do Sul. Do Maranhão até lá é praticamente outro mapa.",
+			"portrait": "kayo",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Isa (celular)",
+			"text": "Então vem logo! Tô te esperando.",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Kayo",
+			"text": "Rota traçada. Champion de GeoGuessr não se perde no caminho.",
+			"portrait": "kayo",
+			"set_flag": "leu_mensagem"
+		}
+	}
+}

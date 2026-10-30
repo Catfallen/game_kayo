@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O janelão depois do fim da fase 2: lembra o caminho para o Japão."
+	],
+	"id": "janela_depois",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "A foto da Isa não sai da minha cabeça. Embarque internacional, porta da direita.",
+			"portrait": "kayo"
+		}
+	}
+}

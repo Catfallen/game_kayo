@@ -1,0 +1,159 @@
+{
+	"_readme": [
+		"Fase 3, cena 1: a vila ao pé do castelo, de noite, com as cerejeiras perdendo as pétalas.",
+		"",
+		"Chega-se pelo embarque internacional do aeroporto de Três Lagoas (spawn do_aeroporto). Na",
+		"primeira entrada os hooks abrem japao_chegada. A Obaachan dá três rapaduras uma vez só.",
+		"A rua de pedra vai para leste e sobe pelo vão do portão torii (19,4)-(19,5) até o caminho",
+		"do castelo (19,2), o warp para o pátio. O torii é visto de frente: só se passa por baixo dele",
+		"indo para o norte, pelos dois tiles do meio.",
+		"",
+		"O 'ambient' tinge o mapa de roxo (a noite tensa) e faz as pétalas caírem pela tela."
+	],
+	"id": "jp_vila",
+	"style": "lpc32",
+	"music": "castelo_sakura",
+	"ambient": {
+		"tint": "#b4a6d6",
+		"petals": {
+			"count": 36,
+			"colors": [
+				"#f7c3d8",
+				"#f09ab9",
+				"#ffe4ee"
+			],
+			"fall": 0.7
+		}
+	},
+	"legend": {
+		"p": "pedra_caminho",
+		".": "cascalho",
+		"M": "muro_castelo",
+		"R": "telhado_jp",
+		"S": "shoji",
+		"N": "ceu_noite",
+		"L": "ceu_lua",
+		"g": "grass",
+		",": "grass_alt",
+		"K": "sakura",
+		"*": "petalas",
+		"l": "lanterna_pedra",
+		"b": "bambu",
+		"P": "pinheiro",
+		"c": "lanterna_papel",
+		"f": "cerca_bambu",
+		"Q": "placa_jp",
+		"0": "torii_00",
+		"1": "torii_01",
+		"2": "torii_02",
+		"3": "torii_10",
+		"4": "torii_11",
+		"5": "torii_12"
+	},
+	"ground": [
+		"NNNNNNNNNNNNNNNNNLNNNN",
+		"NRRRRRRNNNNNNRRRRRRNNN",
+		"MSSSSSSMggggMSSSSSSpMM",
+		"Mgggggggggggggggg,gpgM",
+		"Mgg,ggggg,ggggggggpp.M",
+		"Mggggggggggggggggg.p.M",
+		"pppppppppppppppppppppM",
+		"Mgggg,ggggggg,gggggg.M",
+		"Mggggggggggggggggggg.M",
+		"Mg,gggggggg,gggggggggM",
+		"MggggggggggggggggggggM",
+		"MMMMMMMMMMMMMMMMMMMMMM"
+	],
+	"decor": [
+		"                      ",
+		"                      ",
+		"   c    bbbb    c     ",
+		"       K     * K l  P ",
+		"  K      *  K     012 ",
+		"  Q   l *  l  * l 345 ",
+		"                      ",
+		"   *  l    l          ",
+		"    K        *  K     ",
+		" P   *    K        K  ",
+		"  ffffffffffffffffff  ",
+		"                      "
+	],
+	"spawns": {
+		"do_aeroporto": [
+			1,
+			6
+		],
+		"do_patio": [
+			19,
+			3
+		]
+	},
+	"npcs": [
+		{
+			"id": "obaachan",
+			"character": "town_elder",
+			"tile": [
+				4,
+				3
+			],
+			"facing": "down",
+			"dialog": "obaachan"
+		},
+		{
+			"id": "menino_jp",
+			"character": "town_kid",
+			"tile": [
+				13,
+				9
+			],
+			"facing": "down",
+			"dialog": "menino_jp",
+			"behavior": "wander",
+			"range": 1
+		}
+	],
+	"objects": [
+		{
+			"id": "placa_jp",
+			"tile": [
+				2,
+				5
+			],
+			"dialog": "placa_jp"
+		},
+		{
+			"id": "casa_esq",
+			"tile": [
+				5,
+				2
+			],
+			"dialog": "casa_jp"
+		},
+		{
+			"id": "casa_dir",
+			"tile": [
+				15,
+				2
+			],
+			"dialog": "casa_jp"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				0,
+				6
+			],
+			"map": "tl_aeroporto",
+			"spawn": "do_japao"
+		},
+		{
+			"tile": [
+				19,
+				2
+			],
+			"map": "jp_patio",
+			"spawn": "da_vila"
+		}
+	]
+}

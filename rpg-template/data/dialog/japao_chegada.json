@@ -1,0 +1,38 @@
+{
+	"_readme": [
+		"Abre sozinho na primeira entrada em jp_vila (hooks). Marca chegou_japao."
+	],
+	"id": "japao_chegada",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Japão. Treze horas de voo e eu ainda achando que ia ver placa em português.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "A foto da Isa: telhado curvo, cerejeira, um castelo lá no alto. É aqui.",
+			"portrait": "kayo",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "Rodada fácil. Nem precisei dar zoom.",
+			"portrait": "kayo",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Kayo",
+			"text": "Mas esse silêncio... e essas pétalas caindo de noite. Tem coisa errada nesse castelo.",
+			"portrait": "kayo",
+			"set_flag": "chegou_japao",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Dica",
+			"text": "Siga a rua das cerejeiras até o portão torii, a leste."
+		}
+	}
+}

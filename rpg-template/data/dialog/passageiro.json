@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"Um passageiro esperando nas cadeiras."
+	],
+	"id": "passageiro",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Passageiro",
+			"text": "Vou visitar meus netos em Campo Grande. E vocês dois, vão pra onde?",
+			"portrait": "town_elder",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Ela vai pro Japão. Eu vou até o portão.",
+			"portrait": "kayo"
+		}
+	}
+}

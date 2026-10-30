@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"A placa da rodoviária."
+	],
+	"id": "placa_rodoviaria",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Placa",
+			"text": "Rodoviária de Três Lagoas. Bem-vindo ao Mato Grosso do Sul.",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Placa azul, letra branca. Se eu visse isso no GeoGuessr cravava o Centro-Oeste.",
+			"portrait": "kayo"
+		}
+	}
+}

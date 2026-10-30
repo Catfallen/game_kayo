@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"O carrinho de picolé da praça."
+	],
+	"id": "sorveteria",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Sorveteiro",
+			"text": "Olha o picolé! Tá derretendo, pega logo!",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Depois, moço. Hoje o dia é do tereré.",
+			"portrait": "kayo"
+		}
+	}
+}

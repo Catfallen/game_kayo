@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=3 format=3]
+
+; Golpe do Kayo, nivel 2. O golpe mais forte de um alvo: a Rajada pega todos, a Chicotada derruba um.
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+[ext_resource type="Texture2D" path="res://assets/kayo/icons/chicotada_do_lampiao.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"chicotada_do_lampiao"
+name = "Chicotada do Lampião"
+description = "O chicote estala num bicho só, e estala forte."
+mp_cost = 4
+learn_level = 2
+kind = 0
+power = 11
+icon = ExtResource("2_icon")

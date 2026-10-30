@@ -1,0 +1,26 @@
+{
+	"_readme": [
+		"A placa do ponto de ônibus: fecha a fase 1 e marca fase1_completa."
+	],
+	"id": "fim_fase1",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Ponto de ônibus. Próxima parada: Três Lagoas, Mato Grosso do Sul.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Aguenta firme, Isa. Já tô saindo do Maranhão.",
+			"portrait": "kayo",
+			"set_flag": "fase1_completa",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Fim da Fase 1",
+			"text": "O ônibus para Três Lagoas espera na estrada, logo acima, a leste."
+		}
+	}
+}

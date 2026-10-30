@@ -51,6 +51,9 @@ func _combat() -> CombatDef:
 	out.defend_cue_frames = 4
 	out.timed_window_frames = 2
 	out.message_frames = 2
+	# The demo's own spell list: since a build can carry two games, an EMPTY list means every spell
+	# under data/spells - both games' - and these tests are about the demo's magic.
+	out.spells = (load("res://data/combat/quest_combat.tres") as CombatDef).spells.duplicate()
 	return out
 
 ## The shipped game with a combat definition attached. A duplicate rather than an edit: the
@@ -291,6 +294,10 @@ func test_a_spells_shape_survives_the_trip_into_the_fight() -> void:
 			"'%s' arrived moving a different stat" % row.id).is_equal(def.stat)
 		assert_str(String(row.element)).override_failure_message(
 			"'%s' arrived made of something else" % row.id).is_equal(String(def.element))
+		assert_bool(row.percent).override_failure_message(
+			"'%s' arrived healing by a different measure" % row.id).is_equal(def.percent)
+		assert_object(row.icon).override_failure_message(
+			"'%s' arrived with a different picture" % row.id).is_same(def.icon)
 		checked += 1
 	# A loop over an empty page proves nothing, and this one is reached through a level.
 	assert_int(checked).override_failure_message(
@@ -305,7 +312,7 @@ func test_a_spells_shape_survives_the_trip_into_the_fight() -> void:
 ## THIS test by name. It is the shape the music-field list needed for exactly the same reason.
 func test_every_field_a_spell_row_carries_is_one_the_trip_compares() -> void:
 	const COMPARED := ["id", "name", "cost", "kind", "power", "status_turns", "target", "stat",
-		"element"]
+		"element", "percent", "icon"]
 	var carried: Array[String] = []
 	for property: Dictionary in BattleLogic.SpellRow.new().get_property_list():
 		# Declared fields only, minus the bookkeeping entry Object prepends for the script

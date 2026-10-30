@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"As capivaras da Lagoa Maior."
+	],
+	"id": "capivara",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Capivara",
+			"text": "(A capivara mastiga capim e te ignora com toda a calma do mundo.)",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Mestre em ficar de boa. Quero ser assim quando crescer.",
+			"portrait": "kayo"
+		}
+	}
+}

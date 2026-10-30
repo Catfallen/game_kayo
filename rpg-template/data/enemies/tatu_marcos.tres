@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+
+; O primeiro bicho do Marcos, chefe da fase 1. A musica dele (vigil) toma conta da luta.
+;
+; boss = false DE PROPOSITO: o template permite um unico chefe impossivel de fugir por build
+; (test_battle_content, que conta os do demo). Fugir aqui nao pula nada - os bichos continuam
+; na unica passagem da cerca, e o Kayo tenta de novo quando quiser.
+;
+; O MARCOS FICA ATRAS DA FORMACAO, como treinador de Pokemon (presenter): a luta abre com o
+; cartaz "Marcos quer batalhar!" e ele grita uma fala cada vez que um bicho dele age. Nada
+; disso muda a luta - so a tela le esses campos.
+;
+; No nivel 2 o Kayo tem 24 de vida, ataque 7 e defesa 2. Este tatu tira 2 (4 na Rolada
+; Treinada) e aguenta 4 golpes comuns ou 2 no tempo certo. Com o Animal Louco Treinado ao
+; lado, quem nao acerta tempo nenhum precisa das rapaduras; quem acerta passa com folga.
+
+[ext_resource type="Script" path="res://scripts/data/enemy_def.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"tatu_marcos"
+name = "Tatu Treinado"
+character = &"tatu"
+max_hp = 20
+attack = 4
+defense = 2
+xp = 25
+gold = 10
+boss = false
+music = &"vigil"
+presenter = &"town_smith"
+intro = "Marcos quer batalhar!"
+presenter_lines = Array[String](["Vai, Tatu! Rola nele!", "Morde, Animal Louco!", "Não amolece, não!", "Isso! Mais uma!", "Segura o reflexo dele!"])
+moves = [{ "name": "Rolada Treinada", "power": 2 }, { "name": "Casco", "power": 0 }]
+speed_tiles_per_second = 1.5
+chase_every_frames = 24
+body_tiles = Vector2(0.75, 0.375)

@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"A porta da casa antes da mensagem lida."
+	],
+	"id": "porta_celular",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "O celular não para de vibrar. Melhor ver o que é antes de sair.",
+			"portrait": "kayo"
+		}
+	}
+}

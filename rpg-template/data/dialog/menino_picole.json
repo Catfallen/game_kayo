@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"Menino da praça."
+	],
+	"id": "menino_picole",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Menino",
+			"text": "Moço, você não é daqui, né? Tá todo suado.",
+			"portrait": "town_kid",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Menino",
+			"text": "Aqui é assim: quarenta graus na sombra. E a sombra também é quente.",
+			"portrait": "town_kid"
+		}
+	}
+}

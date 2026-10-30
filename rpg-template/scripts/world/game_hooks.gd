@@ -19,6 +19,12 @@ extends RefCounted
 ##     runs. That is what keeps a game additive: it takes the cases it cares about and leaves
 ##     signs, chests and conversations to the template.
 
+## The id the partner walking behind the player (GameManifest.companion) is talked to by: pressing
+## the button near them arrives at on_interact as a target with this id. It is also the name of the
+## spawn they appear on when they join in the middle of a map.
+const COMPANION := &"companion"
+
+
 ## Called after a map is built and the player is standing in it.
 func on_map_entered(_ctx: GameContext) -> void:
 	pass

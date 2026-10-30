@@ -1,0 +1,113 @@
+{
+	"_readme": [
+		"Fase 3, cena 3: o salão do trono, o fim do jogo.",
+		"",
+		"Uma parede de cristal atravessa o salão (linha 5) e o único vão é onde o Tatu Cristal está:",
+		"a luta é inevitável pela GEOMETRIA, a regra do template. Na primeira entrada os hooks abrem",
+		"tatu_desafio (cena tatu_desperta).",
+		"",
+		"Atrás dele, a Isa presa no cristal (isa_presa, some com isa_livre) e a Isa livre (isa, só",
+		"aparece com isa_livre), as duas no mesmo tile. Vencido o chefe, falar com a Isa presa abre",
+		"cristal_quebra (hooks), que marca isa_livre; falar com a Isa livre abre final_isa, que marca",
+		"fim_de_jogo - e o manifesto rola os créditos."
+	],
+	"id": "jp_salao",
+	"style": "lpc32",
+	"music": "castelo_sakura",
+	"ambient": {
+		"tint": "#9ea2cc"
+	},
+	"legend": {
+		"_": "piso_castelo",
+		"t": "tatame",
+		"M": "muro_castelo",
+		"S": "shoji",
+		"I": "pilar",
+		"B": "biombo",
+		"E": "estandarte",
+		"C": "cristal",
+		"x": "cristal_chao",
+		"v": "vaso_jp",
+		"T": "taiko",
+		"k": "katana"
+	},
+	"ground": [
+		"MMMMMMMMMMMMMMMM",
+		"MSSSSSSSSSSSSSSM",
+		"MttttttttttttttM",
+		"MttttttttttttttM",
+		"MttttttttttttttM",
+		"MttttttttttttttM",
+		"Mtttttt_tttttttM",
+		"Mtttttt_tttttttM",
+		"Mtttttt_tttttttM",
+		"Mtttttt_tttttttM",
+		"Mtttttt_tttttttM",
+		"MMMMMMM_MMMMMMMM"
+	],
+	"decor": [
+		"                ",
+		"                ",
+		"  E B     B  E  ",
+		"      x     x   ",
+		"   x     x      ",
+		" CCCCCC CCCCCCC ",
+		" v            v ",
+		"  I          I  ",
+		"     x          ",
+		"  I        x I  ",
+		"   k        T   ",
+		"                "
+	],
+	"spawns": {
+		"entrada": [
+			7,
+			10
+		]
+	},
+	"npcs": [
+		{
+			"id": "isa_presa",
+			"character": "jp_isa_cristal",
+			"tile": [
+				7,
+				2
+			],
+			"facing": "down",
+			"dialog": "isa_presa",
+			"hidden_if_flag": "isa_livre"
+		},
+		{
+			"id": "isa",
+			"character": "isa_japonesa",
+			"tile": [
+				7,
+				2
+			],
+			"facing": "down",
+			"dialog": "final_isa",
+			"requires_flag": "isa_livre"
+		}
+	],
+	"enemies": [
+		{
+			"id": "tatu_cristal",
+			"enemy": "tatu_cristal",
+			"tile": [
+				7,
+				5
+			],
+			"facing": "down"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				7,
+				11
+			],
+			"map": "jp_patio",
+			"spawn": "do_salao"
+		}
+	]
+}

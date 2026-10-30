@@ -25,6 +25,17 @@ var _dialog: DialogBox
 ## npc id -> the whole map record, plus {"body": ActorBody, "id", "kind"} and, for a mover,
 ## {"brain": NpcBrain}. The map's own keys survive because a game's hook is handed this.
 var _npcs: Dictionary = {}
+## The partner walking behind the player (GameManifest.companion), or null while nobody is. A view
+## and nothing else: no body, so they never stand in the player's way.
+var _companion: SpriteView = null
+## The petals over the map, when its `ambient` asks for them. Inside the map root, so the map's
+## teardown takes it; nulled beside the player for the reason they are.
+var _air: AmbientLayer = null
+## Where the player's feet have been, one entry per frame they moved. The partner stands on the
+## OLDEST entry, which is one tile's walk behind the newest - the caterpillar of EarthBound and
+## the walking partner of HeartGold, done by memory rather than by pathfinding, so they take the
+## very turns the player took and never cut a corner through a wall.
+var _trail: Array[Vector2] = []
 var _gate := InputGate.new()
 ## The device in the player's hands - the last one that spoke - for the words every help line
 ## and the hint use. KEYBOARD until a pad says otherwise; a scripted session never moves it.
@@ -52,6 +63,9 @@ var _saving: SaveScreen
 ## belongs to the game being torn down, but because the thing tearing one down is about to
 ## build another over the top of it.
 var _title: TitleScreen
+## The staff roll after a game's ending, when it is up. Over the title, like the credits.
+var _ending: EndingRoll = null
+
 ## The credits, when they are up. Over the title rather than over a game, so it is torn down
 ## with the title for the same reason: the thing about to build a game frees what is on screen.
 var _credits: CreditsScreen
@@ -63,6 +77,8 @@ var _options: OptionsScreen
 ## thing as the resolved one for a player, and is not the same thing for the integration
 ## suites that hand start_game a manifest of their own.
 var _offered: GameManifest
+## The translation `_bind_language` laid on, kept so the next bind can take it off again.
+var _translation: Translation = null
 ## Every game the title may offer, in order: all of them when the build carries more than one and
 ## nothing chose between them, otherwise just the one that was. The Switch game row exists exactly
 ## when this holds two or more.
@@ -149,6 +165,27 @@ func boot_from_save(manifest: GameManifest, data: SaveData) -> bool:
 	return restore(data)
 
 
+## The language a game is presented in: its `language`, loaded from data/i18n/ and laid over every
+## string the screens draw, or the template's own English when it names none. Bound wherever a
+## manifest is presented - the title and the game - for the reason the voice is (`open_title`'s
+## note), and undone first, so a game that names none never inherits the last one's words.
+func _bind_language(manifest: GameManifest) -> void:
+	if _translation != null:
+		TranslationServer.remove_translation(_translation)
+		_translation = null
+	var wanted := manifest.language if manifest != null else &""
+	if String(wanted).is_empty():
+		TranslationServer.set_locale("en")
+		return
+	_translation = I18n.load_translation(wanted)
+	if _translation == null:
+		push_error("World: game '%s' speaks '%s', which data/i18n does not have" % [manifest.id, wanted])
+		TranslationServer.set_locale("en")
+		return
+	TranslationServer.add_translation(_translation)
+	TranslationServer.set_locale(_translation.locale)
+
+
 ## Everything a running game needs before it has a map: the teardown, who is running, the
 ## config, the hooks, the voice, and the nodes every map re-parents. ONE copy, because the two
 ## ways in differ only in their last step - and the day they were two copies, the duplicated
@@ -160,6 +197,7 @@ func _build_game(manifest: GameManifest) -> bool:
 	_teardown_game()
 	_offered = manifest
 	_game = manifest
+	_bind_language(_game)
 	# The one fact a save carries that no map can supply. Set here because this is where "a
 	# game is running" becomes true, and by nothing else: a view that assigned it would be a
 	# second writer for the one field that decides which slots a player is looking at.
@@ -334,6 +372,9 @@ func _bind_style(style: SpriteStyle) -> void:
 ## here copes with the twelfth suite nobody has written yet.
 func _exit_tree() -> void:
 	UiScale.apply(get_window(), null)
+	# The translation is process-wide, like the window: a suite that booted a game speaking another
+	# language must not hand those words to every suite after it.
+	_bind_language(null)
 
 
 ## The palette the player chose, or nothing. The one place an id becomes colours.
@@ -470,6 +511,9 @@ func _teardown_game() -> void:
 	# Nulled by hand because a freed instance does NOT become null on its own - it becomes a
 	# reference that every `!= null` check still passes and every use of which is an error.
 	_player = null
+	_companion = null
+	_air = null
+	_trail.clear()
 	# Almost always freed as the player's child above. Not always: a start_game whose enter_map
 	# failed before _configure_camera leaves one parented to nothing, which would leak.
 	if _camera != null and is_instance_valid(_camera):
@@ -504,6 +548,9 @@ func _teardown_game() -> void:
 	if _credits != null and is_instance_valid(_credits):
 		_credits.free()
 	_credits = null
+	if _ending != null and is_instance_valid(_ending):
+		_ending.free()
+	_ending = null
 	# Two bases, one teardown: whether it was opened over the title or over a game, the thing
 	# about to build a game frees what is on screen.
 	if _options != null and is_instance_valid(_options):
@@ -601,7 +648,9 @@ func enter_map(map_id: StringName, spawn_id: StringName, at_tile: Vector2 = NO_S
 	_spawn_player(data, spawn_id, at_tile)
 	_spawn_npcs(data)
 	_spawn_enemies(data)
+	_sync_companion(true)
 	_configure_camera(data)
+	_dress_air(data)
 
 	GameState.current_map = map_id
 	# Stated either way, never inherited, so what the player hears is a fact about where they
@@ -666,39 +715,96 @@ func _spawn_player(data: MapData, spawn_id: StringName, at_tile: Vector2) -> voi
 	_last_tile = MapData.world_to_tile(at, _built.tile_size)
 
 
+## The map's `ambient`: a tint over the whole world, and petals drifting across the view. Both
+## live in the map root, so leaving the map takes them, and neither touches a window over it - a
+## CanvasModulate colours only the canvas it is in.
+func _dress_air(data: MapData) -> void:
+	if data.ambient.has("tint"):
+		var tint := CanvasModulate.new()
+		tint.color = AmbientColors.of(data.ambient["tint"])
+		_built.root.add_child(tint)
+	var petals: Variant = data.ambient.get("petals", null)
+	if petals is Dictionary:
+		_air = AmbientLayer.new()
+		_built.root.add_child(_air)
+		_air.setup(petals, _built.tile_size, Engine.physics_ticks_per_second,
+			SeededRng.hash_seed(0, "%s:%s:air" % [GameState.game, data.id]))
+
+
+## The petals over the map, or null. For tests and play sessions.
+func ambient_layer() -> AmbientLayer:
+	return _air
+
+
 func _spawn_npcs(data: MapData) -> void:
 	_npcs.clear()
 	for entry: Variant in data.npcs:
 		var npc: Dictionary = entry
-		var raw := JsonFile.to_int_array(npc.get("tile", []))
-		if raw.size() != 2:
-			continue
+		if _npc_wanted(npc):
+			_spawn_npc(data, npc)
+
+
+## Whether a map's NPC record stands in the world right now: `requires_flag` keeps it away until
+## the flag is set, `hidden_if_flag` takes it away once it is. Both optional, so a record naming
+## neither is always there, which is every NPC shipped before them.
+func _npc_wanted(npc: Dictionary) -> bool:
+	var needs := StringName(str(npc.get("requires_flag", "")))
+	if not String(needs).is_empty() and not GameState.has_flag(needs):
+		return false
+	var gone := StringName(str(npc.get("hidden_if_flag", "")))
+	return String(gone).is_empty() or not GameState.has_flag(gone)
+
+
+## Brings the bodies in line with the flags after something set one: whoever a flag sent away
+## leaves, whoever it called arrives where the map placed them. Called from `_apply_effects`, the
+## one place a flag lands, so a conversation that frees somebody frees them as it closes.
+func _sync_npcs() -> void:
+	if _built == null:
+		return
+	for entry: Variant in _built.data.npcs:
+		var npc: Dictionary = entry
 		var npc_id := StringName(str(npc.get("id", "?")))
-		var body := ActorBody.new()
-		body.name = "Npc_" + String(npc_id)
-		body.setup(_config, _source, StringName(str(npc.get("character", ""))))
-		_built.sorted.add_child(body)
-		# An unreadable or absent facing falls back to front-facing rather than erroring: a
-		# map is data, and the worst case here is an NPC looking the wrong way.
-		var facing := Dir.from_name(str(npc.get("facing", "")))
-		body.place(MapData.tile_to_world(Vector2i(raw[0], raw[1]), _built.tile_size),
-			facing if facing >= 0 else Dir.D.DOWN)
-		# The whole entry is kept, not just the two fields the template reads. It is what a
-		# game's hook is handed, so a key the template has no opinion about ("behavior",
-		# whatever a game invents) survives the trip instead of being quietly dropped here.
-		var record := npc.duplicate()
-		record["id"] = npc_id
-		record["kind"] = StringName(str(npc.get("kind", "npc")))
-		record["body"] = body
-		# Behaviour is data: `static` (the default, and what every shipped NPC is) needs no
-		# brain at all, so a town of statues costs nothing per frame. The seed is built from
-		# stable identifiers rather than a clock, which is what lets a play session assert an
-		# NPC's position hundreds of frames into a run and get the same answer every time.
-		var brain := NpcBrain.of(record, body.global_position, _built.tile_size,
-			SeededRng.new(SeededRng.hash_seed(0, "%s:%s:%s" % [GameState.game, data.id, npc_id])))
-		if NpcBrain.is_mover(brain.kind):
-			record["brain"] = brain
-		_npcs[npc_id] = record
+		var here := _npcs.has(npc_id)
+		var wanted := _npc_wanted(npc)
+		if here and not wanted:
+			var body := (_npcs[npc_id] as Dictionary).get("body") as ActorBody
+			if body != null and is_instance_valid(body):
+				body.queue_free()
+			_npcs.erase(npc_id)
+		elif wanted and not here:
+			_spawn_npc(_built.data, npc)
+
+
+func _spawn_npc(data: MapData, npc: Dictionary) -> void:
+	var raw := JsonFile.to_int_array(npc.get("tile", []))
+	if raw.size() != 2:
+		return
+	var npc_id := StringName(str(npc.get("id", "?")))
+	var body := ActorBody.new()
+	body.name = "Npc_" + String(npc_id)
+	body.setup(_config, _source, StringName(str(npc.get("character", ""))))
+	_built.sorted.add_child(body)
+	# An unreadable or absent facing falls back to front-facing rather than erroring: a
+	# map is data, and the worst case here is an NPC looking the wrong way.
+	var facing := Dir.from_name(str(npc.get("facing", "")))
+	body.place(MapData.tile_to_world(Vector2i(raw[0], raw[1]), _built.tile_size),
+		facing if facing >= 0 else Dir.D.DOWN)
+	# The whole entry is kept, not just the two fields the template reads. It is what a
+	# game's hook is handed, so a key the template has no opinion about ("behavior",
+	# whatever a game invents) survives the trip instead of being quietly dropped here.
+	var record := npc.duplicate()
+	record["id"] = npc_id
+	record["kind"] = StringName(str(npc.get("kind", "npc")))
+	record["body"] = body
+	# Behaviour is data: `static` (the default, and what every shipped NPC is) needs no
+	# brain at all, so a town of statues costs nothing per frame. The seed is built from
+	# stable identifiers rather than a clock, which is what lets a play session assert an
+	# NPC's position hundreds of frames into a run and get the same answer every time.
+	var brain := NpcBrain.of(record, body.global_position, _built.tile_size,
+		SeededRng.new(SeededRng.hash_seed(0, "%s:%s:%s" % [GameState.game, data.id, npc_id])))
+	if NpcBrain.is_mover(brain.kind):
+		record["brain"] = brain
+	_npcs[npc_id] = record
 
 
 ## Puts a body on every enemy tile whose enemy is still standing.
@@ -785,7 +891,10 @@ func _physics_process(_delta: float) -> void:
 	# player cannot walk, so putting it below would freeze the fade it is meant to play.
 	if _night != null:
 		_night.step()
+	# Above the gate, because a conversation is exactly where a partner gets brought along.
+	_sync_companion(false)
 	if not Router.player_can_move():
+		_rest_companion()
 		_player.halt()
 		# The halt may have put a grid step back on its cell, and this is the write that gets
 		# saved and that the QA harness reads. Without it, state would disagree with where the
@@ -799,8 +908,93 @@ func _physics_process(_delta: float) -> void:
 	if step.footfall:
 		AudioBus.play(Sfx.Cue.FOOTSTEP)
 	GameState.set_player(_player.global_position, step.facing)
+	_walk_companion()
 	_drive_npcs()
 	_check_triggers()
+
+
+## Whether the partner should be walking with the player right now: both flags, read live.
+func _companion_wanted() -> bool:
+	if _game == null or String(_game.companion).is_empty() or _built == null or _player == null:
+		return false
+	if not GameState.has_flag(_game.companion_flag):
+		return false
+	return String(_game.companion_gone_flag).is_empty() or not GameState.has_flag(_game.companion_gone_flag)
+
+
+## Brings the partner in or sends them away to match the flags. On a map entry they arrive one tile
+## behind the player; joining in the middle of a map, they appear on the map's `companion` spawn
+## when it has one - the friend who was waiting at the bus stop - and walk over from there.
+func _sync_companion(on_entry: bool) -> void:
+	if on_entry:
+		_drop_companion()
+	var wanted := _companion_wanted()
+	if not wanted:
+		_drop_companion()
+		return
+	if _companion != null:
+		return
+	_companion = SpriteView.new()
+	_companion.name = "Companion"
+	_built.sorted.add_child(_companion)
+	if not _companion.apply_source(_source, _game.companion):
+		push_error("World: companion '%s' has no sheet in style '%s'" % [_game.companion, _style.id])
+	var start := _player.global_position - Dir.vector_of(_player.facing) * float(_built.tile_size)
+	if not on_entry:
+		var spot := MapBuilder.spawn_position(_built.data, GameHooks.COMPANION, _built.tile_size)
+		if spot != Vector2(-1.0, -1.0):
+			start = spot
+	# One tile's walk, in frames: how far back along the trail they stand.
+	var lag := maxi(1, roundi(float(_built.tile_size) * float(Engine.physics_ticks_per_second)
+		/ _config.walk_speed_px()))
+	_trail.clear()
+	for i in lag + 1:
+		_trail.append(start.lerp(_player.global_position, float(i) / float(lag)))
+	_companion.global_position = start
+	_companion.set_pose(&"idle", Dir.facing_from_vector(_player.global_position - start, _player.facing))
+
+
+func _drop_companion() -> void:
+	if _companion != null and is_instance_valid(_companion):
+		_companion.queue_free()
+	_companion = null
+	_trail.clear()
+
+
+## One frame of following: remember where the player is if they moved, and stand on the oldest
+## remembered spot. A player pressed against a wall adds nothing, so the partner stops with them.
+func _walk_companion() -> void:
+	if _companion == null or _trail.is_empty():
+		return
+	var at := _player.global_position
+	if at.distance_squared_to(_trail[_trail.size() - 1]) > 0.01:
+		_trail.append(at)
+		_trail.pop_front()
+	var spot := _trail[0]
+	var moved := spot - _companion.global_position
+	if moved.length_squared() > 0.01:
+		_companion.set_pose(&"walk", Dir.facing_from_vector(moved, _companion.facing()))
+	else:
+		_companion.set_pose(&"idle", _companion.facing())
+	_companion.global_position = spot
+
+
+func _rest_companion() -> void:
+	if _companion != null:
+		_companion.set_pose(&"idle", _companion.facing())
+
+
+## The partner as something to talk to, when they are close enough: within a tile and a half of
+## the player, whichever way the player faces. They turn to look at the player, as an NPC does.
+func _companion_target() -> Interactor.Target:
+	if _companion == null or _built == null:
+		return null
+	var to_player := _player.global_position - _companion.global_position
+	if to_player.length() > float(_built.tile_size) * 1.5:
+		return null
+	_companion.set_pose(&"idle", Dir.facing_from_vector(to_player, _companion.facing()))
+	return Interactor.Target.new(GameHooks.COMPANION, _companion.global_position, _config.body_size_px(),
+		{"id": GameHooks.COMPANION, "kind": GameHooks.COMPANION})
 
 
 ## Walks every NPC that has a brain, one frame.
@@ -949,6 +1143,10 @@ func try_interact() -> bool:
 	if _player == null:
 		return false
 	var target := Interactor.find(_player.global_position, _player.facing, _config, _targets())
+	# The partner last, and by nearness rather than by facing: they walk BEHIND the player, so a
+	# rule that needed the player to face them would make them the one person nobody can talk to.
+	if target == null:
+		target = _companion_target()
 	if target == null:
 		return false
 	var record: Dictionary = target.payload if target.payload is Dictionary else {}
@@ -973,6 +1171,11 @@ func _on_dialog_closed(effects: Array) -> void:
 	_apply_effects(effects)
 	Router.close_overlay()
 	EventBus.dialog_changed.emit({"dialog_id": &"", "open": false})
+	# The last conversation of a game sets its ending flag, and the roll follows it. Deferred, the
+	# OP_SHOP rule: this is still inside the dialog's own close.
+	if _game != null and not String(_game.ending_flag).is_empty() \
+			and GameState.has_flag(_game.ending_flag) and _ending == null:
+		_roll_ending.call_deferred(_game.ending_roll)
 
 
 func _targets() -> Array[Interactor.Target]:
@@ -1111,6 +1314,8 @@ func _apply_effects(effects: Array) -> bool:
 					StringName(str(effect.get("spawn", "start")))) or did
 			_:
 				push_error("World: unknown effect '%s' - nothing carried it out" % op)
+	# A flag may also have sent somebody on this map away or called them in.
+	_sync_npcs()
 	# A flag this list set may have been somebody joining, so anyone the roster now says is
 	# along is made real here. Membership is derived, but a member's NUMBERS are not - and
 	# filling them at the sink is what makes "they joined" and "they have health" the same
@@ -1541,7 +1746,7 @@ func _member_rows() -> Array:
 	# Each row carries what a LIST needs and what a PARTY PANEL needs: the menu reads `id` and
 	# `name`, and the screen draws the rest. Assembled here for `_status_lines`'s reason - a
 	# level is a Registry question and a pure menu may not ask one.
-	out.append(_member_row(&"", "You", _game.player_character, GameState.player_level,
+	out.append(_member_row(&"", tr("You"), _game.player_character, GameState.player_level,
 		GameState.player_hp, GameState.player_mp, _game.combat))
 	for member in _active_party():
 		_ensure_member(member)
@@ -1756,7 +1961,12 @@ func _battle_items() -> Array:
 ## Sorted by the level it arrives at, then by name, so the page reads as the order a player met
 ## them in. Registry.ids_of already sorts, so the result does not depend on the filesystem.
 func _battle_spells() -> Array:
-	return _spells_up_to(GameState.player_level, [], true)
+	if _game == null or _game.combat == null:
+		return []
+	var defs: Array = []
+	for spell_id in Registry.ids_of(&"SpellDef"):
+		defs.append(Registry.get_resource(&"SpellDef", spell_id) as SpellDef)
+	return BattleLogic.SpellRow.leader_page(defs, GameState.player_level, _game.combat)
 
 
 ## What one MEMBER could cast: the same level derivation, narrowed to the spells their own
@@ -1793,7 +2003,7 @@ func _battle_members() -> Array:
 	var out: Array = []
 	if _game == null or _game.combat == null:
 		return out
-	out.append(BattleLogic.Fighter.of(&"", "You", _art_in_fight(_game.player_character),
+	out.append(BattleLogic.Fighter.of(&"", tr("You"), _art_in_fight(_game.player_character),
 		_game.combat, GameState.player_hp, GameState.player_xp,
 		GameState.player_level, GameState.player_mp,
 		_equip_mod(&"attack"), _equip_mod(&"defense"), _battle_spells()))
@@ -2000,6 +2210,7 @@ func _ensure_party() -> void:
 func open_title(at_row := -1) -> bool:
 	if _title != null or _offered == null:
 		return false
+	_bind_language(_offered)
 	var style := _style_for(_offered)
 	if style == null:
 		return false
@@ -2067,6 +2278,44 @@ func open_credits() -> bool:
 	_credits.setup(CreditsMenu.of(_credits_for(_style)), _style, _ui_size())
 	Router.open_overlay(Router.State.CREDITS)
 	return true
+
+
+## The game is over: back to the title, and the staff rolls over it. The game is torn down first,
+## exactly as a game over's Title row does, so leaving the roll lands on a title with nothing behind.
+func _roll_ending(roll_path: String) -> void:
+	if _ending != null or not open_title():
+		return
+	open_ending(EndingRoll.read(roll_path))
+
+
+## Public for the reason open_credits() is: a test stages it without playing a game to its end.
+func open_ending(roll: Dictionary) -> bool:
+	if _ending != null or _title == null or _style == null:
+		return false
+	_ending = EndingRoll.new()
+	_ending.sound_wanted.connect(_on_sound_wanted)
+	_ending.left.connect(_close_ending)
+	_mount_ui(_ending)
+	_ending.setup(roll, _style, _ui_size(), FileSpriteSource.create(_style.id),
+		SeededRng.hash_seed(0, "%s:ending" % GameState.game))
+	var music := StringName(str(roll.get("music", "")))
+	if not String(music).is_empty():
+		AudioBus.play_music(music)
+	Router.open_overlay(Router.State.CREDITS)
+	return true
+
+
+func _close_ending() -> void:
+	if _ending == null:
+		return
+	_ending.queue_free()
+	_ending = null
+	Router.close_overlay()
+
+
+## The staff roll, for tests and play sessions.
+func ending_roll() -> EndingRoll:
+	return _ending
 
 
 func _close_credits() -> void:

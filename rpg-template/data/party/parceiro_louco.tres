@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PartyMemberDef" load_steps=3 format=3]
+
+; O Animal Louco capturado: frágil, mas bate forte e morde todo mundo. Entra na equipe quando o Kayo o captura com uma Cuiabola: a captura marca
+; "pegou_louco" (EnemyDef.caught_flag), e ser da equipe e derivado dessa flag toda vez que se pergunta.
+
+[ext_resource type="Script" path="res://scripts/data/party_member_def.gd" id="1_member"]
+[ext_resource type="Resource" path="res://data/combat/parceiro_louco_combat.tres" id="2_combat"]
+
+[resource]
+script = ExtResource("1_member")
+id = &"parceiro_louco"
+name = "Animal Louco"
+character = &"louco"
+combat = ExtResource("2_combat")
+spells = Array[StringName]([&"doideira_coletiva"])
+joins_on_flag = &"pegou_louco"
+join_level = 1

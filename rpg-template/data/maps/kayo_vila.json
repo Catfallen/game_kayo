@@ -1,0 +1,188 @@
+{
+	"_readme": [
+		"Fase 1, cena 2: o sertão em volta da casa. Seco, com mandacaru, arbusto e árvore",
+		"secos, calangos e uma caveira de boi.",
+		"",
+		"A mecânica GeoGuessr: três pistas (poste, placa e mandacaru). Cada uma é um objeto",
+		"que os hooks reconhecem pelo id; examinar as três marca pistas_nordeste, e só",
+		"então a estrada a leste (o warp em [19,7]) deixa o Kayo sair. Antes disso ela",
+		"responde estrada_sem_pistas.",
+		"",
+		"Calango e caveira são só para olhar: dão vida ao lugar e piadas de GeoGuessr.",
+		"",
+		"O warp em [19,7] ficava na última coluna do mapa: um warp recusado não move o jogador",
+		"(ver o aviso em quest_village.json), então sem a coluna 20 de pedra quem chega lá sem",
+		"pistas_nordeste atravessa o limite do mapa e some no vazio. A coluna 20 é só essa trava."
+	],
+	"id": "kayo_vila",
+	"style": "lpc32",
+	"legend": {
+		".": "terra",
+		",": "terra_alt",
+		"=": "estrada",
+		"#": "pedra",
+		"W": "parede_madeira",
+		"D": "porta",
+		"R": "telhado",
+		"M": "mandacaru",
+		"a": "arbusto_seco",
+		"T": "arvore_seca",
+		"c": "calango",
+		"k": "caveira",
+		"p": "poste",
+		"P": "placa",
+		"f": "cerca",
+		"x": "xique_xique",
+		"l": "palma",
+		"J": "juazeiro",
+		"o": "poco",
+		"~": "bandeirinhas",
+		"v": "varal",
+		"q": "potes_barro",
+		"n": "banco",
+		"u": "tambor",
+		"w": "roda_carroca",
+		"s": "pedras",
+		"i": "capim"
+	},
+	"ground": [
+		"#####################",
+		"#RRRRR,............##",
+		"#RRRRR.............##",
+		"#WWDWW.............##",
+		"#..=...............##",
+		"#..=====...,.......##",
+		"#......=...........##",
+		"#......=============#",
+		"#......,...........##",
+		"#..................##",
+		"#.........,........##",
+		"#..,..........,....##",
+		"#####################"
+	],
+	"decor": [
+		"                     ",
+		"       a      T   M  ",
+		"      o J  Mw   i    ",
+		"      qu v       T   ",
+		" ff   ~~~~~  i  M    ",
+		"      c              ",
+		" na      p  p  p     ",
+		"     i               ",
+		"      x   P  c       ",
+		" l M T   a     i  a  ",
+		"  i     k    M   x   ",
+		"    a   i s   l a s  ",
+		"                     "
+	],
+	"spawns": {
+		"da_casa": [
+			3,
+			4
+		],
+		"da_estrada": [
+			18,
+			7
+		]
+	},
+	"npcs": [
+		{
+			"id": "bode",
+			"character": "sertao_bode",
+			"tile": [
+				4,
+				10
+			],
+			"facing": "right",
+			"dialog": "bode",
+			"behavior": "wander",
+			"range": 2
+		},
+		{
+			"id": "galinha_casa",
+			"character": "sertao_galinha",
+			"tile": [
+				7,
+				2
+			],
+			"facing": "left",
+			"dialog": "galinha",
+			"behavior": "wander",
+			"range": 1
+		},
+		{
+			"id": "galinha_campo",
+			"character": "sertao_galinha",
+			"tile": [
+				14,
+				10
+			],
+			"facing": "right",
+			"dialog": "galinha",
+			"behavior": "wander",
+			"range": 1
+		}
+	],
+	"objects": [
+		{
+			"id": "pista_poste",
+			"tile": [
+				12,
+				6
+			],
+			"dialog": "pista_poste"
+		},
+		{
+			"id": "pista_placa",
+			"tile": [
+				10,
+				8
+			],
+			"dialog": "pista_placa"
+		},
+		{
+			"id": "pista_mandacaru",
+			"tile": [
+				16,
+				4
+			],
+			"dialog": "pista_mandacaru"
+		},
+		{
+			"id": "calango",
+			"tile": [
+				13,
+				8
+			],
+			"dialog": "calango"
+		},
+		{
+			"id": "caveira",
+			"tile": [
+				8,
+				10
+			],
+			"dialog": "caveira"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				3,
+				3
+			],
+			"map": "kayo_casa",
+			"spawn": "da_vila"
+		},
+		{
+			"tile": [
+				19,
+				7
+			],
+			"map": "kayo_estrada",
+			"spawn": "da_vila",
+			"requires_flag": "pistas_nordeste",
+			"locked_dialog": "estrada_sem_pistas"
+		}
+	]
+}

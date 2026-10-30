@@ -1,0 +1,2093 @@
+{
+	"_readme": [
+		"A jornada ate o fim da fase 2: a fase 1 inteira (os mesmos passos de fase1_completa.json)",
+		"e depois Tres Lagoas - a chegada com o abraco, a Isa seguindo e conversando, o banco e o",
+		"aeroporto recusando antes da hora, o terere, o por do sol, a despedida e o aviao.",
+		"Gerado pelo qa_fase2.py; a fase 2 nao tem combate."
+	],
+	"steps": [
+		{
+			"op": "note",
+			"text": "Uma sessao --qa-script esvazia user://qa_saves no boot: o cursor abre em New game e um aperto comeca."
+		},
+		{
+			"op": "assert_state",
+			"state": "title"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "note",
+			"text": "CASA: a abertura abre sozinha na primeira entrada."
+		},
+		{
+			"op": "assert_map",
+			"map": "kayo_casa"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				5,
+				5
+			]
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "acordou",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "A porta nao abre antes do celular."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 60
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "kayo_casa"
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "leu_mensagem",
+			"expect": false
+		},
+		{
+			"op": "note",
+			"text": "Sobe ate a parede do fundo e desce um."
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 160
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				5,
+				1
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				5,
+				2
+			]
+		},
+		{
+			"op": "note",
+			"text": "O pote na estante (4,1) da 3 rapaduras, uma vez so."
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				2
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				4,
+				2
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_item",
+			"id": "rapadura",
+			"count": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_item",
+			"id": "rapadura",
+			"count": 3
+		},
+		{
+			"op": "note",
+			"text": "O celular em cima da mesa (8,4): o Kayo para em cima dela, virado para baixo."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 80
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				8,
+				2
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 40
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				8,
+				3
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "leu_mensagem",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "As cuiabolas na outra ponta da mesa (7,4): um tile a esquerda, ainda colado na mesa."
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				7,
+				3
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 10
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_item",
+			"id": "cuiabola",
+			"count": 5
+		},
+		{
+			"op": "note",
+			"text": "A mesa parou o Kayo colado na borda de baixo do tile (7,3); subir um tile o deixa colado na borda de baixo de (7,2)."
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				7,
+				2
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 40
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				5,
+				2
+			]
+		},
+		{
+			"op": "note",
+			"text": "Da borda de baixo de (5,2) ate a porta (5,7) sao 4 tiles: o warp dispara aos 80 quadros."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 82
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "kayo_vila"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				3,
+				4
+			]
+		},
+		{
+			"op": "note",
+			"text": "A saida leste recusa o Kayo antes das tres pistas."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				3,
+				5
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 160
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				11,
+				5
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				11,
+				6
+			]
+		},
+		{
+			"op": "note",
+			"text": "PISTA 1: o poste a direita."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				11,
+				6
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "pista_poste",
+			"expect": true
+		},
+		{
+			"op": "assert_flag",
+			"key": "pistas_nordeste",
+			"expect": false
+		},
+		{
+			"op": "note",
+			"text": "PISTA 2: a placa, dois tiles abaixo e a esquerda."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 40
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				11,
+				8
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				11,
+				8
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "pista_placa",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "PISTA 3: o mandacaru grande, subindo pela coluna 16."
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				11,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 100
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				16,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 60
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				16,
+				5
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "pista_mandacaru",
+			"expect": true
+		},
+		{
+			"op": "assert_flag",
+			"key": "pistas_nordeste",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "Com as tres pistas a estrada libera."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 40
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				16,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 52
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "kayo_estrada"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				4
+			]
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "leu_a_estrada",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "LUTA 1: o Tatu na primeira passagem. Encosta e a luta abre."
+		},
+		{
+			"op": "note",
+			"text": "90 quadros ate entrar no tile ao lado do Tatu; a luta abre e para o Kayo."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 92
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "note",
+			"text": "CAPTURA: menu Ataque/Golpes/Item/Pegar o beco. Golpes abre em Lapada da Misera (8 de dano)."
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 8
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "wait",
+			"frames": 20
+		},
+		{
+			"op": "wait",
+			"frames": 400
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 8
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "wait",
+			"frames": 150
+		},
+		{
+			"op": "wait",
+			"frames": 90
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_level",
+			"value": 1
+		},
+		{
+			"op": "assert_flag",
+			"key": "pegou_tatu",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "LUTA 2: o Animal Louco na segunda passagem. Depois dela, nivel 2."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 142
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "note",
+			"text": "O Animal Louco: a mesma receita, Lapada e depois a Cuiabola."
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 8
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "wait",
+			"frames": 20
+		},
+		{
+			"op": "wait",
+			"frames": 400
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 8
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "wait",
+			"frames": 150
+		},
+		{
+			"op": "wait",
+			"frames": 90
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 40
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_level",
+			"value": 2
+		},
+		{
+			"op": "assert_flag",
+			"key": "pegou_louco",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "Para o terreiro do Marcos."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 161
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "kayo_terreiro"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				5
+			]
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "marcos_desafiou",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "CHEFE: os bichos do Marcos na passagem da cerca."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 112
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "battle"
+		},
+		{
+			"op": "fight_well",
+			"limit": 12000
+		},
+		{
+			"op": "wait",
+			"frames": 60
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_level",
+			"value": 3
+		},
+		{
+			"op": "note",
+			"text": "O Marcos depois da luta, logo acima."
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 40
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "note",
+			"text": "O ponto de onibus fecha a fase."
+		},
+		{
+			"op": "note",
+			"text": "O corpo do Marcos parou o Kayo alguns pixels antes do tile, entao 30 quadros e nao 20."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 30
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				7,
+				5
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 100
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				10,
+				5
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "fase1_completa",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "FASE 2. O Kayo termina a fase 1 em (10,5) olhando o ponto. A estrada do onibus e (13,4)."
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				10,
+				5
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 20
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				10,
+				4
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 70
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "tl_rodoviaria"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				7,
+				4
+			]
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "assert_flag",
+			"key": "isa_junto",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "A Isa ja apareceu no spawn companion; o abraco da chegada e a terceira fala."
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "wait",
+			"frames": 60
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "chegou_tl",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "RODOVIARIA: a Isa vem atras. Desce ate a calcada de baixo e fala com ela."
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 60
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				7,
+				7
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "note",
+			"text": "Escolhas: Conversar, Abracar a Isa, Nada nao."
+		},
+		{
+			"op": "press",
+			"action": "move_down"
+		},
+		{
+			"op": "wait",
+			"frames": 4
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "wait",
+			"frames": 50
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "note",
+			"text": "Para leste ate a praca: 9,5 tiles ate o warp."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 192
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "tl_centro"
+		},
+		{
+			"op": "note",
+			"text": "CENTRO: a calcada do meio vai direto ate a Lagoa."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 352
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "tl_lagoa"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				1,
+				7
+			]
+		},
+		{
+			"op": "note",
+			"text": "LAGOA: o banco antes do terere recusa."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 260
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				14,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 10
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "sabe_da_viagem",
+			"expect": false
+		},
+		{
+			"op": "note",
+			"text": "O caminho do aeroporto ainda esta trancado."
+		},
+		{
+			"op": "note",
+			"text": "Para no primeiro quadro em (21,7): 6,5 tiles = 130 quadros."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 140
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				21,
+				7
+			]
+		},
+		{
+			"op": "note",
+			"text": "De volta a barraca de terere (5,8): da borda do tile 21 ao meio do 5 sao 310 quadros."
+		},
+		{
+			"op": "hold",
+			"action": "move_left",
+			"frames": 310
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				5,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_down",
+			"frames": 10
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "note",
+			"text": "Escolha 1: dois tereres."
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "wait",
+			"frames": 40
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "tomou_terere",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "Agora o banco conta a noticia: o por do sol."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 180
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				14,
+				7
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 10
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "wait",
+			"frames": 120
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "sabe_da_viagem",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "O aeroporto, a leste."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 130
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_map",
+			"map": "tl_aeroporto"
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				8,
+				9
+			]
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "aeroporto_chegou",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "A Isa entra um tile atras do Kayo; perto dela o botao abre a conversa."
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "note",
+			"text": "O portao 1: a despedida e o abraco."
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 150
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				8,
+				2
+			]
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 6
+		},
+		{
+			"op": "wait",
+			"frames": 80
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "isa_embarcou",
+			"expect": true
+		},
+		{
+			"op": "note",
+			"text": "O janelao: o aviao indo embora."
+		},
+		{
+			"op": "hold",
+			"action": "move_right",
+			"frames": 100
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "assert_position",
+			"tile": [
+				13,
+				2
+			]
+		},
+		{
+			"op": "hold",
+			"action": "move_up",
+			"frames": 10
+		},
+		{
+			"op": "release_all"
+		},
+		{
+			"op": "wait",
+			"frames": 3
+		},
+		{
+			"op": "press",
+			"action": "interact"
+		},
+		{
+			"op": "wait",
+			"frames": 10
+		},
+		{
+			"op": "assert_state",
+			"state": "dialog"
+		},
+		{
+			"op": "wait",
+			"frames": 150
+		},
+		{
+			"op": "press_until_state",
+			"action": "interact",
+			"state": "world",
+			"limit": 60
+		},
+		{
+			"op": "assert_state",
+			"state": "world"
+		},
+		{
+			"op": "assert_flag",
+			"key": "fase2_completa",
+			"expect": true
+		}
+	]
+}

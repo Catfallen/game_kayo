@@ -97,6 +97,10 @@ var _speaker: Label = null
 var _face: TextureRect = null
 var _source: SpriteSource = null
 var _select: ColorRect = null
+## The window a line's scene plays in, above the box, and the strip inside it. Hidden on every line
+## that names none.
+var _scene_frame: UiChrome.Frame = null
+var _scene: DialogScene = null
 var _text := RichTextLabel.new()
 var _choice_labels: Array[Label] = []
 var _choice_index := 0
@@ -164,6 +168,13 @@ func setup(style: SpriteStyle, viewport_size: Vector2i) -> void:
 	_face.visible = false
 	_panel.add_child(_face)
 
+	_scene_frame = UiChrome.frame(style, Rect2(Vector2.ZERO, Vector2.ONE))
+	_scene_frame.panel.visible = false
+	add_child(_scene_frame.panel)
+	_scene = DialogScene.new()
+	_scene.position = Vector2.ONE * float(PADDING)
+	_scene_frame.panel.add_child(_scene)
+
 	_text.position = Vector2(PADDING, TEXT_Y)
 	# The full TEXT_LINES tall. It used to be 22px against a 12px line, so even two lines were
 	# clipped - the box could really only ever show one.
@@ -209,6 +220,8 @@ func restyle(style: SpriteStyle) -> void:
 	_choice_labels.clear()
 	_face = null
 	_select = null
+	_scene_frame = null
+	_scene = null
 	_frame = null
 	_panel = null
 	_speaker = null
@@ -241,6 +254,7 @@ func _show_line() -> void:
 		return
 	_speaker.text = line.speaker.to_upper()
 	_show_face(line.portrait)
+	_show_scene(line.scene)
 	_text.text = line.text
 	_revealed = 0.0
 	_blipped = 0
@@ -274,6 +288,32 @@ func _show_face(character: StringName) -> void:
 	# the other, which is exactly what hid a broken height here until a mutant survived.
 	_text.position = Vector2(PADDING + (0.0 if span <= 0.0 else span + FACE_GAP), TEXT_Y)
 	_text.size.x = text_width(_viewport.x, span)
+
+
+## Plays this line's scene in its window above the box, centred across the screen and in the room
+## the box leaves, or hides the window when the line names none.
+func _show_scene(png: String) -> void:
+	if png.is_empty() or not _scene.play(png):
+		_scene.stop()
+		_scene_frame.panel.visible = false
+		return
+	var inside := _scene.size
+	var outside := inside + Vector2.ONE * float(PADDING) * 2.0
+	var room := float(_viewport.y - BOX_HEIGHT - MARGIN)
+	_scene_frame.panel.size = outside
+	_scene_frame.panel.position = Vector2(floorf((float(_viewport.x) - outside.x) / 2.0),
+		maxf(float(MARGIN), floorf((room - outside.y) / 2.0)))
+	_scene_frame.panel.set_meta(UiChrome.INNER, _scene_frame.inner())
+	_scene_frame.panel.visible = true
+
+
+func scene_playing() -> String:
+	return _scene.path if _scene != null else ""
+
+
+func _physics_process(_delta: float) -> void:
+	if visible and _scene != null:
+		_scene.step()
 
 
 ## Grows or shrinks the panel to fit what this line needs, keeping it pinned to the bottom of
@@ -383,6 +423,9 @@ func _choice_input(event: InputEvent, line: DialogRunner.Line) -> void:
 
 func _close() -> void:
 	visible = false
+	if _scene != null:
+		_scene.stop()
+		_scene_frame.panel.visible = false
 	var earned := _runner.effects()
 	_runner = null
 	closed.emit(earned)

@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"O bode que anda pela vila."
+	],
+	"id": "bode",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Bode",
+			"text": "Mééééé!",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Esse bode me olha como se eu devesse dinheiro pra ele.",
+			"portrait": "kayo"
+		}
+	}
+}

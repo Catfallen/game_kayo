@@ -108,6 +108,18 @@ const STAGGER_WIDTH := 32.0
 const DOWN_FADE := 0.4
 const BAR_WIDTH := 26.0
 const FOE_BAR_WIDTH := 80.0
+## The opening card a presenter's `intro` raises: how long it holds the fight, where it is drawn,
+## how far the formation rushes in from, and how far the presenter steps out while it is up.
+const INTRO_FRAMES := 110
+const INTRO_Y := 58.0
+const INTRO_HEIGHT := 18.0
+const INTRO_RUSH := 140.0
+const INTRO_STEP := 10.0
+## How long a presenter's call-out stays up.
+const BUBBLE_FRAMES := 90
+## The shorter card a wild encounter opens on (CombatDef.wild_intro), and the blink that comes first.
+const WILD_FRAMES := 70
+const FLASH_FRAMES := 12
 
 ## Indexed by BattleLogic.Row, so the order is the enum's rather than a second list's.
 const COMMANDS: Array[String] = ["Attack", "Magic", "Item", "Flee"]
@@ -150,6 +162,33 @@ var _foe_views: Array[SpriteView] = []
 var _foe_homes: Array[Vector2] = []
 
 var _gate := InputGate.new()
+
+## The moving parts of a blow - shakes, flashes, numbers, spell shapes - drawn over the field.
+var _fx := BattleFx.new()
+## What the fight looked like last frame, so a change in it can be drawn as an event.
+var _foe_hp_seen: Array[int] = []
+var _foe_down_seen: Array[bool] = []
+var _member_hp_seen: Array[int] = []
+var _casts_seen := 0
+var _throws_seen := 0
+var _turn_seen := ""
+
+## Somebody standing behind the formation (EnemyDef.presenter), what they call out, and the fight's
+## opening card. All three are absent from every fight that does not name a presenter.
+var _presenter_def: EnemyDef = null
+var _presenter: SpriteView = null
+var _presenter_home := Vector2.ZERO
+## Built only when a presenter exists, so a fight without one carries none of these nodes - the
+## layout audits collect labels and rects by class, hidden or not.
+var _bubble: Label = null
+var _bubble_back: ColorRect = null
+var _bubble_left := 0
+var _line_at := 0
+var _intro_band: ColorRect = null
+var _intro_label: Label = null
+var _intro_left := 0
+var _intro_total := 0
+var _intro_text := ""
 
 ## Nobody's art is passed in any more. The party's stopped being when members gained their own;
 ## the foe's stops now for the same reason, because a formation has as many as it has - so the
@@ -212,8 +251,14 @@ func _build(viewport_size: Vector2i, source: SpriteSource) -> void:
 	_cue.add_theme_font_size_override("font_size", TITLE_SIZE)
 	add_child(_cue)
 
+	_build_presenter(viewport_size, source)
+	add_child(_fx)
+	_fx.setup(_style)
+	_remember_fight()
+
 	_build_commands(edge)
 	_build_party(wide, edge, source)
+	_build_intro(viewport_size)
 
 	_help.position = Vector2(MARGIN, float(viewport_size.y) - 12.0)
 	_help.add_theme_font_size_override("font_size", HELP_SIZE)
@@ -355,6 +400,12 @@ func _make_fighter(source: SpriteSource, character: StringName, at: Vector2, fac
 func _physics_process(_delta: float) -> void:
 	if _logic == null or _committed:
 		return
+	if _intro_left > 0:
+		# The opening card holds the fight still: nothing ticks until it has been shown.
+		_intro_left -= 1
+		_fx.tick()
+		_paint()
+		return
 	_logic.tick()
 	# Drained HERE and nowhere else. Input arrives in _unhandled_input and queues cues there
 	# too, but one drain in the loop picks all of them up on the next frame - and one driver
@@ -362,6 +413,10 @@ func _physics_process(_delta: float) -> void:
 	# something, where the newest site is always the one that forgets.
 	for cue in _logic.take_sounds():
 		sound_wanted.emit(cue)
+		if cue == Sfx.id_of(Sfx.Cue.TIMED_HIT):
+			_fx.quake(3.0)
+	_notice()
+	_fx.tick()
 	_paint()
 	if _logic.finished():
 		_committed = true
@@ -393,6 +448,8 @@ func _paint() -> void:
 	_cue.text = "!"
 
 	_paint_fighters()
+	_paint_presenter()
+	_paint_intro()
 	_paint_rows(text, dim)
 
 
@@ -444,7 +501,7 @@ func _paint_party(text: Color, dim: Color) -> void:
 	for i in _member_labels.size():
 		var down := _logic.member_down(i)
 		var lit := dim if down else text
-		_member_labels[i].text = "%s  Lv%d" % [_logic.member_name(i), _logic.member_level(i)] \
+		_member_labels[i].text = tr("%s  Lv%d") % [_logic.member_name(i), _logic.member_level(i)] \
 			+ _tag_suffix(_logic.member_tag(i))
 		_member_labels[i].add_theme_color_override("font_color", lit)
 		# A face FADES with its owner rather than vanishing, for the caption's reason. Done with
@@ -542,7 +599,9 @@ func _paint_fighters() -> void:
 		# Only the member actually swinging leans; the rest hold their ground, which is what
 		# makes it readable at a glance who the blow belongs to.
 		var mine := acting and player_side and swinging == i
-		_member_views[i].position = _member_homes[i] + Vector2(reach if mine else 0.0, 0.0)
+		_member_views[i].position = _member_homes[i] + Vector2(reach if mine else 0.0, 0.0) \
+			+ _fx.offset_for(_member_views[i])
+		_fx.dress(_member_views[i], _logic.member_down(i))
 		# And inside the press window, a member whose art draws a swing shows it, one picture at a
 		# time from the fight's own count. Art that draws none has nought pictures and walks. The
 		# answer is about the PHASE, not about anybody in it, which is why it is asked only for `mine`.
@@ -556,8 +615,220 @@ func _paint_fighters() -> void:
 		# And only the foe taking its turn, for the same reason. With a formation acting one at a
 		# time, a whole side leaning together would say nothing about which of them is hitting you.
 		var theirs := acting and not player_side and swinging_foe == at
-		_foe_views[at].position = _foe_homes[at] - Vector2(reach if theirs else 0.0, 0.0)
+		var lean := reach
+		if theirs and str(_logic.foe_move().get("fx", "")) == "rush":
+			# The whole way across, late and fast: squared, so it bursts off the mark.
+			lean = _rush_reach(at) * pow(reach / LUNGE, 2.0)
+		_foe_views[at].position = _foe_homes[at] - Vector2(lean if theirs else 0.0, 0.0) \
+			+ _fx.offset_for(_foe_views[at]) + Vector2(_intro_slide(), 0.0)
+		_fx.dress(_foe_views[at], _logic.foe_down(at))
 		_foe_views[at].set_pose(&"walk" if theirs else &"idle", Dir.D.LEFT)
+
+
+# -- what happened this frame, drawn ----------------------------------------------------------
+
+
+## How tall a fighter draws above its feet, for where a number or a spark starts.
+func _tall(view: SpriteView) -> float:
+	return float(view.anchor().y) * view.scale.y * 0.85
+
+
+func _remember_fight() -> void:
+	_foe_hp_seen.clear()
+	_foe_down_seen.clear()
+	_member_hp_seen.clear()
+	for at in _logic.foe_count():
+		_foe_hp_seen.append(_logic.enemy_hp(at))
+		_foe_down_seen.append(_logic.foe_down(at))
+	for i in _logic.member_count():
+		_member_hp_seen.append(_logic.member_hp(i))
+	_casts_seen = _logic.cast_count()
+	_throws_seen = _logic.throw_count()
+
+
+## Reads what the rules did since last frame and hands it to the effects layer. Every event is a
+## DIFFERENCE in the fight's own numbers, so nothing here can draw a blow that did not land.
+func _notice() -> void:
+	var heavy := _logic.pressed_in_time()
+	if _logic.cast_count() != _casts_seen:
+		_casts_seen = _logic.cast_count()
+		var row := _logic.last_cast()
+		var who := clampi(_logic.last_caster(), 0, _member_views.size() - 1)
+		if row != null and not _member_views.is_empty():
+			var caster := _member_views[who]
+			var reached: Array[Vector2] = []
+			for at in _foe_views.size():
+				if not _foe_down_seen[at]:
+					reached.append(_foe_homes[at])
+			_fx.cast(row, _member_homes[who] - Vector2(0.0, _tall(caster) + 8.0), reached,
+				_tall(caster))
+	if _logic.throw_count() != _throws_seen:
+		_throws_seen = _logic.throw_count()
+		var aimed := _logic.last_throw_foe()
+		if aimed >= 0 and aimed < _foe_views.size() and not _member_views.is_empty():
+			var thrower := maxi(_logic.commander(), 0)
+			thrower = mini(thrower, _member_views.size() - 1)
+			_fx.capture(_foe_views[aimed],
+				_member_homes[thrower] - Vector2(-6.0, _tall(_member_views[thrower]) * 0.6),
+				_foe_homes[aimed] - Vector2(0.0, 5.0), _logic.last_throw_icon(),
+				_logic.last_throw_caught(), _logic.last_throw_blocked())
+	for at in _foe_views.size():
+		var foe_hp := _logic.enemy_hp(at)
+		if _logic.foe_caught(at):
+			# Into a ball, not knocked down: no number, no fall - the throw draws all of it.
+			_foe_hp_seen[at] = foe_hp
+			_foe_down_seen[at] = true
+			continue
+		if foe_hp < _foe_hp_seen[at]:
+			_fx.hurt(_foe_views[at], _foe_homes[at], _tall(_foe_views[at]),
+				_foe_hp_seen[at] - foe_hp, heavy)
+		_foe_hp_seen[at] = foe_hp
+		var down := _logic.foe_down(at)
+		if down and not _foe_down_seen[at]:
+			_fx.fell(_foe_views[at])
+		_foe_down_seen[at] = down
+	for i in _member_views.size():
+		var member_hp := _logic.member_hp(i)
+		if member_hp < _member_hp_seen[i]:
+			_fx.hurt(_member_views[i], _member_homes[i], _tall(_member_views[i]),
+				_member_hp_seen[i] - member_hp, false)
+			if _logic.member_down(i):
+				_fx.fell(_member_views[i])
+		elif member_hp > _member_hp_seen[i]:
+			_fx.healed(_member_views[i], _member_homes[i], _tall(_member_views[i]),
+				member_hp - _member_hp_seen[i])
+		_member_hp_seen[i] = member_hp
+	# The presenter calls out each time one of the formation's foes starts its turn.
+	var turn := ""
+	if _logic.phase() == BattleLogic.Phase.ENEMY_ACT:
+		turn = "foe%d" % _logic.acting_foe()
+	if turn != _turn_seen:
+		_turn_seen = turn
+		if not turn.is_empty():
+			_call_out()
+			_wind_up()
+
+
+# -- the presenter and the opening card ----------------------------------------------------
+
+
+func _build_presenter(viewport_size: Vector2i, source: SpriteSource) -> void:
+	_presenter_def = _logic.presenter_def()
+	if _presenter_def == null:
+		return
+	var spacing := _drawn_width() / STAGGER_WIDTH
+	_presenter_home = Vector2(float(viewport_size.x) - 22.0 * spacing, FLOOR_Y - 26.0 * spacing)
+	_presenter = _make_fighter(source, _presenter_def.presenter, _presenter_home, Dir.D.LEFT)
+	_bubble_back = ColorRect.new()
+	_bubble_back.visible = false
+	add_child(_bubble_back)
+	_bubble = UiChrome.label(_style, "text")
+	_bubble.visible = false
+	_bubble.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(_bubble)
+	if not _presenter_def.intro.is_empty():
+		_intro_text = tr(_presenter_def.intro)
+		_intro_total = INTRO_FRAMES
+		_intro_left = INTRO_FRAMES
+		_fx.quake(3.0)
+
+
+func _build_intro(viewport_size: Vector2i) -> void:
+	if _intro_left <= 0:
+		var wild := _logic.wild_intro()
+		if wild.is_empty():
+			return
+		_intro_text = wild
+		_intro_total = WILD_FRAMES
+		_intro_left = WILD_FRAMES
+	_intro_band = ColorRect.new()
+	_intro_band.position = Vector2(0.0, INTRO_Y)
+	_intro_band.size = Vector2(float(viewport_size.x), INTRO_HEIGHT)
+	add_child(_intro_band)
+	_intro_label = UiChrome.label(_style, "text")
+	_intro_label.position = Vector2(0.0, INTRO_Y + (INTRO_HEIGHT - 10.0) * 0.5)
+	_intro_label.size = Vector2(float(viewport_size.x), 10.0)
+	_intro_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_intro_label.text = _intro_text.to_upper()
+	add_child(_intro_label)
+
+
+## How far right of home the formation stands while the card is up: it rushes in, then settles.
+func _intro_slide() -> float:
+	if _intro_left <= 0:
+		return 0.0
+	var gone := 1.0 - float(_intro_left) / float(_intro_total)
+	var t := clampf(gone * 1.6, 0.0, 1.0)
+	return (1.0 - t) * (1.0 - t) * INTRO_RUSH
+
+
+## The acting foe's move, drawn across the cue that has just opened: the shape its file names
+## (`EnemyDef.MOVE_FX`), timed by the cue's own length so whatever it throws arrives on the impact.
+func _wind_up() -> void:
+	var at := _logic.acting_foe()
+	var aimed := _logic.target_member()
+	if at < 0 or at >= _foe_views.size() or aimed < 0 or aimed >= _member_views.size():
+		return
+	_fx.foe_move(str(_logic.foe_move().get("fx", "")), _foe_homes[at], _member_homes[aimed],
+		_tall(_foe_views[at]), _logic.cue_span(), _backdrop.size)
+
+
+## How far a foe that RUSHES travels at the impact: up to its target, less a body's width.
+func _rush_reach(at: int) -> float:
+	var aimed := _logic.target_member()
+	if aimed < 0 or aimed >= _member_homes.size():
+		return LUNGE
+	return maxf(_foe_homes[at].x - _member_homes[aimed].x - _drawn_width() * 0.6, LUNGE)
+
+
+func _call_out() -> void:
+	if _presenter_def == null or _presenter_def.presenter_lines.is_empty():
+		return
+	var lines := _presenter_def.presenter_lines
+	_bubble.text = tr(lines[_line_at % lines.size()])
+	_line_at += 1
+	_bubble_left = BUBBLE_FRAMES
+
+
+func _paint_presenter() -> void:
+	if _presenter == null:
+		return
+	# Forward while the card is up, as a trainer steps out to send their side in; back after.
+	var forward := INTRO_STEP if _intro_left > 0 else 0.0
+	_presenter.position = _presenter_home - Vector2(forward, 0.0) + _fx.field_offset()
+	_presenter.set_pose(&"walk" if _intro_left > 0 else &"idle", Dir.D.LEFT)
+	if _bubble_left > 0:
+		_bubble_left -= 1
+	var shown := _bubble_left > 0 and not _bubble.text.is_empty()
+	_bubble.visible = shown
+	_bubble_back.visible = shown
+	if shown:
+		var width := _bubble.get_minimum_size().x
+		var top := _presenter_home.y - _tall(_presenter) - 14.0
+		_bubble.size = Vector2(width, 10.0)
+		_bubble.position = Vector2(_presenter_home.x + 10.0 - width, top)
+		_bubble_back.position = _bubble.position - Vector2(3.0, 1.0)
+		_bubble_back.size = Vector2(width + 6.0, 11.0)
+		_bubble_back.color = _style.ui_color("header")
+		_bubble.add_theme_color_override("font_color", _style.ui_color("text"))
+
+
+func _paint_intro() -> void:
+	if _intro_band == null:
+		return
+	var up := _intro_left > 0
+	_intro_band.visible = up
+	_intro_label.visible = up
+	if not up:
+		return
+	# The band blinks to the cursor colour as it lands, then holds in the header's.
+	var gone := _intro_total - _intro_left
+	var landing := gone < 10 and (_intro_left / 3) % 2 == 0
+	_intro_band.color = _style.ui_color("select" if landing else "header")
+	# The encounter flash: the whole field blinks before anything is drawn on it.
+	if gone < FLASH_FRAMES and (gone / 3) % 2 == 0:
+		_backdrop.color = _style.ui_color("text")
+	_intro_label.add_theme_color_override("font_color", _style.ui_color("text"))
 
 
 ## Whether the timing window is open RIGHT NOW, and whether the fight is waiting on a choice.
@@ -589,7 +860,7 @@ func _paint_rows(text: Color, dim: Color) -> void:
 	# The window is headed with whoever is choosing, so the menu is a question addressed to
 	# somebody rather than a list floating beside three people.
 	_commands.panel.visible = choosing
-	_commands.title.text = _page_title().to_upper()
+	_commands.title.text = tr(_page_title()).to_upper()
 	_commands.title.add_theme_color_override("font_color", text)
 	for i in _rows.size():
 		var row := _rows[i]
@@ -661,7 +932,7 @@ func _label_for(at: int) -> String:
 		# so a player who has none has not failed to find any, they have not got there.
 		if spell == null:
 			return "(nothing learned yet)"
-		return "%s  %d MP" % [spell.name, spell.cost]
+		return tr("%s  %d MP") % [spell.name, spell.cost]
 	if _logic.phase() == BattleLogic.Phase.ALLY:
 		var rows := _logic.ally_rows()
 		if at < 0 or at >= rows.size():
@@ -706,6 +977,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _committed or _logic == null or not InputGate.is_press(event):
 		return
 	if not _gate.accept(event):
+		return
+	if _intro_left > 0:
+		if event.is_action(&"interact") or event.is_action(&"cancel"):
+			_intro_left = 0
+			_paint()
+			get_viewport().set_input_as_handled()
 		return
 
 	if _gate.pressed(event, &"move_down"):

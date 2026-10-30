@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemDef" load_steps=3 format=3]
+
+; A pokebola do sertao. Jogada num bicho selvagem (EnemyDef.caught_flag), pode captura-lo: a
+; chance cresce com o dano que ele ja levou. Capturado, ele entra para a equipe pela flag
+; (data/party/parceiro_*.tres) e luta do lado do Kayo. Bicho do Marcos tem dono e rebate a bola.
+; O Kayo acha 5 em cima da mesa de casa (games/kayo/kayo_hooks.gd).
+
+[ext_resource type="Script" path="res://scripts/data/item_def.gd" id="1_item"]
+[ext_resource type="Texture2D" path="res://assets/kayo/icons/cuiabola.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"cuiabola"
+name = "Cuiabola"
+description = "A pokébola do sertão. Feita de cuia."
+capture = true
+icon = ExtResource("2_icon")
+price = 5

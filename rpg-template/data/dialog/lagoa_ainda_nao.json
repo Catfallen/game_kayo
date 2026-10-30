@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O caminho do aeroporto antes do pôr do sol (warp trancado)."
+	],
+	"id": "lagoa_ainda_nao",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Pra lá é o aeroporto... Hoje não, Kayo. Fica aqui comigo na Lagoa.",
+			"portrait": "isa_casual"
+		}
+	}
+}

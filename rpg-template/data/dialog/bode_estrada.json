@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"O bode solto na estrada."
+	],
+	"id": "bode_estrada",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Bode",
+			"text": "Méééé.",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Bode na estrada: no GeoGuessr isso é praticamente uma placa dizendo Nordeste.",
+			"portrait": "kayo"
+		}
+	}
+}

@@ -1,0 +1,27 @@
+{
+	"_readme": [
+		"Aberto pelos hooks na primeira entrada em kayo_terreiro."
+	],
+	"id": "marcos_desafio",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Marcos",
+			"text": "Ei, Kayo! Pra passar pelo meu terreiro tem que vencer meus bichos.",
+			"portrait": "town_smith",
+			"set_flag": "marcos_desafiou",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Marcos, tô com pressa. A Isa tá me esperando em Três Lagoas.",
+			"portrait": "kayo",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Marcos",
+			"text": "Três Lagoas? E vai a pé? Então mostra que aguenta. Vai, Tatu! Vai, Animal Louco!",
+			"portrait": "town_smith"
+		}
+	}
+}

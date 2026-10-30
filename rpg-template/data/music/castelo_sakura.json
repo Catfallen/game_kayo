@@ -1,0 +1,59 @@
+{
+	"_readme": [
+		"A Jornada do Kayo, fase 3: o castelo no Japao. Escala in-sen de mi (E F A B D), a escala",
+		"japonesa que soa suspensa e ameacadora ao mesmo tempo - o semitom E-F e o que deixa tenso.",
+		"Lento (84) e com o tambor quase sozinho, como um taiko ao longe: a calma antes do chefe."
+	],
+	"bpm": 84,
+	"beats_per_bar": 4,
+	"steps_per_beat": 4,
+	"instruments": {
+		"lead": {
+			"wave": "tone",
+			"gain": 0.3,
+			"attack_ms": 4,
+			"release_ms": 40
+		},
+		"bass": {
+			"wave": "tone",
+			"gain": 0.3,
+			"attack_ms": 2,
+			"release_ms": 24
+		},
+		"drum": {
+			"wave": "noise",
+			"gain": 0.14,
+			"attack_ms": 1,
+			"release_ms": 34
+		}
+	},
+	"voices": [
+		{
+			"instrument": "lead",
+			"bars": [
+				"E5:4 F5:2 E5:2 B4:8",
+				"A4:4 B4:2 D5:2 E5:8",
+				"F5:4 E5:2 D5:2 B4:4 A4:4",
+				"B4:6 F4:2 E4:8"
+			]
+		},
+		{
+			"instrument": "bass",
+			"bars": [
+				"E2:8 E2:8",
+				"A2:8 A2:8",
+				"F2:8 F2:8",
+				"E2:8 E2:8"
+			]
+		},
+		{
+			"instrument": "drum",
+			"bars": [
+				"x:4 -:8 x:2 x:2",
+				"x:4 -:12",
+				"x:4 -:8 x:2 x:2",
+				"x:2 x:2 -:8 x:4"
+			]
+		}
+	]
+}

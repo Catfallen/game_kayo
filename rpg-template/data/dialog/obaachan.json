@@ -1,0 +1,49 @@
+{
+	"_readme": [
+		"A senhora da vila (jp_vila). Dá três rapaduras uma vez só (set_flag + hidden_if_flag na escolha)."
+	],
+	"id": "obaachan",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Obaachan",
+			"text": "Menino de longe... vai subir no castelo? Desde que o tatu de cristal chegou, as cerejeiras não param de cair.",
+			"portrait": "town_elder",
+			"choices": [
+				{
+					"text": "Vou buscar uma amiga lá",
+					"next": "d1",
+					"set_flag": "ganhou_lanche",
+					"hidden_if_flag": "ganhou_lanche",
+					"give_item": "rapadura",
+					"give_count": 3
+				},
+				{
+					"text": "Só de passagem, vó",
+					"next": "z1"
+				}
+			]
+		},
+		"d1": {
+			"speaker": "Obaachan",
+			"text": "Então leve isto. Um moço do Maranhão esqueceu aqui faz tempo.",
+			"portrait": "town_elder",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "Rapadura?! No Japão?! ...O mundo é pequeno mesmo.",
+			"portrait": "kayo",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Dica",
+			"text": "O Kayo ganhou 3 rapaduras."
+		},
+		"z1": {
+			"speaker": "Obaachan",
+			"text": "Cuidado com o brilho dele. Quem olha demais, dorme.",
+			"portrait": "town_elder"
+		}
+	}
+}

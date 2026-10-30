@@ -1,0 +1,108 @@
+{
+	"_readme": [
+		"Fase 1, cena 1: a casa de madeira do Kayo, em Açailândia.",
+		"",
+		"O jogo começa aqui. Na primeira entrada os hooks (games/kayo) abrem intro_casa.",
+		"Cama de chita, estante, filtro de barro, fogão a lenha, mesa com banquinhos e tapete,",
+		"todos desenhados por tools/gerar_tiles_sertao.py.",
+		"",
+		"O celular em cima da mesa (8,4) traz uma mensagem da Isa chamando o Kayo para Três",
+		"Lagoas; a Isa não aparece no Nordeste. A porta só abre depois da mensagem lida (flag",
+		"leu_mensagem, marcada no último nó de mensagem_isa).",
+		"",
+		"O pote de rapadura fica na estante (4,1) e dá 3 rapaduras uma vez só; quem conta é o",
+		"hook, porque um objeto de dados só sabe dar 1 item.",
+		"",
+		"A porta (5,7) é sólida só quando a saída é recusada: 'porta' não é solid no lpc32.json,",
+		"e um warp recusado NÃO move o jogador (ver o aviso em quest_village.json) - então sem a",
+		"linha extra de parede embaixo (linha 8) quem chega na porta sem leu_mensagem atravessa a",
+		"borda do mapa e some no vazio. A linha 8 é só essa trava; o cômodo continua nas 8 linhas de",
+		"cima."
+	],
+	"id": "kayo_casa",
+	"style": "lpc32",
+	"legend": {
+		"W": "parede_madeira",
+		"_": "piso_madeira",
+		"D": "porta",
+		"m": "table",
+		"t": "mesa",
+		"C": "mesa_celular",
+		"b": "cama_cima",
+		"B": "cama_baixo",
+		"F": "fogao_lenha",
+		"U": "filtro_barro",
+		"E": "estante",
+		"r": "tapete"
+	},
+	"ground": [
+		"WWWWWWWWWWW",
+		"W_________W",
+		"W_________W",
+		"W_________W",
+		"W_________W",
+		"W_________W",
+		"W_________W",
+		"WWWWWDWWWWW",
+		"WWWWWWWWWWW"
+	],
+	"decor": [
+		"           ",
+		" b  E U F  ",
+		" B         ",
+		"           ",
+		"      mtCm ",
+		"  rr       ",
+		"           ",
+		"           ",
+		"           "
+	],
+	"spawns": {
+		"start": [
+			5,
+			5
+		],
+		"da_vila": [
+			5,
+			6
+		]
+	},
+	"objects": [
+		{
+			"id": "celular",
+			"tile": [
+				8,
+				4
+			],
+			"dialog": "mensagem_isa"
+		},
+		{
+			"id": "pote_rapadura",
+			"tile": [
+				4,
+				1
+			],
+			"dialog": "pote_rapadura"
+		},
+		{
+			"id": "cuiabolas",
+			"tile": [
+				7,
+				4
+			],
+			"dialog": "cuiabolas"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				5,
+				7
+			],
+			"map": "kayo_vila",
+			"spawn": "da_casa",
+			"requires_flag": "leu_mensagem",
+			"locked_dialog": "porta_celular"
+		}
+	]
+}

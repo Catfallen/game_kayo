@@ -450,7 +450,7 @@ scripts/ui/battle_screen.gd	s|\treturn clampi\(_logic.index\(\) - VISIBLE_ROWS \
 scripts/ui/battle_screen.gd	s|\t\tvar at := first \+ i|\t\tvar at := i|	tests/integration/test_battle_layout.gd	the window is worked out and then ignored, so the rows drawn never move
 scripts/ui/battle_screen.gd	s|\tvar text_x := inner.position.x \+ face_span \+ 3.0|\tvar text_x := inner.position.x - 40.0|	tests/integration/test_battle_layout.gd	a member's name and bars are drawn left of the window that holds them
 scripts/ui/battle_screen.gd	s|\t\tvar casts := _logic.member_max_mp\(i\) > 0|\t\tvar casts := true|	tests/integration/test_battle_layout.gd	a game with no magic is shown an empty magic bar it can never fill
-scripts/ui/battle_screen.gd	s|\t\treturn \"%s  %d MP\" % \[spell.name, spell.cost\]|\t\treturn spell.name|	tests/integration/test_world_battles.gd	the spell page names no prices, so the choice is made blind
+scripts/ui/battle_screen.gd	s|\t\treturn tr\("%s  %d MP"\) % \[spell.name, spell.cost\]|\t\treturn spell.name|	tests/integration/test_world_battles.gd	the spell page names no prices, so the choice is made blind
 scripts/world/world_scene.gd	s|\t\t\tout.append\("MP %d/%d" % \[mp, curve.max_mp\(level\)\]\)|\t\t\tpass|	tests/integration/test_world_equipment.gd	nothing outside a fight says how much magic is left
 
 # --- M26: a battle theme and a fanfare ---
@@ -521,13 +521,13 @@ scripts/world/map_data.gd	s|^\t\tif occupied.has\(stands\):$|\t\tif false:|	test
 scripts/ui/battle_screen.gd	s|\t\tvar theirs := acting and not player_side and swinging_foe == at|\t\tvar theirs := acting and not player_side|	tests/integration/test_battle_layout.gd	every foe leans when any one of them swings
 scripts/ui/fight_screen.gd	s|^const MAX_FOES := 3$|const MAX_FOES := 0|	tests/unit/test_battle_content.gd	a map may name a formation bigger than the screen draws
 scripts/ui/battle_screen.gd	s|^const MAX_PARTY := 3$|const MAX_PARTY := 0|	tests/unit/test_battle_content.gd	a game may declare a party bigger than the screen draws
-scripts/ui/battle_logic.gd	s|\t\t\t\tdef.status_turns, def.target, def.stat, def.element\)\)|\t\t\t\tdef.status_turns, def.stat, def.element))|	tests/integration/test_world_battles.gd	a spell's shape is dropped between the file and the fight
+scripts/ui/battle_logic.gd	s|def.status_turns, def.target, def.stat, def.element, def.percent, def.icon\)\)|def.status_turns, SpellDef.Target.ONE, def.stat, def.element, def.percent, def.icon))|	tests/integration/test_world_battles.gd	a spell's shape is dropped between the file and the fight
 scripts/ui/battle_logic.gd	s|who.status.attack_bonus\(\)|0|	tests/unit/test_battle_logic.gd	a boost never reaches the swing, so the spell announces itself and changes no number
 scripts/ui/battle_logic.gd	s|it.status.defense_bonus\(\)|0|	tests/unit/test_battle_logic.gd	a sap never reaches the guard the blow is measured against
 scripts/ui/battle_logic.gd	s|maxi\(0, it.def.defense \+ it.status.defense_bonus\(\)\)|it.def.defense + it.status.defense_bonus()|	tests/unit/test_battle_logic.gd	an over-sapped guard goes negative and starts helping the attacker
 scripts/ui/battle_logic.gd	s|if member.status.asleep_turns > 0:|if false:|	tests/unit/test_battle_logic.gd	a sleeping party member is handed the menu anyway, which is a free turn
 scripts/ui/battle_logic.gd	s|if pressed_in_time\(\):|if false:|	tests/unit/test_battle_logic.gd	a well-timed guard stops shrugging off an affliction, so the cue goes quiet in status fights
-scripts/ui/battle_logic.gd	s|def.target, def.stat, def.element\)\)|def.target, def.element))|	tests/integration/test_world_battles.gd	a spell's stat is dropped between the file and the fight, so every boost moves attack
+scripts/ui/battle_logic.gd	s|def.target, def.stat, def.element, def.percent, def.icon\)\)|def.target, SpellDef.Stat.ATTACK, def.element, def.percent, def.icon))|	tests/integration/test_world_battles.gd	a spell's stat is dropped between the file and the fight, so every boost moves attack
 data/spells/ward.tres	s|status_turns = 3|status_turns = 0|	tests/unit/test_battle_content.gd	the game's one buff lasts no turns, so it announces itself and changes nothing
 data/enemies/gloom.tres	s|"turns": 3|"turns": 0|	tests/unit/test_battle_content.gd	the game's one affliction lasts no turns
 data/spells/ward.tres	s|learn_level = 2|learn_level = 9|	tests/fixtures/qa/quest/a_ward_against_the_chill.json	the buff is learned past the level cap, so no played fight can reach it
@@ -549,13 +549,13 @@ scripts/data/spell_def.gd	s|if kind != Kind.ATTACK and not String\(element\).is_
 scripts/data/enemy_def.gd	s|\tout.append_array\(_resistance_problems\(\)\)|\tpass|	tests/unit/test_enemy_def.gd	the resistance map is never validated at all
 scripts/data/enemy_def.gd	s|\t\telif int\(pct\) == 100:|\t\telif false:|	tests/unit/test_enemy_def.gd	an answer of exactly 100% ships, reading like a decision and changing nothing
 scripts/data/enemy_def.gd	s|\t\tif int\(pct\) < 0:|\t\tif false:|	tests/unit/test_enemy_def.gd	an enemy ships healed by an element instead of hurt by it
-scripts/ui/battle_logic.gd	s|def.status_turns, def.target, def.stat, def.element\)\)|def.status_turns, def.target, def.stat))|	tests/integration/test_world_battles.gd	a spell's element is dropped between the file and the fight, so every spell lands at face value
+scripts/ui/battle_logic.gd	s|def.target, def.stat, def.element, def.percent, def.icon\)\)|def.target, def.stat, \&"", def.percent, def.icon))|	tests/integration/test_world_battles.gd	a spell's element is dropped between the file and the fight, so every spell lands at face value
 data/enemies/gloom.tres	s|&"fire": 200|&"fire": 150|	tests/fixtures/qa/quest/fire_finds_the_gloom.json	the Gloom's weakness to fire is retuned and the played session does not notice
 scripts/ui/battle_logic.gd	s|\tif answer > 100:|\tif false:|	tests/unit/test_battle_logic.gd	a weakness lands silently, so a bigger number arrives with nothing to compare it against
 scripts/ui/battle_logic.gd	s|\tif answer < 100:|\tif false:|	tests/unit/test_battle_logic.gd	a resistance lands silently, and a small number reads as a weak spell
 tests/helpers/battle_driver.gd	s|\t\t\t\t\t\t_aim\(logic, _toughest_row\(logic\)\)|\t\t\t\t\t\t_aim(logic, _weakest_row(logic))|	tests/unit/test_battle_content.gd	the caster aims like PERFECT, so a boss is never the target of a spell
-tests/helpers/battle_helpers.gd	s|\t\tBattleLogic.SpellRow.page\(defs, level, \[\], true\)\)\)|\t\t[]))|	tests/unit/test_battle_content.gd	the balance party knows no magic, which is what it knew before M34
-scripts/ui/battle_logic.gd	s|\t\t\tif def == null or def.battle_heal <= 0:|\t\t\tif def == null:|	tests/unit/test_battle_content.gd	a quest item reaches the battle menu, where using it destroys it
+tests/helpers/battle_helpers.gd	s|\t\tBattleLogic.SpellRow.leader_page\(defs, level, combat\)\)\)|\t\t[]))|	tests/unit/test_battle_content.gd	the balance party knows no magic, which is what it knew before M34
+scripts/ui/battle_logic.gd	s|\t\t\tif def == null or \(def.battle_heal <= 0 and not def.capture\):|\t\t\tif def == null:|	tests/unit/test_battle_content.gd	a quest item reaches the battle menu, where using it destroys it
 tests/helpers/battle_driver.gd	s|\treturn rows\[used_count % rows.size\(\)\]|\treturn rows[0]|	tests/unit/test_battle_driver.gd	the drinker always reaches for the first row, exercising one item
 tests/helpers/battle_driver.gd	s|\t\tif logic.member_hp\(at\) > 0 and logic.member_hp\(at\) < logic.member_max_hp\(at\):|\t\tif true:|	tests/unit/test_battle_driver.gd	the drinker drinks at full health, so it never swings
 tests/helpers/battle_driver.gd	s|\tif logic.item_rows\(\).is_empty\(\):|\tif false:|	tests/unit/test_battle_driver.gd	an empty bag is opened anyway, and a dead row is pressed forever
@@ -570,10 +570,10 @@ scripts/ui/battle_screen.gd	s|\t_message.size.x = wide - MARGIN \* 2.0|\t_messag
 scripts/ui/battle_logic.gd	s|\tif not _queued.is_empty\(\):|\tif false:|	tests/unit/test_battle_logic.gd	the queue is never drained, so a sweep reports only its first foe
 scripts/ui/battle_logic.gd	s|\t_queued = lines.slice\(1\)|\t_queued = []|	tests/unit/test_battle_logic.gd	only the first line of a sequence is queued, and the rest are lost
 scripts/ui/battle_logic.gd	s|\t\t_say\(next_line, _after_message\)|\t\t_say(next_line, Phase.PLAYER_ACT)|	tests/unit/test_battle_logic.gd	a sequence forgets where it was going, so a winning sweep hands the turn back
-scripts/ui/battle_logic.gd	s|\t\t\t\tlines.append\(_award_victory\(" and ".join\(felled\)\)\)|\t\t\t\tpass|	tests/unit/test_battle_logic.gd	a sweep that wins the fight never says so
-scripts/ui/battle_logic.gd	s|\t\treturn " %s is weak to %s\." % \[subject, row.element\]|\t\treturn ""|	tests/unit/test_battle_logic.gd	a weakness lands silently, with nothing to compare the bigger number against
-scripts/ui/battle_logic.gd	s|\t\treturn " %s shrugs off most of the %s\." % \[subject, row.element\]|\t\treturn ""|	tests/unit/test_battle_logic.gd	a resistance lands silently, and a small number reads as a weak spell
-scripts/ui/battle_logic.gd	s|var frame := "%s casts %s\." % \[caster.name, row.name\]|var frame := ""|	tests/unit/test_battle_logic.gd	the persistent frame is dropped, so a sequence says who is acting nowhere
+scripts/ui/battle_logic.gd	s|\t\t\t\tlines.append\(_award_victory\(tr\(" and "\).join\(felled\)\)\)|\t\t\t\tpass|	tests/unit/test_battle_logic.gd	a sweep that wins the fight never says so
+scripts/ui/battle_logic.gd	s|\t\treturn tr\(" %s is weak to %s\."\) % \[subject, row.element\]|\t\treturn ""|	tests/unit/test_battle_logic.gd	a weakness lands silently, with nothing to compare the bigger number against
+scripts/ui/battle_logic.gd	s|\t\treturn tr\(" %s shrugs off most of the %s\."\) % \[subject, row.element\]|\t\treturn ""|	tests/unit/test_battle_logic.gd	a resistance lands silently, and a small number reads as a weak spell
+scripts/ui/battle_logic.gd	s|var frame := tr\("%s casts %s\."\) % \[caster.name, row.name\]|var frame := ""|	tests/unit/test_battle_logic.gd	the persistent frame is dropped, so a sequence says who is acting nowhere
 scripts/util/tiled_map.gd	s|\tif count != columns:|\tif false:|	tests/unit/test_tiled_map.gd	a map painted against a different-sized bank is accepted, so every id past the change is wrong
 scripts/util/tiled_map.gd	s|\tif named != String\(style\):|\tif false:|	tests/unit/test_tiled_map.gd	a map painted for another style is accepted, and every tile on it becomes a different tile
 scripts/util/tiled_map.gd	s|TerrainEdges.tile_of_column\(gid - first_gid, tile_ids, edges\)|TerrainEdges.tile_of_column(gid, tile_ids, edges)|	tests/unit/test_tiled_map.gd	the tileset's firstgid is ignored, so every tile on an imported map is off by one
@@ -1142,3 +1142,10 @@ scripts/data/game_manifest.gd	s|for token in Prompts.unknown_tokens\(controls_hi
 scripts/data/game_manifest.gd	s|if not controls_hint.is_empty\(\) and Prompts.tokens_of\(controls_hint\).is_empty\(\):|if false:|	tests/unit/test_game_manifest.gd	a hint that cannot follow the device ships
 scripts/autoload/qa.gd	s|if found.is_empty\(\) == expect:|if false:|	tests/unit/test_qa_ops.gd	assert_prompt never fails
 scripts/autoload/qa.gd	s|_fail\("no such pad button '%s' \(known: %s\)" % \[|_log.append("no such pad button '%s' (known: %s)" % [|	tests/unit/test_qa_ops.gd	a typo'd pad button reads as a pass
+scripts/world/world_scene.gd	s|^\t_sync_npcs\(\)$|\tpass|	tests/integration/test_world_npc_flags.gd	a flag set mid-map frees nobody and calls nobody in until the next visit
+scripts/world/world_scene.gd	s|return String\(gone\).is_empty\(\) or not GameState.has_flag\(gone\)|return true|	tests/integration/test_world_npc_flags.gd	an NPC a flag sent away still stands in the world
+scripts/data/enemy_def.gd	s|if move.has\("fx"\) and not MOVE_FX.has|if false and MOVE_FX.has|	tests/unit/test_kayo_chefe.gd	a misspelt move effect is a boss attack that silently draws nothing
+scripts/ui/battle_logic.gd	s|^\tvar move := _foe_move$|\tvar move := _pick_move\(\)|	tests/unit/test_kayo_chefe.gd	the blow that lands is not the move whose wind-up was drawn
+scripts/world/map_data.gd	s|elif int\(count\) < 1 or int\(count\) > MAX_PETALS:|elif false:|	tests/unit/test_ending_roll.gd	a sky of nought petals passes the content gate
+scripts/ui/ending_roll.gd	s|label.position = Vector2\(\(_size.x - label.size.x \* float\(scale\)\) \* 0.5, y\)|label.position = Vector2\(0.0, y\)|	tests/unit/test_ending_roll.gd	the staff roll draws its names against the left edge instead of centred
+scripts/ui/ending_roll.gd	s|\t\t_scroll.position.y -= _speed|\t\tpass|	tests/unit/test_ending_roll.gd	the credits stand still - the static page they exist not to be

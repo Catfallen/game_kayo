@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O pote depois de esvaziado (aberto pelos hooks)."
+	],
+	"id": "pote_vazio",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Só sobrou farelo. A vó vai perceber.",
+			"portrait": "kayo"
+		}
+	}
+}

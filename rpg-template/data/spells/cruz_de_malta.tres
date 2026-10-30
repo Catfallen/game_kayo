@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=3 format=3]
+
+; Golpe do Kayo (fase 1, nivel 2). Bate no peito em cima da cruz de malta do Vasco: +3 de ataque
+; por 3 turnos. Barato, porque so vale se o Kayo continuar batendo depois.
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+[ext_resource type="Texture2D" path="res://assets/kayo/icons/cruz_de_malta.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"cruz_de_malta"
+name = "Cruz de Malta"
+description = "Bate no peito, em cima da cruz do Vasco. Ataque sobe."
+mp_cost = 2
+learn_level = 2
+kind = 3
+power = 3
+stat = 0
+status_turns = 3
+icon = ExtResource("2_icon")

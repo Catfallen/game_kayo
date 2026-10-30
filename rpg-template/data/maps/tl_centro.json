@@ -1,0 +1,137 @@
+{
+	"_readme": [
+		"Fase 2, cena 2: a praça do centro de Três Lagoas.",
+		"",
+		"Ipês, coqueiros, bancos de praça, carrinho de picolé e o letreiro da cidade. Moradores",
+		"com falas locais (o calor, a celulose). Cruza-se de oeste (rodoviária) para leste (Lagoa)."
+	],
+	"id": "tl_centro",
+	"style": "lpc32",
+	"legend": {
+		".": "grass",
+		",": "grass_alt",
+		"=": "asfalto",
+		"-": "asfalto_faixa",
+		":": "calcada",
+		"R": "parede_reboco",
+		"Y": "ipe_amarelo",
+		"K": "ipe_rosa",
+		"Q": "coqueiro",
+		"L": "poste_luz",
+		"n": "banco_praca",
+		"x": "lixeira",
+		"*": "flores",
+		"S": "placa_tl",
+		"c": "carro_esq",
+		"d": "carro_dir",
+		"z": "sorveteria"
+	},
+	"ground": [
+		"RRRRRRRRRRRRRRRRRRRR",
+		"R==================R",
+		"R------------------R",
+		"R==================R",
+		"R::::::::::::::::::R",
+		"R:.......:........:R",
+		"::::::::::::::::::::",
+		"R:.......:........:R",
+		"R:.......:........:R",
+		"R:.......:........:R",
+		"R::::::::::::::::::R",
+		"R..,.....,......,..R",
+		"RRRRRRRRRRRRRRRRRRRR"
+	],
+	"decor": [
+		"                    ",
+		"              cd    ",
+		"      cd            ",
+		"                    ",
+		"    L          L    ",
+		"   Y   n    n   K   ",
+		"                    ",
+		"     *     S  *  x  ",
+		"   K            Y   ",
+		"      Q *  * Q   z  ",
+		"                    ",
+		"  *      L       *  ",
+		"                    "
+	],
+	"spawns": {
+		"da_rodoviaria": [
+			1,
+			6
+		],
+		"da_lagoa": [
+			18,
+			6
+		]
+	},
+	"npcs": [
+		{
+			"id": "menino_picole",
+			"character": "town_kid",
+			"tile": [
+				5,
+				8
+			],
+			"facing": "down",
+			"dialog": "menino_picole",
+			"behavior": "wander",
+			"range": 1
+		},
+		{
+			"id": "senhora_praca",
+			"character": "town_elder",
+			"tile": [
+				13,
+				8
+			],
+			"facing": "down",
+			"dialog": "senhora_praca"
+		}
+	],
+	"objects": [
+		{
+			"id": "placa_tl",
+			"tile": [
+				11,
+				7
+			],
+			"dialog": "placa_tl"
+		},
+		{
+			"id": "sorveteria",
+			"tile": [
+				17,
+				9
+			],
+			"dialog": "sorveteria"
+		},
+		{
+			"id": "banco_centro",
+			"tile": [
+				7,
+				5
+			],
+			"dialog": "banco_centro"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				0,
+				6
+			],
+			"map": "tl_rodoviaria",
+			"spawn": "da_centro"
+		},
+		{
+			"tile": [
+				19,
+				6
+			],
+			"map": "tl_lagoa",
+			"spawn": "da_centro"
+		}
+	]
+}

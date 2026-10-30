@@ -30,6 +30,9 @@ class Line:
 	## express. Empty is the normal case: a sign, a chest and a well have no face.
 	var portrait: StringName = &""
 	var text_lines: int = 0
+	## A picture to play above the box while this line is up (a DialogScene strip, by res:// path),
+	## or nothing - which is every line but the few a game wants SHOWN.
+	var scene: String = ""
 	var choices: Array[String] = []
 
 	func has_choices() -> bool:
@@ -115,6 +118,7 @@ func line() -> Line:
 	out.speaker = str(node.get("speaker", ""))
 	out.text = str(node.get("text", ""))
 	out.portrait = StringName(str(node.get("portrait", "")))
+	out.scene = str(node.get("scene", ""))
 	for choice in _visible_choices(node):
 		out.choices.append(str((choice as Dictionary).get("text", "")))
 	return out
@@ -332,6 +336,10 @@ func problems() -> Array[String]:
 		var node: Dictionary = _nodes[node_id]
 		if str(node.get("text", "")).is_empty():
 			out.append("dialog '%s' node '%s' has no text" % [id, node_id])
+		var scene := str(node.get("scene", ""))
+		if not scene.is_empty():
+			for fault in DialogScene.problems_of(scene):
+				out.append("dialog '%s' node '%s' shows a %s" % [id, node_id, fault])
 		var next := str(node.get("next", ""))
 		if not next.is_empty() and not _nodes.has(next):
 			out.append("dialog '%s' node '%s' continues to '%s', which does not exist" % [id, node_id, next])

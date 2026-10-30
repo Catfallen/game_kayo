@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PartyMemberDef" load_steps=3 format=3]
+
+; O Tatu capturado: o tanque - muita vida e casco, bate pouco. Entra na equipe quando o Kayo o captura com uma Cuiabola: a captura marca
+; "pegou_tatu" (EnemyDef.caught_flag), e ser da equipe e derivado dessa flag toda vez que se pergunta.
+
+[ext_resource type="Script" path="res://scripts/data/party_member_def.gd" id="1_member"]
+[ext_resource type="Resource" path="res://data/combat/parceiro_tatu_combat.tres" id="2_combat"]
+
+[resource]
+script = ExtResource("1_member")
+id = &"parceiro_tatu"
+name = "Tatu"
+character = &"tatu"
+combat = ExtResource("2_combat")
+spells = Array[StringName]([&"rolada_blindada"])
+joins_on_flag = &"pegou_tatu"
+join_level = 1

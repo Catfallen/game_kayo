@@ -27,16 +27,31 @@ WALK_FRAMES = 8
 # head_bottom: fracao da altura onde termina a cabeca (usado no retrato e nas costas).
 # view: "front" (foto de frente), "front_right" (frente olhando p/ direita), "side_left" (perfil p/ esquerda).
 CHARS = {
-    "kayo": dict(src="personagem kayo.png", cell=64, height=50, view="front",
-                 leg_top=0.62, head_bottom=0.32, stride=3, lift=2, colors=24, nape=True),
+    "kayo": dict(src="personagem kayo.png", cell=64, height=56, view="front",
+                 leg_top=0.62, head_bottom=0.32, stride=4, lift=3, colors=30, nape=True),
     "isa_casual": dict(src="isa casual.png", cell=64, height=48, view="front_right",
                        leg_top=0.56, head_bottom=0.24, stride=3, lift=2, colors=20),
     "isa_japonesa": dict(src="isa japonesa.png", cell=64, height=48, view="front_right",
                          leg_top=0.84, head_bottom=0.25, stride=1, lift=1, colors=20),
     # criatura: o corpo nao se separa das pernas, entao so os pes levantam (walk="lift").
     # Celula 64 porque o estilo lpc32 do template so importa quadros LPC de 64x64.
-    "chefe": dict(src="Chefe.png", cell=64, height=58, view="side_left", walk="lift",
+    "tatu_cristal": dict(src="Chefe.png", cell=64, height=58, view="side_left", walk="lift",
                   leg_top=0.88, head_bottom=0.40, stride=3, lift=2, colors=20),
+}
+
+# Tiras de animacao ja desenhadas (quadros lado a lado, perfil virado para a direita).
+# Aqui nada e sintetizado: os 8 quadros da caminhada sao amostrados da propria tira.
+STRIPS = {
+    "tatu": dict(src="tatu.png", frames=16, cell=64, height=26, colors=20, portrait=22),
+    "louco": dict(src="animal_louco.png", frames=13, cell=64, height=24, colors=20, portrait=20),
+    # bichos que andam pelos mapas (desenhados por tools/gerar_bichos.py). Prefixo sertao_ porque o
+    # teste do Sprite Lab do template exige que o primeiro do elenco em ordem alfabetica seja o dele.
+    "sertao_bode": dict(src="bichos/bode.png", frames=8, cell=64, height=30, colors=16, portrait=22),
+    "sertao_galinha": dict(src="bichos/galinha.png", frames=8, cell=64, height=23, colors=12, portrait=18),
+    # a capivara da Lagoa Maior (fase 2, Tres Lagoas). Prefixo tl_ pelo mesmo motivo do sertao_.
+    "tl_capivara": dict(src="bichos/capivara.png", frames=8, cell=64, height=24, colors=14, portrait=20),
+    # a Isa presa no cristal do Tatu, no salao do castelo (fase 3). Prefixo jp_ pelo mesmo motivo.
+    "jp_isa_cristal": dict(src="bichos/isa_cristal.png", frames=8, cell=64, height=60, colors=24, portrait=22),
 }
 
 # Credito gravado no character.json de cada personagem exportado para o template. O importador
@@ -66,16 +81,49 @@ def load_base(path: Path, height: int, colors: int) -> np.ndarray:
     ys, xs = np.nonzero(a[..., 3] >= 128)
     im = im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
     w = max(1, round(im.width * height / im.height))
-    # reducao por media com alfa pre-multiplicado: nao vaza cor do fundo transparente
+    return quantize(shade(shrink(im, w, height)), colors)
+
+
+def shade(a: np.ndarray) -> np.ndarray:
+    """Gradiente vertical (cabeca mais clara, pes mais escuros) MAIS um gradiente horizontal por
+    linha (mais claro no centro de cada silhueta, mais escuro nas bordas) - sem os dois, a
+    reducao+quantizacao vira uma silhueta uniforme (efeito 'papelao', sem volume nenhum)."""
+    h, w = a.shape[:2]
+    opaque = a[..., 3] > 0
+    rows = np.nonzero(opaque.any(1))[0]
+    if len(rows) < 2:
+        return a
+    y0, y1 = int(rows.min()), int(rows.max())
+    vspan = max(1, y1 - y0)
+    vfac = 1.22 - 0.46 * (np.arange(h) - y0) / vspan
+    vfac = np.clip(vfac, 0.64, 1.22)
+    out = a.copy()
+    rgb = out[..., :3].astype(np.float64)
+    xs_all = np.arange(w)
+    for y in range(h):
+        xs = np.flatnonzero(opaque[y])
+        if len(xs) == 0:
+            continue
+        cx = (xs[0] + xs[-1]) / 2
+        half = max(1, (xs[-1] - xs[0]) / 2)
+        hfac = 1.0 - 0.24 * np.abs(xs_all - cx) / half
+        hfac = np.clip(hfac, 0.78, 1.0)
+        rgb[y] *= (vfac[y] * hfac)[:, None]
+    out[..., :3] = np.where(opaque[..., None], rgb.clip(0, 255), out[..., :3])
+    return out
+
+
+def shrink(im: Image.Image, w: int, h: int) -> np.ndarray:
+    """Reducao por media com alfa pre-multiplicado (nao vaza cor do fundo transparente)."""
     arr = np.array(im).astype(np.float64)
     arr[..., :3] *= arr[..., 3:4] / 255.0
-    small = np.array(Image.fromarray(arr.clip(0, 255).astype(np.uint8)).resize((w, height), Image.BOX)).astype(np.float64)
-    alpha = np.array(im.getchannel("A").resize((w, height), Image.BOX)).astype(np.float64)
+    small = np.array(Image.fromarray(arr.clip(0, 255).astype(np.uint8)).resize((w, h), Image.BOX)).astype(np.float64)
+    alpha = np.array(im.getchannel("A").resize((w, h), Image.BOX)).astype(np.float64)
     rgb = np.where(alpha[..., None] > 0, small[..., :3] * 255.0 / np.maximum(alpha[..., None], 1), 0)
-    out = np.zeros((height, w, 4), np.uint8)
+    out = np.zeros((h, w, 4), np.uint8)
     out[..., :3] = rgb.clip(0, 255)
     out[..., 3] = np.where(alpha >= 110, 255, 0)
-    return quantize(out, colors)
+    return out
 
 
 def quantize(a: np.ndarray, colors: int) -> np.ndarray:
@@ -260,9 +308,6 @@ def build(cid: str, cfg: dict, src_dir: Path, out_dir: Path) -> None:
             ok = (ty >= 0) & (ty < cell) & (tx >= 0) & (tx < cell)
             tgt = sheet[row * cell:(row + 1) * cell, col * cell:(col + 1) * cell]
             tgt[ty[ok], tx[ok]] = fr[ys[ok], xs[ok]]
-    out_dir.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(sheet).save(out_dir / f"{cid}.png")
-
     # retrato: quadrado em volta da cabeca no quadro parado de frente
     f0 = sheet[:cell, :cell]
     ys, xs = np.nonzero(f0[..., 3] > 0)
@@ -271,6 +316,49 @@ def build(cid: str, cfg: dict, src_dir: Path, out_dir: Path) -> None:
     size = min(cell, head_h + 4 + (head_h % 2))
     px = cell // 2 - size // 2
     py = max(0, min(cell - size, top - 2))
+    write_sheet(cid, sheet, cell, foot_y, [px, py, size, size], "photo", out_dir)
+
+
+def build_strip(cid: str, cfg: dict, src_dir: Path, out_dir: Path) -> None:
+    """Folha a partir de uma tira de quadros de perfil (virada para a direita)."""
+    im = Image.open(src_dir / cfg["src"]).convert("RGBA")
+    a = np.array(im)
+    ys = np.nonzero((a[..., 3] >= 128).any(1))[0]
+    # recorte vertical comum a todos os quadros, para que a escala e a linha do chao sejam iguais
+    im = im.crop((0, ys.min(), im.width, ys.max() + 1))
+    f = cfg["height"] / im.height
+    small = quantize(shrink(im, round(im.width * f), cfg["height"]), cfg["colors"])
+    fw = im.width / cfg["frames"]
+    chunks = [outline(small[:, round(k * fw * f):round((k + 1) * fw * f)]) for k in range(cfg["frames"])]
+    picks = [round(i * cfg["frames"] / WALK_FRAMES) for i in range(WALK_FRAMES)]
+    cell = cfg["cell"]
+    foot_y = cell - 2
+    sheet = np.zeros((cell * 4, cell * (1 + WALK_FRAMES), 4), np.uint8)
+    for row, d in enumerate(DIRS):
+        flip = d in ("left", "up")  # sem frente/costas na arte: baixo usa o perfil direito, cima o esquerdo
+        for col in range(1 + WALK_FRAMES):
+            fr = chunks[picks[col - 1] if col else 0]
+            if flip:
+                fr = fr[:, ::-1]
+            h, w = fr.shape[:2]
+            yy, xx = np.nonzero(fr[..., 3] > 0)
+            ty = yy - (h - 1) + foot_y
+            tx = xx - w // 2 + cell // 2
+            ok = (ty >= 0) & (ty < cell) & (tx >= 0) & (tx < cell)
+            tgt = sheet[row * cell:(row + 1) * cell, col * cell:(col + 1) * cell]
+            tgt[ty[ok], tx[ok]] = fr[yy[ok], xx[ok]]
+    # retrato: a cabeca fica na ponta direita do perfil; o quadrado precisa cruzar o centro (ancora.x)
+    f0 = sheet[:cell, :cell]
+    yy, xx = np.nonzero(f0[..., 3] > 0)
+    size = cfg["portrait"]
+    px = max(cell // 2 - size + 1, min(cell // 2, int(xx.max()) + 1 - size))
+    py = max(0, min(cell - size, int(yy.min()) - 2))
+    write_sheet(cid, sheet, cell, foot_y, [px, py, size, size], "strip", out_dir)
+
+
+def write_sheet(cid: str, sheet: np.ndarray, cell: int, foot_y: int, portrait: list, source: str, out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(sheet).save(out_dir / f"{cid}.png")
     meta = {
         "anchor": [cell // 2, foot_y + 1],
         "animations": {
@@ -281,10 +369,10 @@ def build(cid: str, cfg: dict, src_dir: Path, out_dir: Path) -> None:
         "character": cid,
         "columns": 1 + WALK_FRAMES,
         "directions": DIRS,
-        "portrait": [px, py, size, size],
+        "portrait": portrait,
         "rows": 4,
         "seed": 0,
-        "source": "photo",
+        "source": source,
         "style": "lpc32",
         "version": 2,
     }
@@ -330,7 +418,7 @@ def export_lpc(out_dir: Path, imports_dir: Path, ids: list) -> None:
         lpc.save(dest / "sheet.png")
         recipe = {
             "bodyType": "photo",
-            "credits": [dict(CREDIT, file=f"game_kayo/assets/{CHARS[cid]['src']}")],
+            "credits": [dict(CREDIT, file=f"game_kayo/assets/{({**CHARS, **STRIPS})[cid]['src']}")],
             "generatedBy": "game_kayo/tools/gerar_sprites.py",
             "layers": [],
         }
@@ -346,9 +434,12 @@ def main() -> None:
     (out_dir / "preview").mkdir(parents=True, exist_ok=True)
     for cid, cfg in CHARS.items():
         build(cid, cfg, src_dir, out_dir)
-    preview(out_dir, list(CHARS))
+    for cid, cfg in STRIPS.items():
+        build_strip(cid, cfg, src_dir, out_dir)
+    ids = list(CHARS) + list(STRIPS)
+    preview(out_dir, ids)
     if imports_dir.parent.is_dir():
-        export_lpc(out_dir, imports_dir, list(CHARS))
+        export_lpc(out_dir, imports_dir, ids)
 
 
 if __name__ == "__main__":

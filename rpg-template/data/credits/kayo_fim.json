@@ -1,0 +1,21 @@
+{
+	"_readme": [
+		"Os créditos que rolam depois do fim de A Jornada do Kayo (GameManifest.ending_roll, desenhados",
+		"por scripts/ui/ending_roll.gd): sobem pela tela com pétalas caindo, estrelas piscando e o Kayo e",
+		"a Isa andando lá embaixo. 'big' desenha os nomes do bloco no dobro do tamanho."
+	],
+	"title": "A Jornada do Kayo",
+	"blocks": [
+		{"heading": "Um jogo de", "big": true, "names": ["Pedro Henrique", "Carlos Eduardo", "Kayo Andrade", "Vinicius Fonseca"]},
+		{"heading": "Estrelando", "names": ["Kayo", "Isa"]},
+		{"heading": "Com a participação de", "names": ["Marcos e seus bichos", "Seu Zé do tereré", "A Obaachan e o Monge", "As capivaras da Lagoa Maior"]},
+		{"heading": "Chefe final", "names": ["Tatu Cristal"]},
+		{"heading": "Fases", "names": ["Nordeste - Açailândia (MA)", "Três Lagoas (MS)", "Japão"]},
+		{"heading": "Feito com", "names": ["Godot Engine 4.7", "rpg-template", "Arte LPC: veja Créditos no título"]},
+		{"heading": "Projeto de faculdade", "names": ["Obrigado por jogar!"]}
+	],
+	"last": "Fim",
+	"parade": ["kayo", "isa_japonesa"],
+	"speed": 0.35,
+	"music": "fim_da_jornada"
+}

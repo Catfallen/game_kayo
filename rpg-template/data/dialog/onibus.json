@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O ônibus que trouxe o Kayo da fase 1."
+	],
+	"id": "onibus",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "O ônibus que me trouxe do Maranhão. Dois mil quilômetros, e eu contei cada poste.",
+			"portrait": "kayo"
+		}
+	}
+}

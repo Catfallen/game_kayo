@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"A Isa presa no cristal (jp_salao), antes da luta."
+	],
+	"id": "isa_presa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Kayo, cuidado! Ele rola rápido e o brilho dele dá sono!",
+			"portrait": "isa_japonesa"
+		}
+	}
+}

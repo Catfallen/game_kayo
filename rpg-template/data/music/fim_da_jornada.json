@@ -1,0 +1,71 @@
+{
+	"_readme": [
+		"A Jornada do Kayo: os creditos do fim (o 'music' do data/credits/kayo_fim.json). Do maior,",
+		"devagar, oito compassos: a primeira frase termina em suspenso no re, a segunda volta para casa",
+		"no do - que e justamente a pergunta da ultima conversa."
+	],
+	"bpm": 96,
+	"beats_per_bar": 4,
+	"steps_per_beat": 4,
+	"instruments": {
+		"lead": {
+			"wave": "tone",
+			"gain": 0.3,
+			"attack_ms": 4,
+			"release_ms": 40
+		},
+		"bass": {
+			"wave": "tone",
+			"gain": 0.3,
+			"attack_ms": 2,
+			"release_ms": 24
+		},
+		"drum": {
+			"wave": "noise",
+			"gain": 0.14,
+			"attack_ms": 1,
+			"release_ms": 34
+		}
+	},
+	"voices": [
+		{
+			"instrument": "lead",
+			"bars": [
+				"E5:4 G5:4 A5:6 G5:2",
+				"E5:4 D5:4 C5:8",
+				"D5:4 E5:4 G5:6 E5:2",
+				"D5:12 -:4",
+				"E5:4 G5:4 A5:6 C6:2",
+				"B5:4 A5:4 G5:8",
+				"A5:4 G5:4 E5:4 D5:4",
+				"C5:12 -:4"
+			]
+		},
+		{
+			"instrument": "bass",
+			"bars": [
+				"C3:8 G2:8",
+				"A2:8 E2:8",
+				"F2:8 C3:8",
+				"G2:8 G2:8",
+				"C3:8 G2:8",
+				"E2:8 A2:8",
+				"F2:8 G2:8",
+				"C3:16"
+			]
+		},
+		{
+			"instrument": "drum",
+			"bars": [
+				"x:8 x:8",
+				"x:8 x:8",
+				"x:8 x:8",
+				"x:8 x:8",
+				"x:8 x:8",
+				"x:8 x:8",
+				"x:8 x:8",
+				"x:8 x:8"
+			]
+		}
+	]
+}

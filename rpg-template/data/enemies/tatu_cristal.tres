@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+
+; O Tatu Cristal, chefe final (fase 3, salao do castelo no Japao). Sprite da foto assets/Chefe.png.
+;
+; boss = false DE PROPOSITO, pelo motivo do tatu_marcos: o template permite um unico chefe
+; impossivel de fugir por build e esse lugar ainda e do Keeper do demo. Fugir nao pula nada - ele
+; esta parado na unica passagem ate a Isa (geometria, a regra do template), e a luta recomeca
+; quando o Kayo quiser.
+;
+; CADA GOLPE TEM ANIMACAO PROPRIA (o "fx" de cada move, EnemyDef.MOVE_FX): estilhacos subindo do
+; chao, um raio prismatico, a rolada atravessando a tela, o terremoto, a chuva de cristais e o
+; clarao que faz dormir. A animacao corre durante a preparacao e chega no impacto - e ai que o
+; jogador aperta para defender.
+;
+; DIFICIL MAS JUSTO, medido em tests/unit/test_kayo_chefe.gd com o Kayo SOZINHO no nivel 3 (o
+; teto, e sem os parceiros, que sao opcionais): quem acerta todo tempo vence em todas as
+; sementes; quem aperta sem tempo nenhum perde. No meio disso estao as rapaduras e a Agua
+; Sagrada, e os parceiros capturados na fase 1 deixam tudo mais leve.
+
+[ext_resource type="Script" path="res://scripts/data/enemy_def.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"tatu_cristal"
+name = "Tatu Cristal"
+character = &"tatu_cristal"
+max_hp = 72
+attack = 7
+defense = 4
+xp = 60
+gold = 0
+boss = false
+music = &"tatu_cristal"
+intro = "O Tatu Cristal desperta!"
+moves = [{ "name": "Estilhaço de Cristal", "power": 2, "fx": "shards" }, { "name": "Raio Prismático", "power": 4, "fx": "beam" }, { "name": "Rolada de Diamante", "power": 3, "fx": "rush" }, { "name": "Terremoto Cristalino", "power": 1, "fx": "quake" }, { "name": "Chuva de Cristais", "power": 2, "fx": "storm" }, { "name": "Brilho Ofuscante", "status": "sleep", "turns": 1, "fx": "flash" }]
+speed_tiles_per_second = 1.0
+chase_every_frames = 30
+body_tiles = Vector2(0.75, 0.375)

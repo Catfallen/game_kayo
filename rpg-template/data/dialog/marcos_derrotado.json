@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"O Marcos depois da luta (aberto pelos hooks)."
+	],
+	"id": "marcos_derrotado",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Marcos",
+			"text": "Rapaz... no reflexo você é bom mesmo. Pode passar.",
+			"portrait": "town_smith",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Marcos",
+			"text": "O ônibus pra Três Lagoas para ali na placa. Manda um abraço pra Isa!",
+			"portrait": "town_smith"
+		}
+	}
+}

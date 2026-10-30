@@ -1,0 +1,73 @@
+{
+	"_readme": [
+		"O banco da beira da Lagoa depois do tereré (hooks). A cena por_do_sol mostra os dois de",
+		"costas vendo o sol descer na Lagoa. A Isa conta da volta ao Japão: marca sabe_da_viagem,",
+		"que abre o caminho do aeroporto."
+	],
+	"id": "por_do_sol",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Senta aqui. Daqui o sol se põe bem em cima da Lagoa.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Oeste. Pelo sol, pela sombra do poste e pelo brilho no seu cabelo.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Isa",
+			"text": "Kayo... eu preciso te contar uma coisa.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Isa",
+			"text": "Minha família vai voltar pro Japão. E eu vou junto. O voo é amanhã.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Kayo",
+			"text": "Japão? Tipo... o do outro lado do planeta?",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n6"
+		},
+		"n6": {
+			"speaker": "Isa",
+			"text": "Esse mesmo. Desculpa não ter contado antes. Eu não sabia como.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n7"
+		},
+		"n7": {
+			"speaker": "Kayo",
+			"text": "Eu sei onde fica o Japão. O problema é o oceano inteiro que tem no meio.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n8"
+		},
+		"n8": {
+			"speaker": "Isa",
+			"text": "Me leva até o aeroporto? Quero ficar com você até a última hora.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/por_do_sol.png",
+			"next": "n9"
+		},
+		"n9": {
+			"speaker": "Kayo",
+			"text": "Levo. É só seguir o calçadão pro leste.",
+			"portrait": "kayo",
+			"set_flag": "sabe_da_viagem"
+		}
+	}
+}

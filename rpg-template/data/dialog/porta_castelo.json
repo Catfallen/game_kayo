@@ -1,0 +1,13 @@
+{
+	"_readme": [
+		"A placa ao lado do portão do castelo (jp_patio)."
+	],
+	"id": "porta_castelo",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Placa",
+			"text": "Salão do Trono. Proibido rolar nos corredores."
+		}
+	}
+}

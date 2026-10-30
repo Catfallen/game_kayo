@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O pote da vó; os hooks dão as 3 rapaduras junto com esta fala."
+	],
+	"id": "pote_rapadura",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Pote de rapadura da vó. Levei três: viagem longa pede açúcar.",
+			"portrait": "kayo"
+		}
+	}
+}

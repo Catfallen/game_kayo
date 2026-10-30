@@ -1,0 +1,18 @@
+{
+	"bodyType": "photo",
+	"credits": [
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": [],
+			"notes": "Sprites de caminhada gerados por tools/gerar_sprites.py a partir de uma ilustracao unica.",
+			"file": "game_kayo/assets/bichos/capivara.png"
+		}
+	],
+	"generatedBy": "game_kayo/tools/gerar_sprites.py",
+	"layers": []
+}

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=2 format=3]
+
+; Golpe do Tatu quando ele luta do lado do Kayo (data/party/parceiro_tatu.tres).
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"rolada_blindada"
+name = "Rolada Blindada"
+description = "Vira bola e passa por cima."
+mp_cost = 2
+learn_level = 1
+kind = 0
+power = 6

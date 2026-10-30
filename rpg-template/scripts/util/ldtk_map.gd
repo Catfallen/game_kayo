@@ -36,7 +36,7 @@ const RECORD_LAYERS := ["spawns", "npcs", "warps", "objects", "enemies"]
 
 ## The map's own fields, carried as LDtk level fields - the `.ldtk` equivalent of Tiled's map
 ## properties, so one file is still a complete description.
-const LEVEL_FIELDS := ["id", "style", "music"]
+const LEVEL_FIELDS := ["id", "style", "music", "ambient"]
 
 const VERSION := "1.5.3"
 const TILESET_UID := 1
@@ -235,6 +235,11 @@ static func to_native(raw: Dictionary, tile_ids: PackedStringArray, tile_size: i
 		"style": str(fields.get("style", "gb16")),
 		"music": str(fields.get("music", "")),
 	}
+	# `ambient` is an object, so it travels as JSON behind the prefix (which `_read_fields` has
+	# already decoded), and only a map with one has it.
+	var air: Variant = fields.get("ambient", "")
+	if air is Dictionary and not (air as Dictionary).is_empty():
+		out["ambient"] = air
 	var legend := {}
 	var used := {}
 	for entry: Variant in level.get("layerInstances", []):
@@ -370,10 +375,17 @@ static func _level_fields(native: Dictionary) -> Array:
 	for i in LEVEL_FIELDS.size():
 		var key: String = LEVEL_FIELDS[i]
 		out.append({
-			"__identifier": key, "__type": "String", "__value": str(native.get(key, "")),
+			"__identifier": key, "__type": "String", "__value": _level_value(native, key),
 			"__tile": null, "defUid": LEVEL_FIELD_UID + i, "realEditorValues": [],
 		})
 	return out
+
+
+static func _level_value(native: Dictionary, key: String) -> String:
+	var value: Variant = native.get(key, "")
+	if value is Dictionary:
+		return "" if (value as Dictionary).is_empty() else JSON_PREFIX + JSON.stringify(value)
+	return str(value)
 
 
 static func _tile_layer(name: String, rows: Array[String], legend: Dictionary,

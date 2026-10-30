@@ -61,6 +61,12 @@ enum Phase { MENU, SPELLS, ITEMS, ALLY, FOE, PLAYER_ACT, ENEMY_ACT, MESSAGE, OVE
 ## Equipment and Status rows in PauseMenu were inserted for the same reason and at the same price.
 enum Row { ATTACK, MAGIC, ITEM, FLEE }
 
+## The chance a capture item catches a foe at full health. The rest grows with the damage it has taken,
+## CATCH_RAMP times as fast, so a foe worn down to a third of its health is caught for certain - the
+## genre's lesson ("weaken it first") stated as a rule a player can rely on rather than a roll.
+const CATCH_BASE := 0.35
+const CATCH_RAMP := 1.5
+
 ## How it ended. NONE is "still fighting", so a caller never has to ask two questions.
 enum Outcome { NONE, VICTORY, DEFEAT, FLED }
 
@@ -74,13 +80,19 @@ class ItemRow:
 	var name: String = ""
 	var count: int = 0
 	var heal: int = 0
+	## Thrown at a foe to catch it, rather than given to an ally. See ItemDef.capture.
+	var capture: bool = false
+	var icon: Texture2D = null
 
-	static func of(item_id: StringName, item_name: String, item_count: int, item_heal: int) -> ItemRow:
+	static func of(item_id: StringName, item_name: String, item_count: int, item_heal: int,
+			catches: bool = false, picture: Texture2D = null) -> ItemRow:
 		var out := ItemRow.new()
 		out.id = item_id
 		out.name = item_name
 		out.count = item_count
 		out.heal = item_heal
+		out.capture = catches
+		out.icon = picture
 		return out
 
 	## The battle bag, from the defs the caller has already loaded and how many of each is
@@ -99,9 +111,10 @@ class ItemRow:
 	static func bag(defs: Array, counts: Dictionary) -> Array:
 		var out: Array = []
 		for def: ItemDef in defs:
-			if def == null or def.battle_heal <= 0:
+			if def == null or (def.battle_heal <= 0 and not def.capture):
 				continue
-			out.append(ItemRow.of(def.id, def.name, int(counts.get(def.id, 0)), def.battle_heal))
+			out.append(ItemRow.of(def.id, def.name, int(counts.get(def.id, 0)), def.battle_heal,
+				def.capture, def.icon))
 		return out
 
 
@@ -125,10 +138,15 @@ class SpellRow:
 	## What the spell is made of, looked up in the foe's own resistance map. Empty is elementless
 	## and lands at face value, so every call site that predates elements reads as it did.
 	var element: StringName = &""
+	## A HEAL whose power is a percentage of the target's max hp. False for every other kind.
+	var percent: bool = false
+	## What the screen raises over the caster. Null draws nothing; the rules never read it.
+	var icon: Texture2D = null
 
 	static func of(spell_id: StringName, spell_name: String, mp_cost: int, spell_kind: int,
 			spell_power: int, turns: int, shape: int = SpellDef.Target.ONE,
-			moves: int = SpellDef.Stat.ATTACK, made_of: StringName = &"") -> SpellRow:
+			moves: int = SpellDef.Stat.ATTACK, made_of: StringName = &"",
+			by_percent: bool = false, picture: Texture2D = null) -> SpellRow:
 		var out := SpellRow.new()
 		out.id = spell_id
 		out.name = spell_name
@@ -139,7 +157,16 @@ class SpellRow:
 		out.target = shape
 		out.stat = moves
 		out.element = made_of
+		out.percent = by_percent
+		out.icon = picture
 		return out
+
+	## The LEADER's page: the spells their game names on its CombatDef, or every spell when it
+	## names none. One function because the world and the balance gate both ask it.
+	static func leader_page(defs: Array, level: int, combat: CombatDef) -> Array:
+		if combat == null or combat.spells.is_empty():
+			return page(defs, level, [], true)
+		return page(defs, level, combat.spells, false)
 
 	## The whole spell page for a fighter at `level`, from the defs the caller has already
 	## loaded - filtered by what that level has reached, ordered the way the page is drawn, and
@@ -182,7 +209,7 @@ class SpellRow:
 			# field. `test_world_battles` compares every field against the file it came from, and
 			# polices its own list against this class so a new one cannot go unnoticed.
 			out.append(SpellRow.of(def.id, def.name, def.mp_cost, def.kind, def.power,
-				def.status_turns, def.target, def.stat, def.element))
+				def.status_turns, def.target, def.stat, def.element, def.percent, def.icon))
 		return out
 
 
@@ -240,9 +267,9 @@ class Status:
 		if asleep_turns > 0:
 			return "ZZZ"
 		if attack_turns > 0:
-			return "ATK+" if attack_delta > 0 else "ATK-"
+			return tr("ATK+") if attack_delta > 0 else tr("ATK-")
 		if defense_turns > 0:
-			return "DEF+" if defense_delta > 0 else "DEF-"
+			return tr("DEF+") if defense_delta > 0 else tr("DEF-")
 		return ""
 
 
@@ -337,6 +364,9 @@ class Foe:
 	## reads exactly as it always did.
 	var name: String = ""
 	var hp: int = 0
+	## Caught by a capture item: out of the fight like a fallen foe, but gone into a ball rather than
+	## down on the ground - which is a difference only the screen draws.
+	var caught: bool = false
 	## The same holder the party carries. `asleep_turns` used to be a field right here, and
 	## moving it in is what let one tick and one fold serve both sides.
 	var status := Status.new()
@@ -369,6 +399,18 @@ var _queued: Array[String] = []
 ## Untyped Array because a typed default for a nested class is not a constant expression -
 ## the same reason PauseMenu._items is untyped.
 var _items: Array = []
+## Every cast so far, counted, with the last one remembered - so a VIEW can tell a new cast from
+## the one it already drew without the rules knowing anything about drawing.
+var _casts: int = 0
+## Every throw of a capture item, and how the last one went, for the view's animation.
+var _throws: int = 0
+var _throw_foe: int = -1
+var _throw_caught: bool = false
+var _throw_blocked: bool = false
+var _throw_icon: Texture2D = null
+var _capture_rng: SeededRng = null
+var _last_cast: SpellRow = null
+var _last_caster: int = -1
 ## Whose turn it is on the player's side, or -1 when it is the enemy's. The MENU, SPELLS, ITEMS
 ## and ALLY pages all belong to this member, and so does the act they choose - a member holds
 ## the turn from being asked until their blow has landed, which is what lets the view mark one
@@ -392,6 +434,11 @@ var _pending: Order = null
 ## Which foe is taking its turn, or -1 when the enemy side is not acting. The enemy phase walks
 ## the living in foe order, and this is how far it has walked.
 var _foe_turn: int = -1
+## The move that foe will land, drawn as its cue OPENS rather than at the impact, so the screen
+## can play the move's own wind-up (`EnemyDef.MOVE_FX`) across the cue the player is reacting to.
+## The same stream drawn the same number of times - one per turn that reaches a cue - so moving the
+## draw shifts nothing any replay sees.
+var _foe_move: Dictionary = {}
 ## Which foe a swing is aimed at, carried from the moment it was chosen through the cue to the
 ## impact. The cursor is long gone by the time the blow lands, so the aim cannot be read back
 ## off `_index`.
@@ -440,6 +487,9 @@ static func of(combat: CombatDef, enemies: Array, members: Array, items: Array,
 	# replay in the repo would diverge. Deliberately drawn even at one target, because a branch
 	# no test can distinguish from its absence is decoration.
 	out._target_rng = SeededRng.new(seed_value).derive("target")
+	# A THIRD label for catching, for the second one's reason: drawing a catch from either stream
+	# would shift every move and target an existing fight already draws.
+	out._capture_rng = SeededRng.new(seed_value).derive("capture")
 	out._begin_round()
 	return out
 
@@ -700,6 +750,12 @@ func acting_foe() -> int:
 	return _foe_turn
 
 
+## What the acting foe is about to do, `{"name", "power", "fx", ...}` as its file wrote it. Read
+## by the view to draw the wind-up; empty before any foe has acted.
+func foe_move() -> Dictionary:
+	return _foe_move
+
+
 ## Which foe a swing is aimed at, or -1. Meaningful from the moment the cursor closes until the
 ## blow lands, which is exactly how long the view marks it.
 func struck_foe() -> int:
@@ -718,6 +774,67 @@ func enemy_max_hp(at: int = 0) -> int:
 
 func enemy_name(at: int = 0) -> String:
 	return _foe(at).name
+
+
+## How many spells have been cast this fight, the last of them, and who cast it. For the view.
+func throw_count() -> int:
+	return _throws
+
+
+func last_throw_foe() -> int:
+	return _throw_foe
+
+
+func last_throw_caught() -> bool:
+	return _throw_caught
+
+
+func last_throw_blocked() -> bool:
+	return _throw_blocked
+
+
+func last_throw_icon() -> Texture2D:
+	return _throw_icon
+
+
+func foe_caught(at: int) -> bool:
+	return (_foes[at] as Foe).caught
+
+
+## The wild card this fight opens on, or "" - only when the game states one and nobody presents
+## the formation, whose own card wins.
+func wild_intro() -> String:
+	if _combat == null or presenter_def() != null or _foes.is_empty():
+		return ""
+	# A foe with no trainer can still announce itself: its own `intro` outranks the game's wild line,
+	# so a boss standing alone opens on its own card rather than on "a wild boss appeared".
+	var own := (_foes[0] as Foe).def.intro
+	if not own.is_empty():
+		return tr(own)
+	if _combat.wild_intro.is_empty():
+		return ""
+	return tr(_combat.wild_intro) % (_foes[0] as Foe).name
+
+
+func cast_count() -> int:
+	return _casts
+
+
+func last_cast() -> SpellRow:
+	return _last_cast
+
+
+func last_caster() -> int:
+	return _last_caster
+
+
+## The first foe in the formation that brings somebody to stand behind it, or null. A Pokemon
+## trainer, a commander: drawn by the screen, never read by the rules.
+func presenter_def() -> EnemyDef:
+	for each: Foe in _foes:
+		if each.def != null and not String(each.def.presenter).is_empty():
+			return each.def
+	return null
 
 
 func message() -> String:
@@ -1026,7 +1143,7 @@ func _confirm_spell() -> void:
 		# carrying is simply absent, a spell they know and cannot pay for has to stay on the
 		# page, or the list would change shape as they spend.
 		_want(Sfx.Cue.LOCKED)
-		_say("Not enough magic for %s." % row.name, Phase.SPELLS)
+		_say(tr("Not enough magic for %s.") % row.name, Phase.SPELLS)
 		return
 	var order := Order.new()
 	order.member = _commander
@@ -1054,6 +1171,9 @@ func _confirm_item() -> void:
 	order.member = _commander
 	order.row = Row.ITEM
 	order.item = row
+	if row.capture:
+		_aim_at_foe(order, Phase.ITEMS)
+		return
 	_aim_at_ally(order, Phase.ITEMS)
 
 
@@ -1075,7 +1195,10 @@ func _perform(order: Order) -> void:
 		Row.MAGIC:
 			_cast(order)
 		Row.ITEM:
-			_use(order)
+			if order.item != null and order.item.capture:
+				_throw(order)
+			else:
+				_use(order)
 		_:
 			_advance()
 
@@ -1118,7 +1241,7 @@ func _hand_turn_to(who: int) -> void:
 	member.status.tick()
 	if member.status.asleep_turns > 0:
 		member.status.asleep_turns -= 1
-		_say("%s sleeps on." % member.name, Phase.PLAYER_ACT)
+		_say(tr("%s sleeps on.") % member.name, Phase.PLAYER_ACT)
 		return
 	_phase = Phase.MENU
 	_index = Row.ATTACK
@@ -1127,7 +1250,7 @@ func _hand_turn_to(who: int) -> void:
 ## What a message calls the stat a shift moved. Here rather than on `SpellDef` because it is
 ## wording, and the enum is the fact.
 func _stat_word(which: int) -> String:
-	return "attack" if which == SpellDef.Stat.ATTACK else "guard"
+	return tr("attack") if which == SpellDef.Stat.ATTACK else tr("guard")
 
 
 ## What `row` actually takes off `target`, once that foe's answer to the spell's element is
@@ -1176,9 +1299,9 @@ func _spell_damage(row: SpellRow, target: Foe) -> int:
 func _effect_word(row: SpellRow, target: Foe, subject: String) -> String:
 	var answer := target.def.resistance_to(row.element)
 	if answer > 100:
-		return " %s is weak to %s." % [subject, row.element]
+		return tr(" %s is weak to %s.") % [subject, row.element]
 	if answer < 100:
-		return " %s shrugs off most of the %s." % [subject, row.element]
+		return tr(" %s shrugs off most of the %s.") % [subject, row.element]
 	return ""
 
 
@@ -1191,37 +1314,41 @@ func _cast(order: Order) -> void:
 	# cast and have their mp go elsewhere before their turn came - that gap no longer exists,
 	# and a guard for it would be a branch no test could reach.
 	caster.mp -= row.cost
+	_casts += 1
+	_last_cast = row
+	_last_caster = order.member
 	_want(Sfx.Cue.CAST)
 	match row.kind:
 		SpellDef.Kind.HEAL:
 			var on := _fighter(order.target if order.target >= 0 else order.member)
-			var healed := mini(on.hp + row.power, on.max_hp()) - on.hp
+			var amount := (on.max_hp() * row.power + 99) / 100 if row.percent else row.power
+			var healed := mini(on.hp + amount, on.max_hp()) - on.hp
 			on.hp += healed
 			if healed > 0:
 				_want(Sfx.Cue.HEAL)
-				_say("%s casts %s. %s: %d healed." % [caster.name, row.name, on.name, healed],
+				_say(tr("%s casts %s. %s: %d healed.") % [caster.name, row.name, on.name, healed],
 					Phase.PLAYER_ACT)
 			else:
-				_say("%s casts %s, and %s is already whole." % [caster.name, row.name, on.name],
+				_say(tr("%s casts %s, and %s is already whole.") % [caster.name, row.name, on.name],
 					Phase.PLAYER_ACT)
 		SpellDef.Kind.SLEEP:
 			var sleeper := _foe(order.foe if order.foe >= 0 else 0)
 			sleeper.status.asleep_turns = row.status_turns
-			_say("%s casts %s. The %s sleeps." % [caster.name, row.name, sleeper.name],
+			_say(tr("%s casts %s. The %s sleeps.") % [caster.name, row.name, sleeper.name],
 				Phase.PLAYER_ACT)
 		SpellDef.Kind.BOOST:
 			# At an ALLY, and the target arm is the heal's exactly: -1 means the cursor was
 			# skipped because there was only one of us, which is the caster.
 			var lifted := _fighter(order.target if order.target >= 0 else order.member)
 			lifted.status.shift(row.stat, row.power, row.status_turns)
-			_say("%s casts %s. %s's %s rises." % [caster.name, row.name, lifted.name,
+			_say(tr("%s casts %s. %s's %s rises.") % [caster.name, row.name, lifted.name,
 				_stat_word(row.stat)], Phase.PLAYER_ACT)
 		SpellDef.Kind.SAP:
 			# The same verb pointed the other way, at a foe, on the attack spell's target arm.
 			# The MINUS lives here rather than in the data: `power` is a size on every kind.
 			var drained := _foe(order.foe if order.foe >= 0 else 0)
 			drained.status.shift(row.stat, -row.power, row.status_turns)
-			_say("%s casts %s. The %s's %s drops." % [caster.name, row.name, drained.name,
+			_say(tr("%s casts %s. The %s's %s drops.") % [caster.name, row.name, drained.name,
 				_stat_word(row.stat)], Phase.PLAYER_ACT)
 		_ when row.target == SpellDef.Target.ALL:
 			# Everything still standing, for the same flat damage. The one place in the fight a
@@ -1237,7 +1364,7 @@ func _cast(order: Order) -> void:
 			# frame that holds while the target half cycles beneath it. That is Final Fantasy I's
 			# "undraw all but the attacker and the spell", adapted to a caption with two lines
 			# instead of six boxes. See docs/GENRE_CONVENTIONS.md S7c.
-			var frame := "%s casts %s." % [caster.name, row.name]
+			var frame := tr("%s casts %s.") % [caster.name, row.name]
 			var lines: Array[String] = []
 			for at in reached:
 				var each := _foe(at)
@@ -1246,20 +1373,20 @@ func _cast(order: Order) -> void:
 				# Named at the front, so the clause can say "It" and not repeat the name. A foe
 				# that shrugged the whole thing off is worded as nothing happening rather than as
 				# nought damage, the single-target rule exactly.
-				var told := "%s\n%s takes %d.%s" % [frame, each.name, took,
-					_effect_word(row, each, "It")]
+				var told := tr("%s\n%s takes %d.%s") % [frame, each.name, took,
+					_effect_word(row, each, tr("It"))]
 				if took == 0:
-					told = "%s\nIt does nothing to %s." % [frame, each.name]
+					told = tr("%s\nIt does nothing to %s.") % [frame, each.name]
 				if each.down():
 					felled.append(each.name)
-					told += " %s is down." % each.name
+					told += tr(" %s is down.") % each.name
 				lines.append(told)
 			if _living_foes().is_empty():
 				# The victory line is the LAST thing said rather than the only thing: the per-foe
 				# lines still play, which is why the award is computed here and the telling is
 				# left to the queue. Before this a sweep that killed everything reported none of
 				# what it did.
-				lines.append(_award_victory(" and ".join(felled)))
+				lines.append(_award_victory(tr(" and ").join(felled)))
 				_say_each(lines, Phase.OVER)
 				return
 			_say_each(lines, Phase.PLAYER_ACT)
@@ -1271,19 +1398,58 @@ func _cast(order: Order) -> void:
 			var hit := _foe(order.foe if order.foe >= 0 else 0)
 			var dealt := _spell_damage(row, hit)
 			hit.hp = maxi(hit.hp - dealt, 0)
-			var line := "%s casts %s. %d damage.%s" % [caster.name, row.name, dealt,
+			var line := tr("%s casts %s. %d damage.%s") % [caster.name, row.name, dealt,
 				_effect_word(row, hit, hit.name)]
 			if dealt == 0:
 				# It spent the magic and the turn and moved no number, so it SAYS so: a cast that
 				# changed nothing and reported a damage figure of zero reads as a broken button,
 				# which is the argument problems() makes for refusing a powerless spell outright.
-				line = "%s casts %s, and it does nothing to %s." % [caster.name, row.name, hit.name]
+				line = tr("%s casts %s, and it does nothing to %s.") % [caster.name, row.name, hit.name]
 			if hit.down() and not _living_foes().is_empty():
-				line += " %s is down." % hit.name
+				line += tr(" %s is down.") % hit.name
 			if _living_foes().is_empty():
 				_win(hit.name)
 				return
 			_say(line, Phase.PLAYER_ACT)
+
+
+## A capture item thrown at a foe. The chance grows as the foe weakens - about a third at full health,
+## certain at a third of its health, the genre's own shape - and is drawn from its own stream. A foe
+## that names no `caught_flag` belongs to somebody, and the throw is batted away and wasted.
+func _throw(order: Order) -> void:
+	var user := _fighter(order.member)
+	var ball := order.item
+	var at := order.foe if order.foe >= 0 else _living_foes()[0]
+	var target := _foe(at)
+	_effects.append({"op": GameContext.OP_TAKE_ITEM, "id": ball.id, "count": 1})
+	ball.count -= 1
+	if ball.count <= 0:
+		_items.erase(ball)
+	_throws += 1
+	_throw_foe = at
+	_throw_icon = ball.icon
+	_throw_blocked = String(target.def.caught_flag).is_empty()
+	_throw_caught = false
+	var throw_line := tr("%s throws the %s!") % [user.name, ball.name]
+	if _throw_blocked:
+		_want(Sfx.Cue.LOCKED)
+		_say_each([throw_line, tr("It bats the %s away. That one belongs to somebody!") % ball.name],
+			Phase.PLAYER_ACT)
+		return
+	var missing := float(target.def.max_hp - target.hp) / float(maxi(target.def.max_hp, 1))
+	_throw_caught = _capture_rng.chance(minf(1.0, CATCH_BASE + (1.0 - CATCH_BASE) * missing * CATCH_RAMP))
+	if not _throw_caught:
+		_say_each([throw_line, "...", tr("Argh! The %s broke free!") % target.name], Phase.PLAYER_ACT)
+		return
+	target.caught = true
+	target.hp = 0
+	_effects.append({"op": GameContext.OP_FLAG, "key": target.def.caught_flag, "value": true})
+	var lines: Array[String] = [throw_line, "...", tr("Gotcha! %s was caught!") % target.name]
+	if _living_foes().is_empty():
+		lines.append(_award_victory(target.name))
+		_say_each(lines, Phase.OVER)
+		return
+	_say_each(lines, Phase.PLAYER_ACT)
 
 
 func _use(order: Order) -> void:
@@ -1305,8 +1471,8 @@ func _use(order: Order) -> void:
 		_items.erase(row)
 	# Using a thing costs the turn. Otherwise the answer to every fight is to drink first and
 	# swing afterwards, for free.
-	_say("%s used the %s on %s." % [user.name, row.name, on.name] if healed > 0
-		else "%s used the %s, and nothing changed." % [user.name, row.name], Phase.PLAYER_ACT)
+	_say(tr("%s used the %s on %s.") % [user.name, row.name, on.name] if healed > 0
+		else tr("%s used the %s, and nothing changed.") % [user.name, row.name], Phase.PLAYER_ACT)
 
 
 ## Running, which the whole party does together or not at all.
@@ -1326,13 +1492,13 @@ func _flee() -> void:
 		# mandatory whole. `_foe_turn` is wound back so the enemy phase starts at the first foe.
 		_commander = -1
 		_foe_turn = -1
-		_say("There is no way past the %s." % _foe(barring).name, Phase.ENEMY_ACT)
+		_say(tr("There is no way past the %s.") % _foe(barring).name, Phase.ENEMY_ACT)
 		return
 	_outcome = Outcome.FLED
 	# No seen effect: something you ran from is still standing there. The party effect still
 	# goes out, because the damage taken on the way out is real.
 	_seal()
-	_say("%s broke away." % _party_name(), Phase.OVER)
+	_say(tr("%s broke away.") % _party_name(), Phase.OVER)
 
 
 ## The first foe that will not be run from, or -1 when the whole formation can be.
@@ -1348,7 +1514,7 @@ func _boss() -> int:
 func _party_name() -> String:
 	if _members.size() == 1:
 		return _fighter(0).name
-	return "The party"
+	return tr("The party")
 
 
 # -- the cues ------------------------------------------------------------------------------
@@ -1398,13 +1564,14 @@ func _begin_foe_turn(at: int) -> void:
 		# Its own counter, so the rest of the formation still swings. FF1's sleepers each roll
 		# their own wake, which one flag on the fight could not express.
 		it.status.asleep_turns -= 1
-		_say("The %s sleeps on." % it.name, Phase.ENEMY_ACT)
+		_say(tr("The %s sleeps on.") % it.name, Phase.ENEMY_ACT)
 		return
 	# WHO is chosen before the cue opens, not at the impact. The cue is the thing being reacted
 	# to, so a player defending has to know who is about to be hit while there is still time to
 	# press - and the halving belongs to whoever is actually hit.
 	var standing := _living()
 	_target = standing[_target_rng.next_int(0, standing.size() - 1)]
+	_foe_move = _pick_move()
 	_begin_cue(Phase.ENEMY_ACT, _combat.defend_cue_frames)
 
 
@@ -1424,9 +1591,9 @@ func _land_player_hit() -> void:
 	# tell the player they pressed - which they know - instead of telling them they landed it.
 	_want(Sfx.Cue.TIMED_HIT if timed else Sfx.Cue.HIT)
 	aimed.hp = maxi(aimed.hp - dealt, 0)
-	var line := "A clean hit! %d damage." % dealt if timed else "%d damage." % dealt
+	var line := tr("A clean hit! %d damage.") % dealt if timed else tr("%d damage.") % dealt
 	if aimed.down() and not _living_foes().is_empty():
-		line += " %s is down." % aimed.name
+		line += tr(" %s is down.") % aimed.name
 	if _living_foes().is_empty():
 		_win(aimed.name)
 		return
@@ -1434,7 +1601,7 @@ func _land_player_hit() -> void:
 
 
 func _land_enemy_hit() -> void:
-	var move := _pick_move()
+	var move := _foe_move
 	var swinging := _foe(_foe_turn)
 	var on := _fighter(_target)
 	if not str(move.get("status", "")).is_empty():
@@ -1446,10 +1613,10 @@ func _land_enemy_hit() -> void:
 	_want(Sfx.Cue.BLOCK if blocked else Sfx.Cue.HURT)
 	on.hp = maxi(on.hp - taken, 0)
 	var name := str(move.get("name", "attacks"))
-	var line := "%s: %s. Blocked - %d damage." % [swinging.name, name, taken] if blocked \
-		else "%s: %s. %d damage." % [swinging.name, name, taken]
+	var line := tr("%s: %s. Blocked - %d damage.") % [swinging.name, name, taken] if blocked \
+		else tr("%s: %s. %d damage.") % [swinging.name, name, taken]
 	if on.hp <= 0:
-		line += " %s falls." % on.name
+		line += tr(" %s falls.") % on.name
 		# The fight is lost only when EVERYONE is down, which is the rule in every reference
 		# game. One member falling is a setback the survivors fight on through, and the fallen
 		# stay down until somebody pays to put them back up.
@@ -1480,19 +1647,19 @@ func _land_affliction(move: Dictionary, swinging: Foe, on: Fighter) -> void:
 	var move_name := str(move.get("name", "attacks"))
 	if pressed_in_time():
 		_want(Sfx.Cue.BLOCK)
-		_say("%s: %s. Shrugged off." % [swinging.name, move_name], Phase.ENEMY_ACT)
+		_say(tr("%s: %s. Shrugged off.") % [swinging.name, move_name], Phase.ENEMY_ACT)
 		return
 	_want(Sfx.Cue.HURT)
 	var turns := int(move.get("turns", 1))
 	var line := ""
 	if str(move.get("status", "")) == "sleep":
 		on.status.asleep_turns = turns
-		line = "%s: %s. %s drops asleep." % [swinging.name, move_name, on.name]
+		line = tr("%s: %s. %s drops asleep.") % [swinging.name, move_name, on.name]
 	else:
 		var which := SpellDef.Stat.ATTACK if str(move.get("stat", "")) == "attack" \
 			else SpellDef.Stat.DEFENSE
 		on.status.shift(which, -int(move.get("amount", 1)), turns)
-		line = "%s: %s. %s's %s drops." % [swinging.name, move_name, on.name, _stat_word(which)]
+		line = tr("%s: %s. %s's %s drops.") % [swinging.name, move_name, on.name, _stat_word(which)]
 	_say(line, Phase.ENEMY_ACT)
 
 
@@ -1528,7 +1695,7 @@ func _win(felled: String = "") -> void:
 func _award_victory(felled: String) -> String:
 	_outcome = Outcome.VICTORY
 	var earned := xp_of(_foes)
-	var line := "%s is down. +%d xp." % [felled if not felled.is_empty() else _foe(0).name, earned]
+	var line := tr("%s is down. +%d xp.") % [felled if not felled.is_empty() else _foe(0).name, earned]
 	_want(Sfx.Cue.VICTORY)
 	var standing: Array = []
 	for i in _living():
@@ -1539,8 +1706,8 @@ func _award_victory(felled: String) -> String:
 		# carries no information the first did not.
 		_want(Sfx.Cue.LEVEL_UP)
 	for who: Fighter in levelled:
-		line += " %s: level %d!" % [who.name, who.level] if _members.size() > 1 \
-			else " Level %d!" % who.level
+		line += tr(" %s: level %d!") % [who.name, who.level] if _members.size() > 1 \
+			else tr(" Level %d!") % who.level
 	_seal()
 	return line
 

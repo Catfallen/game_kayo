@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"A atendente do check-in."
+	],
+	"id": "atendente",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Atendente",
+			"text": "Boa tarde! O voo para São Paulo, com conexão para Tóquio, embarca no portão 1.",
+			"portrait": "inn_keeper"
+		}
+	}
+}

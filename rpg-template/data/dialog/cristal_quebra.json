@@ -1,0 +1,41 @@
+{
+	"_readme": [
+		"Falar com a Isa presa depois de vencer o Tatu Cristal (hooks). A cena cristal_quebra; marca",
+		"isa_livre, que troca a Isa presa pela Isa livre no mesmo lugar (requires_flag/hidden_if_flag)."
+	],
+	"id": "cristal_quebra",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Acabou, Isa. Ele caiu.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Narrador",
+			"text": "O cristal treme...",
+			"scene": "res://assets/kayo/cenas/cristal_quebra.png",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Narrador",
+			"text": "...racha de cima a baixo...",
+			"scene": "res://assets/kayo/cenas/cristal_quebra.png",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Narrador",
+			"text": "...e se desfaz em mil pedacinhos brilhantes.",
+			"scene": "res://assets/kayo/cenas/cristal_quebra.png",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Isa",
+			"text": "Kayo...? Eu tô... livre?",
+			"portrait": "isa_japonesa",
+			"scene": "res://assets/kayo/cenas/cristal_quebra.png",
+			"set_flag": "isa_livre"
+		}
+	}
+}

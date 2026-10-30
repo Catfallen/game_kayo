@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"As casas fechadas da vila (jp_vila)."
+	],
+	"id": "casa_jp",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Tudo fechado. Dá pra ver alguém espiando pela fresta do shoji.",
+			"portrait": "kayo"
+		}
+	}
+}

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SpellDef" load_steps=3 format=3]
+
+; Golpe do Kayo (fase 1). E so agua - mas pra nordestino toda agua e sagrada. Cura METADE da vida
+; maxima (percent = true), entao continua valendo quando o Kayo sobe de nivel.
+
+[ext_resource type="Script" path="res://scripts/data/spell_def.gd" id="1_spell"]
+[ext_resource type="Texture2D" path="res://assets/kayo/icons/agua_sagrada.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_spell")
+id = &"agua_sagrada"
+name = "Água Sagrada"
+description = "Só água. Mas pra nordestino, toda água é sagrada."
+mp_cost = 3
+learn_level = 1
+kind = 1
+power = 50
+percent = true
+icon = ExtResource("2_icon")

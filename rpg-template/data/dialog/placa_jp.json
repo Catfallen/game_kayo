@@ -1,0 +1,13 @@
+{
+	"_readme": [
+		"A placa na entrada da vila (jp_vila)."
+	],
+	"id": "placa_jp",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Placa",
+			"text": "Castelo Sakura. Visitação suspensa. Motivo: tatu."
+		}
+	}
+}

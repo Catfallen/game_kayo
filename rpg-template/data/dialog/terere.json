@@ -1,0 +1,89 @@
+{
+	"_readme": [
+		"A barraca de tereré e o Seu Zé. A primeira rodada marca tomou_terere (na escolha) e mostra",
+		"os dois dividindo a guampa, como se toma tereré no MS. Depois dá para pedir mais rodadas."
+	],
+	"id": "terere",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Seu Zé",
+			"text": "Olha o tereré! Gelado, com limão e hortelã. Vai um?",
+			"portrait": "town_carter",
+			"choices": [
+				{
+					"text": "Dois! Um pra mim e um pra ela",
+					"next": "t1",
+					"set_flag": "tomou_terere",
+					"hidden_if_flag": "tomou_terere"
+				},
+				{
+					"text": "Mais uma rodada!",
+					"next": "r1",
+					"requires_flag": "tomou_terere"
+				},
+				{
+					"text": "Agora não, obrigado",
+					"next": "x1"
+				}
+			]
+		},
+		"t1": {
+			"speaker": "Seu Zé",
+			"text": "Dois? É uma guampa só, rapaz! Tereré se toma junto, um passa pro outro.",
+			"portrait": "town_carter",
+			"next": "t2"
+		},
+		"t2": {
+			"speaker": "Isa",
+			"text": "Primeiro você. Puxa devagar que é gelado.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/terere.png",
+			"next": "t3"
+		},
+		"t3": {
+			"speaker": "Kayo",
+			"text": "GELADO! Congelou até o cérebro!",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/terere.png",
+			"next": "t4"
+		},
+		"t4": {
+			"speaker": "Isa",
+			"text": "Agora me passa. É assim que se toma no Mato Grosso do Sul: junto.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/terere.png",
+			"next": "t5"
+		},
+		"t5": {
+			"speaker": "Kayo",
+			"text": "Melhor que qualquer refri do Maranhão. Não conta isso pra ninguém lá.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/terere.png",
+			"next": "t6"
+		},
+		"t6": {
+			"speaker": "Isa",
+			"text": "Agora vem sentar comigo no banco da Lagoa. O sol já vai se pôr.",
+			"portrait": "isa_casual"
+		},
+		"r1": {
+			"speaker": "Isa",
+			"text": "Mais uma? Você tá viciado, hein!",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/terere.png",
+			"next": "r2"
+		},
+		"r2": {
+			"speaker": "Kayo",
+			"text": "Viciado é pouco. Tô morando nessa guampa.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/terere.png"
+		},
+		"x1": {
+			"speaker": "Seu Zé",
+			"text": "Se mudar de ideia, a barraca não sai daqui.",
+			"portrait": "town_carter"
+		}
+	}
+}

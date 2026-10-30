@@ -1,0 +1,155 @@
+{
+	"_readme": [
+		"Fase 2, cena 4: o saguão do aeroporto de Três Lagoas, o fim da fase.",
+		"",
+		"Na primeira entrada os hooks abrem aeroporto_chegada. O portão 1 (8,1) abre a despedida:",
+		"a conversa triste, o abraço apertado (cena abraco_despedida) e isa_embarcou, que tira a",
+		"Isa de trás do Kayo. Depois o janelão (13,1) mostra o avião indo embora (cena aviao) e",
+		"marca fase2_completa e emenda a mensagem da Isa presa no castelo. A porta da direita (17,6)",
+		"e o embarque internacional para o Japao (jp_vila), trancada ate fase2_completa.",
+		"",
+		"A porta (17,6) ficava na ultima coluna do mapa: um warp recusado nao move o jogador (ver",
+		"o aviso em quest_village.json), entao sem a coluna 18 de parede quem chega la sem",
+		"fase2_completa atravessa o limite do mapa e some no vazio. A coluna 18 e so essa trava."
+	],
+	"id": "tl_aeroporto",
+	"style": "lpc32",
+	"legend": {
+		"R": "parede_reboco",
+		"_": "piso_ceramica",
+		"V": "vidro",
+		"D": "porta_vidro",
+		"t": "balcao",
+		"h": "cadeiras",
+		"p": "painel_voos",
+		"v": "vaso_planta",
+		"g": "portao",
+		"m": "mala",
+		"w": "bebedouro",
+		"a": "placa_aviao"
+	},
+	"ground": [
+		"RRRRRRRRRRRRRRRRRRR",
+		"RVVVVVVRRRVVVVVVVRR",
+		"R________________RR",
+		"R________________RR",
+		"R________________RR",
+		"R________________RR",
+		"R________________DR",
+		"R________________RR",
+		"R________________RR",
+		"R________________RR",
+		"RRRRRRRRDRRRRRRRRRR"
+	],
+	"decor": [
+		"                   ",
+		"    a   g          ",
+		" v    p         v  ",
+		"                w  ",
+		"  ttt              ",
+		"           hhhh    ",
+		"                   ",
+		"           hhhh    ",
+		"          m        ",
+		" v              v  ",
+		"                   "
+	],
+	"spawns": {
+		"entrada": [
+			8,
+			9
+		],
+		"do_japao": [
+			16,
+			6
+		]
+	},
+	"npcs": [
+		{
+			"id": "atendente",
+			"character": "inn_keeper",
+			"tile": [
+				3,
+				3
+			],
+			"facing": "down",
+			"dialog": "atendente"
+		},
+		{
+			"id": "passageiro",
+			"character": "town_elder",
+			"tile": [
+				15,
+				8
+			],
+			"facing": "left",
+			"dialog": "passageiro"
+		},
+		{
+			"id": "menina_aeroporto",
+			"character": "town_kid",
+			"tile": [
+				4,
+				7
+			],
+			"facing": "down",
+			"dialog": "menina_aeroporto",
+			"behavior": "wander",
+			"range": 1
+		}
+	],
+	"objects": [
+		{
+			"id": "portao_embarque",
+			"tile": [
+				8,
+				1
+			],
+			"dialog": "portao_vazio"
+		},
+		{
+			"id": "janela",
+			"tile": [
+				13,
+				1
+			],
+			"dialog": "janela_antes"
+		},
+		{
+			"id": "painel_voos",
+			"tile": [
+				6,
+				2
+			],
+			"dialog": "painel_voos"
+		},
+		{
+			"id": "check_in",
+			"tile": [
+				3,
+				4
+			],
+			"dialog": "atendente"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				8,
+				10
+			],
+			"map": "tl_lagoa",
+			"spawn": "do_aeroporto"
+		},
+		{
+			"tile": [
+				17,
+				6
+			],
+			"map": "jp_vila",
+			"spawn": "do_aeroporto",
+			"requires_flag": "fase2_completa",
+			"locked_dialog": "embarque_fechado"
+		}
+	]
+}

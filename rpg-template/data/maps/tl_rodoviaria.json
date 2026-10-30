@@ -1,0 +1,127 @@
+{
+	"_readme": [
+		"Fase 2, cena 1: a rodoviária de Três Lagoas (MS). O ônibus do Maranhão acabou de chegar.",
+		"",
+		"Na primeira entrada os hooks (games/kayo) marcam isa_junto e abrem chegada_isa: a Isa",
+		"aparece no spawn 'companion', corre até o Kayo e os dois se abraçam (cena abraco_chegada).",
+		"Dali em diante ela anda atrás dele (GameManifest.companion) até o portão do aeroporto.",
+		"",
+		"Sem combate na fase 2. A saída é a calçada de baixo, a leste, para a praça do centro."
+	],
+	"id": "tl_rodoviaria",
+	"style": "lpc32",
+	"legend": {
+		".": "grass",
+		",": "grass_alt",
+		"=": "asfalto",
+		"-": "asfalto_faixa",
+		":": "calcada",
+		"R": "parede_reboco",
+		"V": "vidro",
+		"Y": "ipe_amarelo",
+		"K": "ipe_rosa",
+		"Q": "coqueiro",
+		"L": "poste_luz",
+		"n": "banco_praca",
+		"x": "lixeira",
+		"*": "flores",
+		"c": "carro_esq",
+		"d": "carro_dir",
+		"P": "placa_rodoviaria",
+		"e": "orelhao",
+		"0": "onibus_00",
+		"1": "onibus_01",
+		"2": "onibus_02",
+		"3": "onibus_03",
+		"4": "onibus_04",
+		"5": "onibus_05",
+		"6": "onibus_10",
+		"7": "onibus_11",
+		"8": "onibus_12",
+		"9": "onibus_13",
+		"A": "onibus_14",
+		"C": "onibus_15",
+		"E": "onibus_20",
+		"F": "onibus_21",
+		"G": "onibus_22",
+		"H": "onibus_23",
+		"I": "onibus_24",
+		"J": "onibus_25"
+	},
+	"ground": [
+		"RRRRRRRRRRRRRRRRRR",
+		"RVVRRVVRRVVRRVVRRR",
+		"R::::::::::::::::R",
+		"R::::::::::::::::R",
+		"R================R",
+		"R-789A-----------R",
+		"R================R",
+		"R:::::::::::::::::",
+		"R................R",
+		"R..,......,......R",
+		"RRRRRRRRRRRRRRRRRR"
+	],
+	"decor": [
+		"                  ",
+		"                  ",
+		"       n   x P e  ",
+		"                L ",
+		" 012345           ",
+		" 6    C           ",
+		" EFGHIJ     cd    ",
+		"                  ",
+		"  L     K  *    Q ",
+		"   Y *    *  Y    ",
+		"                  "
+	],
+	"spawns": {
+		"chegada": [
+			7,
+			4
+		],
+		"companion": [
+			11,
+			3
+		],
+		"da_centro": [
+			16,
+			7
+		]
+	},
+	"objects": [
+		{
+			"id": "placa_rodoviaria",
+			"tile": [
+				13,
+				2
+			],
+			"dialog": "placa_rodoviaria"
+		},
+		{
+			"id": "orelhao",
+			"tile": [
+				15,
+				2
+			],
+			"dialog": "orelhao"
+		},
+		{
+			"id": "onibus",
+			"tile": [
+				6,
+				4
+			],
+			"dialog": "onibus"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				17,
+				7
+			],
+			"map": "tl_centro",
+			"spawn": "da_rodoviaria"
+		}
+	]
+}

@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"A porta do embarque internacional (tl_aeroporto, warp trancado até fase2_completa)."
+	],
+	"id": "embarque_fechado",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Embarque internacional. Não tenho nada pra fazer do outro lado do mundo... ainda.",
+			"portrait": "kayo"
+		}
+	}
+}

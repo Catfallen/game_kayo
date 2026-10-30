@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"Só para olhar."
+	],
+	"id": "calango",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Um calango tomando sol. Me olhou com cara de quem também não planejou nada.",
+			"portrait": "kayo"
+		}
+	}
+}

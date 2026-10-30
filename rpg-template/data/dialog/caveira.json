@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"Só para olhar."
+	],
+	"id": "caveira",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Caveira de boi. Apareceu isso no GeoGuessr, chuta Nordeste e vai pro abraço.",
+			"portrait": "kayo"
+		}
+	}
+}

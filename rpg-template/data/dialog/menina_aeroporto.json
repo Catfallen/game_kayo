@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"Uma menina correndo no saguão."
+	],
+	"id": "menina_aeroporto",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Menina",
+			"text": "Eu vou andar de avião pela primeira vez! Ele voa até as nuvens!",
+			"portrait": "town_kid"
+		}
+	}
+}

@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="CombatDef" load_steps=2 format=3]
+
+; Como o Kayo luta. Ele luta SOZINHO (o jogo nao tem companheiros), entao os inimigos da
+; fase 1 foram dimensionados para um lutador so - o demo do template tem um aliado e por isso
+; os numeros dele nao servem aqui.
+;
+; Dano = ataque - defesa (minimo 1); um golpe na hora certa vale o DOBRO, e uma defesa na hora
+; certa corta o dano pela metade (BattleLogic). E o "reflexo do CS" do texto do Kayo.
+;
+; Curva [20, 40]: Tatu (12) + Animal Louco (10) = 22 leva ao nivel 2 antes do Marcos; os bichos
+; do Marcos valem 40 e levam ao nivel 3, que e onde a fase 2 vai comecar.
+;
+; FOLEGO (MP) para os golpes: 6 no nivel 1, +2 por nivel. Golpes (data/spells/): Lapada da
+; Misera, Rajada Seca e Agua Sagrada no nivel 1; Cruz de Malta, Chicotada do Lampiao e
+; Oxente! no nivel 2. A lista
+; `spells` fecha o Kayo nos golpes dele - sem ela ele aprenderia as magias do demo.
+;
+; Os tempos do golpe sao os do demo depois do play-test dele (72/84 quadros, janela de 24):
+; os primeiros valores eram rapidos demais para reacao humana.
+
+[ext_resource type="Script" path="res://scripts/data/combat_def.gd" id="1_combat"]
+
+[resource]
+script = ExtResource("1_combat")
+id = &"kayo_combat"
+base_hp = 20
+hp_per_level = 4
+base_attack = 5
+attack_per_level = 2
+base_defense = 1
+defense_per_level = 1
+base_mp = 6
+mp_per_level = 2
+spells = Array[StringName]([&"lapada_da_misera", &"rajada_seca", &"agua_sagrada", &"cruz_de_malta", &"chicotada_do_lampiao", &"oxente"])
+wild_intro = "Um %s selvagem apareceu!"
+xp_curve = Array[int]([20, 40])
+attack_cue_frames = 72
+defend_cue_frames = 84
+timed_window_frames = 24
+message_frames = 45
+arena_tiles = Vector2i(14, 4)

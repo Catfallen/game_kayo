@@ -1,0 +1,19 @@
+{
+	"_readme": [
+		"A placa da Lagoa Maior."
+	],
+	"id": "placa_lagoa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Placa",
+			"text": "LAGOA MAIOR",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "São três lagoas na cidade, e essa é a maior. O nome não mente.",
+			"portrait": "kayo"
+		}
+	}
+}

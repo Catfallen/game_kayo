@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O menino da vila (jp_vila)."
+	],
+	"id": "menino_jp",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Menino",
+			"text": "Dizem que o tatu brilha mais que a lua. Se ele vier rolando... corre!",
+			"portrait": "town_kid"
+		}
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O janelão antes da despedida (hooks)."
+	],
+	"id": "janela_antes",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Dá pra ver a pista daqui. Melhor não pensar nisso ainda.",
+			"portrait": "kayo"
+		}
+	}
+}

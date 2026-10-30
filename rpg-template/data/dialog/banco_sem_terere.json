@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O banco da beira da Lagoa antes do tereré (os hooks decidem)."
+	],
+	"id": "banco_sem_terere",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Isa",
+			"text": "Sentar agora? Primeiro o tereré, Kayo. Tá um calor de rachar.",
+			"portrait": "isa_casual"
+		}
+	}
+}

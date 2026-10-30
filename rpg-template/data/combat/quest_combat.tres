@@ -60,6 +60,7 @@ base_defense = 1
 defense_per_level = 1
 base_mp = 8
 mp_per_level = 3
+spells = Array[StringName]([&"ember", &"gale", &"lull", &"mend", &"ward"])
 xp_curve = Array[int]([20, 24])
 attack_cue_frames = 72
 defend_cue_frames = 84

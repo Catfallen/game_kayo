@@ -203,6 +203,42 @@
 			"urls": [
 				"https://opengameart.org/content/lpc-flowers-plants-fungi-wood"
 			]
+		},
+		{
+			"file": "sertao.png",
+			"sha256": "df8b0f3bf6ce85c3cd33233a92b23afbf4196fe8962562d8eecaf01283f87021",
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": [],
+			"notes": "Desenhado por game_kayo/tools/gerar_tiles_sertao.py; os tiles do sertao da fase do Nordeste."
+		},
+		{
+			"file": "cidade.png",
+			"sha256": "c0f9d0426b4cc54b9a11dd43775b090d2d56c97fe3e112ae3b706f67a798fc14",
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": [],
+			"notes": "Desenhado por game_kayo/tools/gerar_tiles_cidade.py; os tiles de Tres Lagoas da fase 2."
+		},
+		{
+			"file": "japao.png",
+			"sha256": "080c2ab558044cec341f320802ac05fa6c4481fbf1c61dd555af7e3b4489515c",
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": [],
+			"notes": "Desenhado por game_kayo/tools/gerar_tiles_japao.py; o castelo japones da fase 3."
 		}
 	],
 	"tiles": [
@@ -487,6 +523,1486 @@
 				2
 			],
 			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "asfalto",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "asfalto_faixa",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "calcada",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "calcadao",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "parede_reboco",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "piso_ceramica",
+			"from": "cidade.png",
+			"cell": [
+				5,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "vidro",
+			"from": "cidade.png",
+			"cell": [
+				6,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "porta_vidro",
+			"from": "cidade.png",
+			"cell": [
+				7,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "ipe_amarelo",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "ipe_rosa",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "coqueiro",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "poste_luz",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "banco_praca",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "lixeira",
+			"from": "cidade.png",
+			"cell": [
+				5,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "flores",
+			"from": "cidade.png",
+			"cell": [
+				6,
+				1
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "placa_tl",
+			"from": "cidade.png",
+			"cell": [
+				7,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "barraca_esq",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "barraca_dir",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "placa_rodoviaria",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "orelhao",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "sorveteria",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "balcao",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cadeiras",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "painel_voos",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "vaso_planta",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "portao",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "mala",
+			"from": "cidade.png",
+			"cell": [
+				5,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "bebedouro",
+			"from": "cidade.png",
+			"cell": [
+				6,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "placa_aviao",
+			"from": "cidade.png",
+			"cell": [
+				7,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_00",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_01",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_02",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_03",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_04",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_05",
+			"from": "cidade.png",
+			"cell": [
+				5,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "carro_esq",
+			"from": "cidade.png",
+			"cell": [
+				6,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "carro_dir",
+			"from": "cidade.png",
+			"cell": [
+				7,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_10",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				5
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_11",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				5
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "onibus_12",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				5
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "onibus_13",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				5
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "onibus_14",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				5
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "onibus_15",
+			"from": "cidade.png",
+			"cell": [
+				5,
+				5
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_20",
+			"from": "cidade.png",
+			"cell": [
+				0,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_21",
+			"from": "cidade.png",
+			"cell": [
+				1,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_22",
+			"from": "cidade.png",
+			"cell": [
+				2,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_23",
+			"from": "cidade.png",
+			"cell": [
+				3,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_24",
+			"from": "cidade.png",
+			"cell": [
+				4,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "onibus_25",
+			"from": "cidade.png",
+			"cell": [
+				5,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "terra",
+			"from": "sertao.png",
+			"cell": [
+				0,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "terra_alt",
+			"from": "sertao.png",
+			"cell": [
+				1,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "estrada",
+			"from": "sertao.png",
+			"cell": [
+				2,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "pedra",
+			"from": "sertao.png",
+			"cell": [
+				3,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "parede_madeira",
+			"from": "sertao.png",
+			"cell": [
+				4,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "piso_madeira",
+			"from": "sertao.png",
+			"cell": [
+				5,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "porta",
+			"from": "sertao.png",
+			"cell": [
+				6,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "telhado",
+			"from": "sertao.png",
+			"cell": [
+				7,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "mandacaru",
+			"from": "sertao.png",
+			"cell": [
+				0,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "arbusto_seco",
+			"from": "sertao.png",
+			"cell": [
+				1,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "arvore_seca",
+			"from": "sertao.png",
+			"cell": [
+				2,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "calango",
+			"from": "sertao.png",
+			"cell": [
+				3,
+				1
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "caveira",
+			"from": "sertao.png",
+			"cell": [
+				4,
+				1
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "poste",
+			"from": "sertao.png",
+			"cell": [
+				5,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "placa",
+			"from": "sertao.png",
+			"cell": [
+				6,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cerca",
+			"from": "sertao.png",
+			"cell": [
+				7,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "mesa",
+			"from": "sertao.png",
+			"cell": [
+				0,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "mesa_celular",
+			"from": "sertao.png",
+			"cell": [
+				1,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cama_cima",
+			"from": "sertao.png",
+			"cell": [
+				2,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cama_baixo",
+			"from": "sertao.png",
+			"cell": [
+				3,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "fogao_lenha",
+			"from": "sertao.png",
+			"cell": [
+				4,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "filtro_barro",
+			"from": "sertao.png",
+			"cell": [
+				5,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "estante",
+			"from": "sertao.png",
+			"cell": [
+				6,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "tapete",
+			"from": "sertao.png",
+			"cell": [
+				7,
+				2
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "xique_xique",
+			"from": "sertao.png",
+			"cell": [
+				0,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "palma",
+			"from": "sertao.png",
+			"cell": [
+				1,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "juazeiro",
+			"from": "sertao.png",
+			"cell": [
+				2,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "poco",
+			"from": "sertao.png",
+			"cell": [
+				3,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "fogueira",
+			"from": "sertao.png",
+			"cell": [
+				4,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "bandeirinhas",
+			"from": "sertao.png",
+			"cell": [
+				5,
+				3
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "varal",
+			"from": "sertao.png",
+			"cell": [
+				6,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "potes_barro",
+			"from": "sertao.png",
+			"cell": [
+				7,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "banco",
+			"from": "sertao.png",
+			"cell": [
+				0,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "tambor",
+			"from": "sertao.png",
+			"cell": [
+				1,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "roda_carroca",
+			"from": "sertao.png",
+			"cell": [
+				2,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "pedras",
+			"from": "sertao.png",
+			"cell": [
+				3,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "capim",
+			"from": "sertao.png",
+			"cell": [
+				4,
+				4
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "piso_castelo",
+			"from": "japao.png",
+			"cell": [
+				0,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "tatame",
+			"from": "japao.png",
+			"cell": [
+				1,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "pedra_caminho",
+			"from": "japao.png",
+			"cell": [
+				2,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "cascalho",
+			"from": "japao.png",
+			"cell": [
+				3,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "muro_castelo",
+			"from": "japao.png",
+			"cell": [
+				4,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "telhado_jp",
+			"from": "japao.png",
+			"cell": [
+				5,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "shoji",
+			"from": "japao.png",
+			"cell": [
+				6,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "ponte",
+			"from": "japao.png",
+			"cell": [
+				7,
+				0
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "ceu_noite",
+			"from": "japao.png",
+			"cell": [
+				8,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "ceu_lua",
+			"from": "japao.png",
+			"cell": [
+				9,
+				0
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "sakura",
+			"from": "japao.png",
+			"cell": [
+				0,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "petalas",
+			"from": "japao.png",
+			"cell": [
+				1,
+				1
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "lanterna_pedra",
+			"from": "japao.png",
+			"cell": [
+				2,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "bambu",
+			"from": "japao.png",
+			"cell": [
+				3,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "pinheiro",
+			"from": "japao.png",
+			"cell": [
+				4,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "lanterna_papel",
+			"from": "japao.png",
+			"cell": [
+				5,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cerca_bambu",
+			"from": "japao.png",
+			"cell": [
+				6,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "placa_jp",
+			"from": "japao.png",
+			"cell": [
+				7,
+				1
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "pilar",
+			"from": "japao.png",
+			"cell": [
+				0,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "biombo",
+			"from": "japao.png",
+			"cell": [
+				1,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "estandarte",
+			"from": "japao.png",
+			"cell": [
+				2,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cristal",
+			"from": "japao.png",
+			"cell": [
+				3,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "cristal_chao",
+			"from": "japao.png",
+			"cell": [
+				4,
+				2
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "vaso_jp",
+			"from": "japao.png",
+			"cell": [
+				5,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "taiko",
+			"from": "japao.png",
+			"cell": [
+				6,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "katana",
+			"from": "japao.png",
+			"cell": [
+				7,
+				2
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "torii_00",
+			"from": "japao.png",
+			"cell": [
+				0,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "torii_01",
+			"from": "japao.png",
+			"cell": [
+				1,
+				3
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "torii_02",
+			"from": "japao.png",
+			"cell": [
+				2,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "torii_10",
+			"from": "japao.png",
+			"cell": [
+				3,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "torii_11",
+			"from": "japao.png",
+			"cell": [
+				4,
+				3
+			],
+			"solid": false,
+			"decor": true
+		},
+		{
+			"id": "torii_12",
+			"from": "japao.png",
+			"cell": [
+				5,
+				3
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_00",
+			"from": "japao.png",
+			"cell": [
+				0,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_01",
+			"from": "japao.png",
+			"cell": [
+				1,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_02",
+			"from": "japao.png",
+			"cell": [
+				2,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_03",
+			"from": "japao.png",
+			"cell": [
+				3,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_04",
+			"from": "japao.png",
+			"cell": [
+				4,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_05",
+			"from": "japao.png",
+			"cell": [
+				5,
+				4
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_10",
+			"from": "japao.png",
+			"cell": [
+				0,
+				5
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_11",
+			"from": "japao.png",
+			"cell": [
+				1,
+				5
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_12",
+			"from": "japao.png",
+			"cell": [
+				2,
+				5
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_13",
+			"from": "japao.png",
+			"cell": [
+				3,
+				5
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_14",
+			"from": "japao.png",
+			"cell": [
+				4,
+				5
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_15",
+			"from": "japao.png",
+			"cell": [
+				5,
+				5
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_20",
+			"from": "japao.png",
+			"cell": [
+				0,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_21",
+			"from": "japao.png",
+			"cell": [
+				1,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_22",
+			"from": "japao.png",
+			"cell": [
+				2,
+				6
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_23",
+			"from": "japao.png",
+			"cell": [
+				3,
+				6
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_24",
+			"from": "japao.png",
+			"cell": [
+				4,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_25",
+			"from": "japao.png",
+			"cell": [
+				5,
+				6
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_30",
+			"from": "japao.png",
+			"cell": [
+				0,
+				7
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_31",
+			"from": "japao.png",
+			"cell": [
+				1,
+				7
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_32",
+			"from": "japao.png",
+			"cell": [
+				2,
+				7
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_33",
+			"from": "japao.png",
+			"cell": [
+				3,
+				7
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_34",
+			"from": "japao.png",
+			"cell": [
+				4,
+				7
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_35",
+			"from": "japao.png",
+			"cell": [
+				5,
+				7
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_40",
+			"from": "japao.png",
+			"cell": [
+				0,
+				8
+			],
+			"solid": true,
+			"decor": true
+		},
+		{
+			"id": "castelo_41",
+			"from": "japao.png",
+			"cell": [
+				1,
+				8
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_42",
+			"from": "japao.png",
+			"cell": [
+				2,
+				8
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "castelo_43",
+			"from": "japao.png",
+			"cell": [
+				3,
+				8
+			],
+			"solid": false,
+			"decor": false
+		},
+		{
+			"id": "castelo_44",
+			"from": "japao.png",
+			"cell": [
+				4,
+				8
+			],
+			"solid": true,
+			"decor": false
+		},
+		{
+			"id": "castelo_45",
+			"from": "japao.png",
+			"cell": [
+				5,
+				8
+			],
+			"solid": true,
 			"decor": true
 		}
 	]

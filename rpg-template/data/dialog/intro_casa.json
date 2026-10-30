@@ -1,0 +1,21 @@
+{
+	"_readme": [
+		"Abertura do jogo, aberta pelos hooks na primeira entrada em kayo_casa."
+	],
+	"id": "intro_casa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Mais um dia de sol rachando no sertão. Até o calango tá procurando sombra.",
+			"portrait": "kayo",
+			"set_flag": "acordou",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "O celular tá vibrando em cima da mesa faz um tempão...",
+			"portrait": "kayo"
+		}
+	}
+}

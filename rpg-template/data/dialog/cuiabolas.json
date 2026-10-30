@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"As Cuiabolas do avô na mesa; os hooks dão as 5 junto com esta fala."
+	],
+	"id": "cuiabolas",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "As cuiabolas que o vô fazia. Diz ele que cabe até bicho do mato dentro.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Peguei cinco. Bicho machucado entra mais fácil, isso todo mundo sabe.",
+			"portrait": "kayo"
+		}
+	}
+}

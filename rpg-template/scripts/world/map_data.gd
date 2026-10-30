@@ -56,6 +56,17 @@ var style_id: StringName = &"gb16"
 ## that said nothing would sound like whichever door the player came through, so the cave would
 ## be quiet or loud depending on the route.
 var music_id: StringName = &""
+## The air over the map, optional: `{"tint": "#rrggbb", "petals": {"count", "colors", "fall"}}`.
+## A tint colours the whole world (never the windows over it) and petals drift down across the
+## view. Colours are DATA here because a colour literal in scripts/world is a build failure, and
+## because how a place feels is the map's business. Empty is the default and draws nothing.
+var ambient: Dictionary = {}
+
+## Every key `ambient` may carry, and every key its `petals` may. Closed, so a misspelt key is a
+## refusal rather than weather that silently never arrives.
+const AMBIENT_KEYS := ["tint", "petals"]
+const PETAL_KEYS := ["count", "colors", "fall"]
+const MAX_PETALS := 200
 
 
 ## Where the game's maps live, and the one place a map id becomes a path. `root` is a var so a
@@ -92,6 +103,7 @@ static func from_dictionary(data: Dictionary, fallback_id: String = "") -> MapDa
 	map.id = StringName(file.get_string("id", fallback_id))
 	map.style_id = StringName(file.get_string("style", "gb16"))
 	map.music_id = StringName(file.get_string("music", ""))
+	map.ambient = file.get_dict("ambient")
 	map.legend = file.get_dict("legend")
 	map.ground = JsonFile.to_string_array(file.data.get("ground", []))
 	map.decor = JsonFile.to_string_array(file.data.get("decor", []))
@@ -139,7 +151,8 @@ static func differences(before: MapData, after: MapData) -> Array[String]:
 		out.append("size %s became %s" % [before.size(), after.size()])
 		return out
 	for pair: Array in [["id", before.id, after.id], ["style", before.style_id, after.style_id],
-			["music", before.music_id, after.music_id]]:
+			["music", before.music_id, after.music_id],
+			["ambient", JSON.stringify(before.ambient, "", true), JSON.stringify(after.ambient, "", true)]]:
 		if str(pair[1]) != str(pair[2]):
 			out.append("%s '%s' became '%s'" % [pair[0], pair[1], pair[2]])
 	for y in before.size().y:
@@ -414,6 +427,43 @@ func _behavior_problems(npc: Dictionary, bounds: Vector2i, solid_tiles: Array[St
 	return out
 
 
+## What is wrong with `ambient`. Every fault here is silent in play - an unreadable colour tints
+## nothing, a petal count read as a string drifts no petals - so each one is said by name.
+func _ambient_problems() -> Array[String]:
+	var out: Array[String] = []
+	for key: Variant in ambient:
+		if not AMBIENT_KEYS.has(str(key)):
+			out.append("map ambient has '%s', which is not one of %s" % [key, AMBIENT_KEYS])
+	if ambient.has("tint") and not AmbientColors.valid(ambient["tint"]):
+		out.append("map ambient tint '%s' is not a colour" % ambient["tint"])
+	if not ambient.has("petals"):
+		return out
+	var petals: Variant = ambient["petals"]
+	if not petals is Dictionary:
+		out.append("map ambient petals is not an object")
+		return out
+	var spec: Dictionary = petals
+	for key: Variant in spec:
+		if not PETAL_KEYS.has(str(key)):
+			out.append("map ambient petals has '%s', which is not one of %s" % [key, PETAL_KEYS])
+	var count: Variant = spec.get("count", 0)
+	if typeof(count) != TYPE_INT and typeof(count) != TYPE_FLOAT:
+		out.append("map ambient petals count %s is not a number" % [count])
+	elif int(count) < 1 or int(count) > MAX_PETALS:
+		out.append("map ambient petals count is %d, outside 1-%d" % [int(count), MAX_PETALS])
+	var colors: Variant = spec.get("colors", [])
+	if not colors is Array or (colors as Array).is_empty():
+		out.append("map ambient petals name no colours")
+	else:
+		for c: Variant in colors:
+			if not AmbientColors.valid(c):
+				out.append("map ambient petal colour '%s' is not a colour" % c)
+	var fall: Variant = spec.get("fall", 0.0)
+	if (typeof(fall) != TYPE_INT and typeof(fall) != TYPE_FLOAT) or float(fall) <= 0.0:
+		out.append("map ambient petals fall at %s tiles a second - they would hang still" % [fall])
+	return out
+
+
 func problems(known_tiles: Array[String], solid_tiles: Array[String] = []) -> Array[String]:
 	var out: Array[String] = []
 	if not ok:
@@ -424,6 +474,7 @@ func problems(known_tiles: Array[String], solid_tiles: Array[String] = []) -> Ar
 	if ground.is_empty():
 		out.append("map has no ground rows")
 		return out
+	out.append_array(_ambient_problems())
 
 	var width := ground[0].length()
 	for y in ground.size():

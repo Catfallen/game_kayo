@@ -1,0 +1,20 @@
+{
+	"_readme": [
+		"Pista GeoGuessr 2 de 3 (os hooks marcam a flag)."
+	],
+	"id": "pista_placa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Placa verde, letra branca: padrão de rodovia brasileira. Até aqui, fácil.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "Pela distância até a próxima cidade... Açailândia, Maranhão. Cravado.",
+			"portrait": "kayo"
+		}
+	}
+}

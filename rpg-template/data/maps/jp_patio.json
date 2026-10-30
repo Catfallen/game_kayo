@@ -1,0 +1,165 @@
+{
+	"_readme": [
+		"Fase 3, cena 2: o pátio do castelo. O castelo inteiro (6x5 tiles) fecha o norte, e a porta",
+		"dele, no meio da base, é o warp para o salão do trono.",
+		"",
+		"Na primeira entrada os hooks abrem patio_chegada: a voz da Isa vem lá de dentro. O monge",
+		"oferece descanso completo (rest) e a dica de defesa antes do chefe."
+	],
+	"id": "jp_patio",
+	"style": "lpc32",
+	"music": "castelo_sakura",
+	"ambient": {
+		"tint": "#a898cc",
+		"petals": {
+			"count": 46,
+			"colors": [
+				"#f7c3d8",
+				"#f09ab9",
+				"#ffe4ee"
+			],
+			"fall": 0.7
+		}
+	},
+	"legend": {
+		"p": "pedra_caminho",
+		".": "cascalho",
+		"M": "muro_castelo",
+		"N": "ceu_noite",
+		"L": "ceu_lua",
+		"~": "water",
+		"K": "sakura",
+		"*": "petalas",
+		"l": "lanterna_pedra",
+		"P": "pinheiro",
+		"Q": "placa_jp",
+		"A": "castelo_00",
+		"D": "castelo_01",
+		"F": "castelo_02",
+		"G": "castelo_03",
+		"H": "castelo_04",
+		"J": "castelo_05",
+		"O": "castelo_10",
+		"U": "castelo_11",
+		"W": "castelo_12",
+		"X": "castelo_13",
+		"Y": "castelo_14",
+		"Z": "castelo_15",
+		"a": "castelo_20",
+		"d": "castelo_21",
+		"e": "castelo_22",
+		"h": "castelo_23",
+		"i": "castelo_24",
+		"j": "castelo_25",
+		"m": "castelo_30",
+		"n": "castelo_31",
+		"o": "castelo_32",
+		"q": "castelo_33",
+		"r": "castelo_34",
+		"s": "castelo_35",
+		"u": "castelo_40",
+		"w": "castelo_41",
+		"y": "castelo_42",
+		"z": "castelo_43",
+		"6": "castelo_44",
+		"9": "castelo_45"
+	},
+	"ground": [
+		"NNNNNNNNNNNNNNNNNLNN",
+		"NNNNNNNNNWXNNNNNNNNN",
+		"NNNNNNNNNehNNNNNNNNN",
+		"NNNNNNNNnoqrNNNNNNNN",
+		"MMMMMMM.wyz6.MMMMMMM",
+		"M........pp........M",
+		"M........pp........M",
+		"M........pp........M",
+		"M........pp........M",
+		"ppppppppppp...~~~~.M",
+		"M.............~~~~.M",
+		"M.............~~~~.M",
+		"M..................M",
+		"MMMMMMMMMMMMMMMMMMMM"
+	],
+	"decor": [
+		"       ADFGHJ       ",
+		"       OU  YZ       ",
+		"       ad  ij       ",
+		"       m    s       ",
+		"       u    9       ",
+		"  K         Q    K  ",
+		"    * P l  l   *    ",
+		"             K      ",
+		"   K    l  l    *   ",
+		"                    ",
+		"  *   *             ",
+		"     K      *       ",
+		" P       *    *  K  ",
+		"                    "
+	],
+	"spawns": {
+		"da_vila": [
+			1,
+			9
+		],
+		"do_salao": [
+			10,
+			5
+		]
+	},
+	"npcs": [
+		{
+			"id": "monge",
+			"character": "town_carter",
+			"tile": [
+				5,
+				8
+			],
+			"facing": "right",
+			"dialog": "monge"
+		}
+	],
+	"objects": [
+		{
+			"id": "lago_carpas",
+			"tile": [
+				14,
+				9
+			],
+			"dialog": "lago_carpas"
+		},
+		{
+			"id": "porta_castelo",
+			"tile": [
+				12,
+				5
+			],
+			"dialog": "porta_castelo"
+		}
+	],
+	"warps": [
+		{
+			"tile": [
+				0,
+				9
+			],
+			"map": "jp_vila",
+			"spawn": "do_patio"
+		},
+		{
+			"tile": [
+				9,
+				4
+			],
+			"map": "jp_salao",
+			"spawn": "entrada"
+		},
+		{
+			"tile": [
+				10,
+				4
+			],
+			"map": "jp_salao",
+			"spawn": "entrada"
+		}
+	]
+}

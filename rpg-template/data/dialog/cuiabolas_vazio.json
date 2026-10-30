@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"A mesa depois das cuiabolas (aberto pelos hooks)."
+	],
+	"id": "cuiabolas_vazio",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Só sobrou a caneca de café. Fria.",
+			"portrait": "kayo"
+		}
+	}
+}

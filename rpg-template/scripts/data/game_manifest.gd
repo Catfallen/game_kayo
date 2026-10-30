@@ -102,6 +102,28 @@ extends Resource
 ## holding a pad, so problems() refuses a hint naming no token, or a token no device has a word for.
 @export var controls_hint: String = ""
 
+## The language this game is presented in, by file under data/i18n/ ("pt_BR"). Empty is the
+## template's own English, and the default. See I18n.
+@export var language: StringName = &""
+
+## Somebody who walks behind the player, by character id - the genre's following partner, the
+## way a Pokemon walks behind its trainer in HeartGold or a party trails the leader in EarthBound.
+## Empty is the default and means nobody follows. They are drawn and never collide: a body that
+## blocked the corridor behind the player would trap them against their own friend.
+@export var companion: StringName = &""
+## They walk with the player while this flag is set and `companion_gone_flag` is not - two flags
+## rather than one, because the dialog format can only ever SET a flag, and a partner who leaves
+## is a conversation's doing.
+@export var companion_flag: StringName = &""
+@export var companion_gone_flag: StringName = &""
+
+## The game's ENDING: when a conversation closes with this flag set, the world goes back to the
+## title and rolls the staff (`EndingRoll`) from `ending_roll`, a JSON file of headings and names.
+## The references roll credits after the ending rather than offering them on a menu, which a
+## template with no ending could not do. Both empty is the default: a game with no ending.
+@export var ending_flag: StringName = &""
+@export_file("*.json") var ending_roll: String = ""
+
 ## This game's own code: a GameHooks subclass, living under games/<id>/. Null is normal - a
 ## game whose whole design is expressible in maps and dialog has none, as the demo does not.
 ##
@@ -134,12 +156,24 @@ func problems() -> Array[String]:
 		out.append("manifest has no id")
 	if starting_gold < 0:
 		out.append("manifest '%s' starts the player %d gold in debt" % [id, starting_gold])
+	if not String(language).is_empty() and I18n.load_translation(language) == null:
+		out.append("manifest '%s' speaks '%s', and %s is missing or not a language file"
+			% [id, language, I18n.path_of(language)])
 	for token in Prompts.unknown_tokens(controls_hint):
 		out.append("manifest '%s' has a controls_hint naming '{%s}', which no device has a word for (known: %s)" % [
 			id, token, ", ".join(PackedStringArray(Prompts.TOKENS.keys()))])
 	if not controls_hint.is_empty() and Prompts.tokens_of(controls_hint).is_empty():
 		out.append("manifest '%s' has a controls_hint that names no verb, so it cannot follow the player's device: '%s'" % [
 			id, controls_hint])
+	if not String(companion).is_empty() and String(companion_flag).is_empty():
+		out.append("manifest '%s' has a companion and no companion_flag, so nobody can ever bring them along"
+			% id)
+	if String(ending_flag).is_empty() != ending_roll.is_empty():
+		out.append("manifest '%s' has an ending_flag or an ending_roll without the other - an ending needs both a moment and a roll"
+			% id)
+	elif not ending_roll.is_empty():
+		for fault in EndingRoll.problems_of(ending_roll):
+			out.append("manifest '%s': %s" % [id, fault])
 	if String(start_map).is_empty():
 		out.append("manifest '%s' names no start_map" % id)
 		return out

@@ -127,6 +127,14 @@ enum Target { ONE, ALL }
 ## number. docs/DECISIONS.md carries the fork.
 @export var status_turns: int = 1
 
+## HEAL only: `power` is a PERCENTAGE of the target's max hp rather than a flat amount, so a heal
+## keeps its worth as the curve grows - the genre's "restores half" next to "restores 30".
+@export var percent: bool = false
+
+## Optional picture the battle screen raises over the caster when this is cast. Pure decoration:
+## nothing in the rules reads it, and a spell without one casts exactly as before.
+@export var icon: Texture2D
+
 
 ## Everything wrong with this spell, in the idiom of every other problems() here: all of them,
 ## not the first.
@@ -170,4 +178,8 @@ func problems() -> Array[String]:
 	# scaling for damage, so every kind that deals none refuses it by the same one line.
 	if kind != Kind.ATTACK and not String(element).is_empty():
 		out.append("spell '%s' is made of '%s' but deals no damage for that to scale" % [id, element])
+	if percent and kind != Kind.HEAL:
+		out.append("spell '%s' is a percentage, which only a heal may be" % id)
+	elif percent and power > 100:
+		out.append("spell '%s' heals %d%% - more than everything" % [id, power])
 	return out

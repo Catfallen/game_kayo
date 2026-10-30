@@ -1,25 +1,54 @@
-[gd_resource type="Resource" script_class="GameManifest" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="GameManifest" load_steps=8 format=3]
 
-; A Jornada do Kayo, scaffolded by tools/new_game.sh.
+; A Jornada do Kayo. Criado por tools/new_game.sh e depois escrito à mão.
 ;
-; This file is the whole answer to "which game is running": its first map, where the
-; player stands in it, who they are, the tuning it uses and the voice it speaks in.
+; Fase 1 (Nordeste/Açailândia): kayo_casa -> kayo_vila -> kayo_estrada -> kayo_terreiro.
+; Fase 2 (Três Lagoas/MS): tl_rodoviaria -> tl_centro -> tl_lagoa -> tl_aeroporto, sem combate.
+; Fase 3 (Japão): jp_vila -> jp_patio -> jp_salao, o Tatu Cristal e o fim do jogo.
+; Os roteiros estão em docs/kayo/FASE_1_NORDESTE.md, FASE_2_TRES_LAGOAS.md e FASE_3_JAPAO.md.
 ;
-; It is not chosen automatically. With more than one game in data/games and nothing
-; picking between them the title offers a Switch game row; to boot this one straight
-; away, set application/config/game in project.godot or run it with --game=kayo.
+; O FIM: a conversa final com a Isa (final_isa) marca fim_de_jogo, e o mundo volta ao título e
+; rola os créditos animados de data/credits/kayo_fim.json (ending_flag / ending_roll).
+;
+; A Isa anda atrás do Kayo na fase 2: companion = isa_casual, da chegada na rodoviária
+; (isa_junto, marcada pelos hooks) até o portão do aeroporto (isa_embarcou).
+;
+; Usa o game_config.tres do template de propósito: a sensação de andar é a mesma do demo.
+; O combate é próprio (data/combat/kayo_combat.tres) porque o Kayo luta sozinho.
+; As músicas são as do demo, por enquanto. O jogo fala português: language = pt_BR, as
+; frases do template traduzidas em data/i18n/pt_BR.json.
+;
+; O project.godot aponta application/config/game para "kayo", então o projeto abre direto
+; neste jogo; o demo ainda roda com --game=quest.
 
 [ext_resource type="Script" path="res://scripts/data/game_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/game_config.tres" id="2_config"]
 [ext_resource type="Resource" path="res://data/sounds/dusk16.tres" id="3_sound"]
+[ext_resource type="Resource" path="res://data/combat/kayo_combat.tres" id="4_combat"]
+[ext_resource type="Script" path="res://games/kayo/kayo_hooks.gd" id="5_hooks"]
+[ext_resource type="Resource" path="res://data/party/parceiro_tatu.tres" id="6_tatu"]
+[ext_resource type="Resource" path="res://data/party/parceiro_louco.tres" id="7_louco"]
 
 [resource]
 script = ExtResource("1_manifest")
 id = &"kayo"
 title = "A Jornada do Kayo"
-start_map = &"kayo_start"
+start_map = &"kayo_casa"
 start_spawn = &"start"
 player_character = &"kayo"
+title_music = &"barred_gate"
+battle_music = &"skirmish"
+victory_music = &"triumph"
+game_over_music = &"dirge"
 config = ExtResource("2_config")
+party = Array[Resource]([ExtResource("6_tatu"), ExtResource("7_louco")])
+combat = ExtResource("4_combat")
 sound_style = ExtResource("3_sound")
+hooks = ExtResource("5_hooks")
+language = &"pt_BR"
 controls_hint = "{move} andar    {confirm} olhar    {pause} pausar"
+companion = &"isa_casual"
+companion_flag = &"isa_junto"
+companion_gone_flag = &"isa_embarcou"
+ending_flag = &"fim_de_jogo"
+ending_roll = "res://data/credits/kayo_fim.json"

@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O banco da Lagoa depois do pôr do sol (hooks)."
+	],
+	"id": "banco_lagoa_depois",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "O banco onde ela me contou. Ainda tá quente do sol.",
+			"portrait": "kayo"
+		}
+	}
+}

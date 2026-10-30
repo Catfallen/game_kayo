@@ -78,7 +78,7 @@ static func party_of(manifest: GameManifest, members: Array, level: int) -> Arra
 	# arguments rather than one.
 	out.append(BattleLogic.Fighter.of(&"", "You", manifest.player_character, combat,
 		combat.max_hp(level), 0, level, combat.max_mp(level), 0, 0,
-		BattleLogic.SpellRow.page(defs, level, [], true)))
+		BattleLogic.SpellRow.leader_page(defs, level, combat)))
 	for member: PartyMemberDef in members:
 		if member == null:
 			continue

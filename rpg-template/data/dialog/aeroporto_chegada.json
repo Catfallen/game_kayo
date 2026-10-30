@@ -1,0 +1,33 @@
+{
+	"_readme": [
+		"Abre sozinho na primeira entrada em tl_aeroporto (hooks)."
+	],
+	"id": "aeroporto_chegada",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "O aeroporto. Nunca vi um lugar tão pequeno pesar tanto.",
+			"portrait": "kayo",
+			"set_flag": "aeroporto_chegou",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Isa",
+			"text": "O embarque é no portão 1, lá em cima.",
+			"portrait": "isa_casual",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Isa",
+			"text": "Fica comigo até a última chamada?",
+			"portrait": "isa_casual",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Kayo",
+			"text": "Até a última chamada. E depois dela também, se deixarem.",
+			"portrait": "kayo"
+		}
+	}
+}

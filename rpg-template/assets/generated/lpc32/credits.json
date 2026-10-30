@@ -1,6 +1,5 @@
 {
 	"authors": [
-		"Arte original do projeto game_kayo",
 		"Benjamin K. Smith (BenCreating)",
 		"Buch",
 		"Carlo Enrico Victoria (Nemisys)",
@@ -30,6 +29,7 @@
 		"Nila122",
 		"Page",
 		"Pierre Vigier (pvigier)",
+		"Projeto de faculdade game_kayo",
 		"Sander Frenken (castelonia)",
 		"SpiderDave",
 		"Stephen Challener (Redshrike)",
@@ -268,6 +268,16 @@
 		},
 		{
 			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "cidade.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
 				"Lanea Zimmerman (Sharm)"
 			],
 			"file": "country.png",
@@ -385,7 +395,7 @@
 		},
 		{
 			"authors": [
-				"Arte original do projeto game_kayo"
+				"Projeto de faculdade game_kayo"
 			],
 			"file": "game_kayo/assets/Chefe.png",
 			"licenses": [
@@ -395,7 +405,57 @@
 		},
 		{
 			"authors": [
-				"Arte original do projeto game_kayo"
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "game_kayo/assets/animal_louco.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "game_kayo/assets/bichos/bode.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "game_kayo/assets/bichos/capivara.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "game_kayo/assets/bichos/galinha.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "game_kayo/assets/bichos/isa_cristal.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
 			],
 			"file": "game_kayo/assets/isa casual.png",
 			"licenses": [
@@ -405,7 +465,7 @@
 		},
 		{
 			"authors": [
-				"Arte original do projeto game_kayo"
+				"Projeto de faculdade game_kayo"
 			],
 			"file": "game_kayo/assets/isa japonesa.png",
 			"licenses": [
@@ -415,9 +475,19 @@
 		},
 		{
 			"authors": [
-				"Arte original do projeto game_kayo"
+				"Projeto de faculdade game_kayo"
 			],
 			"file": "game_kayo/assets/personagem kayo.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "game_kayo/assets/tatu.png",
 			"licenses": [
 				"CC-BY 4.0"
 			],
@@ -643,6 +713,16 @@
 		},
 		{
 			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "japao.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
+		},
+		{
+			"authors": [
 				"ElizaWy",
 				"JaidynReiman",
 				"Johannes Sjölund (wulax)",
@@ -715,6 +795,16 @@
 			"urls": [
 				"https://opengameart.org/content/lpc-flowers-plants-fungi-wood"
 			]
+		},
+		{
+			"authors": [
+				"Projeto de faculdade game_kayo"
+			],
+			"file": "sertao.png",
+			"licenses": [
+				"CC-BY 4.0"
+			],
+			"urls": []
 		},
 		{
 			"authors": [

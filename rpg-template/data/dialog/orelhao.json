@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"O orelhão da rodoviária."
+	],
+	"id": "orelhao",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Um orelhão funcionando! No Maranhão eles já viraram peça de museu.",
+			"portrait": "kayo"
+		}
+	}
+}

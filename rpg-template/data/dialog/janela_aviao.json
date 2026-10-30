@@ -1,0 +1,89 @@
+{
+	"_readme": [
+		"O janelão depois da despedida (hooks): a cena aviao, o avião correndo na pista e sumindo.",
+		"Fecha a fase 2 (fase2_completa) e emenda a ponte para o Japão: a mensagem da Isa presa no",
+		"castelo (o texto do próprio Kayo) e a dica do embarque internacional, a porta da direita."
+	],
+	"id": "janela_aviao",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Eu vi ela indo. Vi pela janela o avião correndo na pista...",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/aviao.png",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Kayo",
+			"text": "...subindo, virando um pontinho, e sumindo no céu.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/aviao.png",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "Abri o mapa no celular pra ver até onde ia. Apareceu um oceano inteiro.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/aviao.png",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Kayo",
+			"text": "Champion de GeoGuessr, e acertar o Japão no mapa não te leva até lá.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/aviao.png",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Kayo",
+			"text": "Mas eu sei onde ela tá. E um dia eu chego lá.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/aviao.png",
+			"set_flag": "fase2_completa",
+			"next": "n6"
+		},
+		"n6": {
+			"speaker": "Fim da Fase 2",
+			"text": "Alguns dias depois, chega uma mensagem muito estranha da Isa...",
+			"next": "n7"
+		},
+		"n7": {
+			"speaker": "Celular",
+			"text": "1 mensagem nova de: Isa",
+			"next": "n8"
+		},
+		"n8": {
+			"speaker": "Isa (celular)",
+			"text": "Kayo? Sou eu. Tô presa num castelo e tem um chefão que não me deixa sair.",
+			"next": "n9"
+		},
+		"n9": {
+			"speaker": "Kayo",
+			"text": "Do nada um castelo? Isso tá com cara de golpe.",
+			"portrait": "kayo",
+			"next": "n10"
+		},
+		"n10": {
+			"speaker": "Isa (celular)",
+			"text": "Não é golpe! Te mandei uma foto da janela. Por favor, vem me buscar.",
+			"next": "n11"
+		},
+		"n11": {
+			"speaker": "Kayo",
+			"text": "Telhado curvo, uma cerejeira, um castelo no alto... isso daria uma rodada boa.",
+			"portrait": "kayo",
+			"next": "n12"
+		},
+		"n12": {
+			"speaker": "Kayo",
+			"text": "Aguenta aí, Isa. Mostrou meia cerejeira pra um champion de GeoGuessr? Já era.",
+			"portrait": "kayo",
+			"next": "n13"
+		},
+		"n13": {
+			"speaker": "Dica",
+			"text": "O embarque internacional é a porta da direita do saguão."
+		}
+	}
+}

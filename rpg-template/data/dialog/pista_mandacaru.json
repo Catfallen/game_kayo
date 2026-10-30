@@ -1,0 +1,14 @@
+{
+	"_readme": [
+		"Pista GeoGuessr 3 de 3 (os hooks marcam a flag)."
+	],
+	"id": "pista_mandacaru",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Mandacaru desse tamanho e chão rachado assim, só no sertão. Planta não mente.",
+			"portrait": "kayo"
+		}
+	}
+}

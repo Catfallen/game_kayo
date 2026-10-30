@@ -1,0 +1,114 @@
+{
+	"_readme": [
+		"O portão 1, antes do embarque (hooks). A despedida: a conversa triste, o abraço apertado",
+		"(cena abraco_despedida, escolhido pelo jogador) e isa_embarcou, que tira a Isa de trás do",
+		"Kayo quando a conversa fecha."
+	],
+	"id": "despedida",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Alto-falante",
+			"text": "Última chamada para o voo 1:47, para São Paulo, com conexão para Tóquio. Portão 1.",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Isa",
+			"text": "É o meu.",
+			"portrait": "isa_casual",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Kayo",
+			"text": "Já? Parece que eu acabei de descer do ônibus.",
+			"portrait": "kayo",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Isa",
+			"text": "Kayo, promete uma coisa? Não fica triste demais.",
+			"portrait": "isa_casual",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Kayo",
+			"text": "Prometo ficar triste na medida certa. Nem mais, nem menos.",
+			"portrait": "kayo",
+			"next": "n6"
+		},
+		"n6": {
+			"speaker": "Isa",
+			"text": "Eu te amo. Do Maranhão até o Japão. O caminho inteiro.",
+			"portrait": "isa_casual",
+			"next": "n7"
+		},
+		"n7": {
+			"speaker": "Kayo",
+			"text": "Eu também te amo, Isa. Mais que tudo.",
+			"portrait": "kayo",
+			"next": "n8"
+		},
+		"n8": {
+			"speaker": "Kayo",
+			"text": "E eu acho qualquer lugar do mundo. Se precisar, eu te acho.",
+			"portrait": "kayo",
+			"next": "n9"
+		},
+		"n9": {
+			"speaker": "Isa",
+			"text": "Então me abraça. Bem forte. Pra eu levar comigo.",
+			"portrait": "isa_casual",
+			"choices": [
+				{
+					"text": "Abraçar a Isa bem forte",
+					"next": "h1"
+				}
+			]
+		},
+		"h1": {
+			"speaker": "",
+			"text": "Kayo abraça a Isa com toda a força que tem.",
+			"scene": "res://assets/kayo/cenas/abraco_despedida.png",
+			"next": "h2"
+		},
+		"h2": {
+			"speaker": "Isa",
+			"text": "Não solta ainda... só mais um pouquinho.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco_despedida.png",
+			"next": "h3"
+		},
+		"h3": {
+			"speaker": "Kayo",
+			"text": "Ninguém nunca abraçou ninguém tão forte em Três Lagoas. Pode anotar.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco_despedida.png",
+			"next": "h4"
+		},
+		"h4": {
+			"speaker": "Isa",
+			"text": "Tchau, Kayo. Me manda mensagem todo dia.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco_despedida.png",
+			"next": "h5"
+		},
+		"h5": {
+			"speaker": "Kayo",
+			"text": "Todo dia. Com latitude e longitude.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco_despedida.png",
+			"next": "h6"
+		},
+		"h6": {
+			"speaker": "",
+			"text": "A Isa passa pelo portão e olha para trás uma última vez.",
+			"set_flag": "isa_embarcou",
+			"next": "h7"
+		},
+		"h7": {
+			"speaker": "Kayo",
+			"text": "Ela foi. O janelão do saguão dá pra pista...",
+			"portrait": "kayo"
+		}
+	}
+}

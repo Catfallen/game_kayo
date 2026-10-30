@@ -1,0 +1,62 @@
+{
+	"_readme": [
+		"Abre sozinho na primeira entrada em tl_rodoviaria (hooks). Os hooks marcam isa_junto antes,",
+		"então a Isa já está no spawn 'companion' e anda atrás do Kayo quando a conversa fecha.",
+		"As falas do meio mostram a cena abraco_chegada."
+	],
+	"id": "chegada_isa",
+	"start": "n1",
+	"nodes": {
+		"n1": {
+			"speaker": "Kayo",
+			"text": "Três Lagoas, Mato Grosso do Sul. Quarenta graus e eu de calça. Planejamento impecável.",
+			"portrait": "kayo",
+			"next": "n2"
+		},
+		"n2": {
+			"speaker": "Isa",
+			"text": "KAYO! Você veio mesmo!",
+			"portrait": "isa_casual",
+			"next": "n3"
+		},
+		"n3": {
+			"speaker": "Isa",
+			"text": "Vem cá, me dá um abraço!",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco_chegada.png",
+			"next": "n4"
+		},
+		"n4": {
+			"speaker": "Kayo",
+			"text": "Falei que vinha. Champion de GeoGuessr não erra a rota.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco_chegada.png",
+			"next": "n5"
+		},
+		"n5": {
+			"speaker": "Isa",
+			"text": "Você errou três vezes no caminho. Eu tava vendo sua localização.",
+			"portrait": "isa_casual",
+			"scene": "res://assets/kayo/cenas/abraco_chegada.png",
+			"next": "n6"
+		},
+		"n6": {
+			"speaker": "Kayo",
+			"text": "Era rota alternativa. Pra conhecer o Brasil.",
+			"portrait": "kayo",
+			"scene": "res://assets/kayo/cenas/abraco_chegada.png",
+			"next": "n7"
+		},
+		"n7": {
+			"speaker": "Isa",
+			"text": "Bobo. Vem, vou te mostrar a cidade. Depois a gente toma um tereré na Lagoa.",
+			"portrait": "isa_casual",
+			"set_flag": "chegou_tl",
+			"next": "n8"
+		},
+		"n8": {
+			"speaker": "Dica",
+			"text": "Agora a Isa anda com você. Chegue perto dela e aperte o botão para conversar."
+		}
+	}
+}
